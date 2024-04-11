@@ -210,7 +210,7 @@ gregtech.machine.pressure_swing_adsorber.name=变压吸附器
 gregtech.machine.reaction_furnace.name=反应炉
 
 gregtech.machine.fermentation_vat.name=发酵罐
-gregtech.machine.ore_sorter.name=矿石拣选机
+gregtech.machine.ore_sorter.name=矿石分选机
 gregtech.machine.gravity_separator.name=重力分离器
 gregtech.machine.condenser.name=冷凝器
 gregtech.machine.cooling_unit.name=冷却装置
@@ -639,7 +639,7 @@ recipemap.polymerization_tank.name=聚合缸
 recipemap.uv_light_box.name=紫外线辐照
 recipemap.ion_implantation.name=离子注入
 recipemap.cvd.name=化学气相沉积
-recipemap.ore_sorter.name=矿石拣选
+recipemap.ore_sorter.name=矿石分选
 recipemap.cooling_tower.name=冷却塔
 recipemap.cooling_unit.name=冷却装置
 recipemap.fluid_decompressor.name=流体降压
