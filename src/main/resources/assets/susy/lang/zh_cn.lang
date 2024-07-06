@@ -604,7 +604,7 @@ gregtech.machine.textile_spinner.uxv.name=史诗纺线机 IV
 gregtech.machine.textile_spinner.opv.name=传说纺线机
 
 # Polishing Machine
-gregtech.machine.polishing_machine.lv.name=基础 
+gregtech.machine.polishing_machine.lv.name=基础抛光机
 gregtech.machine.polishing_machine.mv.name=进阶抛光机
 gregtech.machine.polishing_machine.hv.name=进阶抛光机 II
 gregtech.machine.polishing_machine.ev.name=进阶抛光机 III
@@ -783,4 +783,4 @@ susy.command.horde.start.has_active_invasion=已有正在进行中的%s入侵。
 susy.command.horde.start.started=%s入侵已开始。
 susy.command.horde.stop.usage=/mobHorde stop
 susy.command.horde.stop.has_active_no_invasion=没有正在进行中的入侵。
-susy.command.horde.stop.stopped=%s入侵已结束。
+susy.command.horde.stop.stopped=%s入侵已结束。g
