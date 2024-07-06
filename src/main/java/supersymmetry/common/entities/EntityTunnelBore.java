@@ -141,6 +141,9 @@ public class EntityTunnelBore extends Locomotive {
     @Override
     public void onTick() {
         super.onTick();
+
+        if(!this.isBuilt()) return;
+
         this.updateBorer();
         if(!this.getWorld().isClient) {
             long discharged = 0;
@@ -255,6 +258,10 @@ public class EntityTunnelBore extends Locomotive {
 
                 int cost = trackBuilder.costFill();
                 if(this.getAmountInInventory(this.getRailBedFill()) < cost) return;
+
+                List<ItemStack> trackSegments = new ArrayList<>();
+                trackSegments.add(trackSegmentStack);
+                trackBuilder.setDrops(trackSegments);
 
                 trackBuilder.build();
 
