@@ -1,15 +1,14 @@
 package supersymmetry.common.metatileentities.multi.electric;
 
 import codechicken.lib.render.CCRenderState;
+import codechicken.lib.render.RenderUtils;
 import codechicken.lib.render.pipeline.IVertexOperation;
-import codechicken.lib.texture.TextureUtils;
 import codechicken.lib.vec.Cuboid6;
 import codechicken.lib.vec.Matrix4;
 import gregtech.api.GTValues;
 import gregtech.api.GregTechAPI;
 import gregtech.api.block.IHeatingCoilBlockStats;
 import gregtech.api.capability.GregtechDataCodes;
-import gregtech.api.capability.GregtechTileCapabilities;
 import gregtech.api.capability.impl.MultiblockRecipeLogic;
 import gregtech.api.metatileentity.MetaTileEntity;
 import gregtech.api.metatileentity.MetaTileEntityHolder;
@@ -19,15 +18,10 @@ import gregtech.api.metatileentity.multiblock.MultiblockAbility;
 import gregtech.api.metatileentity.multiblock.MultiblockDisplayText;
 import gregtech.api.metatileentity.multiblock.RecipeMapMultiblockController;
 import gregtech.api.pattern.*;
-import gregtech.api.recipes.Recipe;
 import gregtech.api.unification.material.Materials;
 import gregtech.api.util.*;
-import gregtech.client.renderer.CubeRendererState;
 import gregtech.client.renderer.ICubeRenderer;
-import gregtech.client.renderer.cclop.ColourOperation;
-import gregtech.client.renderer.cclop.LightMapOperation;
 import gregtech.client.renderer.texture.Textures;
-import gregtech.client.utils.BloomEffectUtil;
 import gregtech.client.utils.TooltipHelper;
 import gregtech.common.blocks.MetaBlocks;
 import gregtech.common.blocks.StoneVariantBlock;
@@ -39,18 +33,18 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.*;
+import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import supersymmetry.api.SusyLog;
 import supersymmetry.api.capability.impl.EvapRecipeLogic;
@@ -64,7 +58,7 @@ import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static gregtech.api.pattern.TraceabilityPredicate.HEATING_COILS;
+import static codechicken.lib.fluid.FluidUtils.water;
 
 
 public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController {
@@ -88,11 +82,9 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     public int coilStateMeta = -1; //order is last in order dependent ops because I'm lazy
 
     public static final int energyValuesID = 10868607;
-    int exposedBlocks = 0;
     byte[] wasExposed; //indexed with row*col + col with row = 0 being furthest and col 0 being leftmost when looking at controller
     int kiloJoules = 0; //about 1000J/s on a sunny day for 1/m^2 of area
     int joulesBuffer = 0;
-    int tickTimer = 0;
     public boolean isRecipeStalled = false;
 
     //just initialized on formation
@@ -129,6 +121,9 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
     private int currentTemperature;
 
+    int tickTimer = 0;
+
+    int exposedBlocks = 0;
 
     private int coilTier;
 
@@ -172,7 +167,8 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         this.rDist = 0;
         this.bDist = 0;
         this.coilTier = -1;
-
+        this.exposedBlocks = 0;
+        this.tickTimer = 0;
 
 
 
@@ -180,10 +176,8 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         this.areCoilsHeating = false;
         this.coilStateMeta = -1;
 
-        this.exposedBlocks = 0;
         this.wasExposed = new byte[0];
         this.kiloJoules = 0;
-        this.tickTimer = 0;
         this.isRecipeStalled = false;
 
         this.writeCustomData(coilDataID, (buf) -> {
@@ -641,30 +635,36 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 //        }
 
         super.renderMetaTileEntity(renderState, translation, pipeline);
-
-
-        if (recipeMapWorkable.isActive() && isStructureFormed()) {
-            if (recipeMapWorkable != null) {
-                FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
-                Fluid fluid = fluidStack.getFluid();
-                ResourceLocation fluidStill = fluid.getStill(fluidStack);
-                EnumFacing back = getFrontFacing().getOpposite();
-                Matrix4 offset = translation.copy().translate(back.getXOffset(), 2, back.getZOffset());
-                CubeRendererState op = Textures.RENDER_STATE.get();
-                Textures.RENDER_STATE.set(new CubeRendererState(op.layer, CubeRendererState.PASS_MASK, op.world));
-                Textures.renderFace(renderState, offset,
-                        ArrayUtils.addAll(pipeline, new LightMapOperation(240, 240), new ColourOperation(0xFFFFFFFF)),
-                        EnumFacing.UP, Cuboid6.full, TextureUtils.getTexture(fluidStack.getFluid().getStill(fluidStack)),
-                        BlockRenderLayer.CUTOUT_MIPPED);
-                Textures.RENDER_STATE.set(op);
-            }
+        if (getWorld() != null) {
+            CCRenderState.instance().reset();
+            CCRenderState.instance().pullLightmap();
+            RenderUtils.renderFluidCuboid(water,
+                    Cuboid6.full,
+                    1, 0.8);
         }
+//        if (recipeMapWorkable.isActive() && isStructureFormed()) {
+//            if (recipeMapWorkable != null) {
+//
+//                FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
+//                RenderUtils.renderFluidCuboidGL(fluidStack,
+//                        Cuboid6.full,
+//                        1, 0.8);
+
+
+//                Matrix4 offset = translation.copy().translate(back.getXOffset(), 2, back.getZOffset());
+////                Textures.RENDER_STATE.set(new CubeRendererState(op.layer, CubeRendererState.PASS_MASK, op.world));
+//                renderState.setFluidColour(fluidStack);
+//                renderState.setBrightness(getWorld(), getPos().offset(EnumFacing.UP, 2));
+//                Textures.renderFace(renderState, offset, pipeline, EnumFacing.UP, Cuboid6.full, fluidStillSprite,
+//                        BlockRenderLayer.CUTOUT_MIPPED);
+//                GlStateManager.resetColor();
+//            }
+//        }
     }
 
     @Override
     public void update() {
         super.update(); //means recipe logic happens before heating is added
-
         if (this.getWorld().isRemote) {
             if (this.isActive() && !isRecipeStalled) {
                 //if world is clientside (remote from server) do custom rendering
@@ -674,76 +674,92 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
             return; //dont do logic on client
         }
 
-        setCoilActivity(false); // solves world issue reload where coils would be active even if multi was not running
-        if (structurePattern.getError() != null) return; //dont do processing for unformed multis
 
-        //ensure timer is non-negative by anding sign bit with 0
-        tickTimer = tickTimer & 0b01111111111111111111111111111111;
-        checkCoilActivity(); // make coils active if they should be
-        rollingAverage[tickTimer % 20] = 0; // reset rolling average for this tick index
-
-        //should skip/cost an extra tick the first time and then anywhere from 1-9 extra when rolling over. Determines exposedblocks
-        if (tickTimer % 10 == 0 && tickTimer != 0) {
-            //no sunlight heat generated when raining or during night. May be incongruent with partial exposure to sun, but oh well
-            if (getWorld().isRainingAt(getPos().offset(getFrontFacing().getOpposite(), 2)) || !getWorld().isDaytime()) {
-                exposedBlocks = 0;
-            }
-            //checks for ow and skylight access to prevent beneath portal issues (-1 = the Nether, 0 = normal world)
-            else if (getWorld().provider.getDimension() == 0) {
-                //tickTimer is always multiple of 20 at this point, so division by 20 yields proper counter. You can treat (tickTimer/20) as 'i'
-                int row = ((tickTimer / 20) / columnCount) % rowCount; //going left to right, further to closer checking skylight access.
-                int col = ((tickTimer / 20) % columnCount);
-                //places blockpos for skycheck into correct position. Row counts from furthest to closest (kinda inconsistent but oh well)
-                BlockPos.MutableBlockPos skyCheckPos = new BlockPos.MutableBlockPos(getPos().offset(EnumFacing.UP, 2));
-                skyCheckPos.move(getFrontFacing().getOpposite(), rowCount - row + 1);
-                skyCheckPos.move(getFrontFacing().rotateY(), controllerPosition); //move to the furthest left
-                skyCheckPos.move(getFrontFacing().rotateYCCW(), col); //traverse down row
-
-                if (wasExposed == null || wasExposed.length != rowCount * columnCount) {
-                    wasExposed = new byte[rowCount * columnCount];
-                    exposedBlocks = 0;
-                    SusyLog.logger.atError().log("Detected evaporation pool with invalid wasExposed array at pos: " + this.getPos() + "; setting explosed blocks to 0");
-                }
-
-                //Perform skylight check
-                if (!getWorld().canBlockSeeSky(skyCheckPos)) {
-                    //only decrement exposedBlocks if previously exposed block is found to no longer be exposed and one full pass has occurred
-                    if (wasExposed[(row * columnCount) + col] != 0 && tickTimer / 20 > rowCount * columnCount) {
-                        exposedBlocks = Math.max(0, exposedBlocks - 1);
-                        wasExposed[(row * columnCount) + col] = 0;
-                    }
-                } else {
-                    //only increment if block was not previously exposed
-                    if (wasExposed[(row * columnCount) + col] == 0) {
-                        if (exposedBlocks < rowCount * columnCount) ++exposedBlocks;
-                        wasExposed[(row * columnCount) + col] = 1;
-                    }
-                }
-            }
-
-        } //finish once a ~second check
-
-        inputEnergy(exposedBlocks * 50); //1kJ/s /m^2 -> 50J/t
-
-        //convert joules in buffer to kJ
-        if (joulesBuffer >= 1000) {
-            int tempBuffer = joulesBuffer;
-            joulesBuffer = 0;
-            //if energy was not stored into kiloJoules, place everything back into buffer manually
-            if (!inputEnergy(tempBuffer)) joulesBuffer = tempBuffer;
+        // Lazy updates
+        if (this.tickTimer++ % 20 == 0) {
+            if (isActive()) updateExposedBlocksInstantly(); // TODO: THIS IS NOT A SOLUTION!!!
         }
 
-        ++tickTimer;
 
-        //store relevant values
-//        writeCustomData(energyValuesID, buf -> {
-//            buf.writeInt(exposedBlocks);
-//            buf.writeByteArray(wasExposed);
-//            buf.writeInt(kiloJoules);
-//            buf.writeInt(tickTimer);
-//            buf.writeBoolean(isRecipeStalled);
-//        });
+//        setCoilActivity(false); // solves world issue reload where coils would be active even if multi was not running
+//        if (structurePattern.getError() != null) return; //dont do processing for unformed multis
+//
+//        //ensure timer is non-negative by anding sign bit with 0
+//        tickTimer = tickTimer & 0b01111111111111111111111111111111;
+//        checkCoilActivity(); // make coils active if they should be
+//        rollingAverage[tickTimer % 20] = 0; // reset rolling average for this tick index
+//
+//        //should skip/cost an extra tick the first time and then anywhere from 1-9 extra when rolling over. Determines exposedblocks
+//        if (tickTimer % 10 == 0 && tickTimer != 0) {
+//            //no sunlight heat generated when raining or during night. May be incongruent with partial exposure to sun, but oh well
+//            if (getWorld().isRainingAt(getPos().offset(getFrontFacing().getOpposite(), 2)) || !getWorld().isDaytime()) {
+//                exposedBlocks = 0;
+//            }
+//            //checks for ow and skylight access to prevent beneath portal issues (-1 = the Nether, 0 = normal world)
+//            else if (getWorld().provider.getDimension() == 0) {
+//                //tickTimer is always multiple of 20 at this point, so division by 20 yields proper counter. You can treat (tickTimer/20) as 'i'
+//                int row = ((tickTimer / 20) / columnCount) % rowCount; //going left to right, further to closer checking skylight access.
+//                int col = ((tickTimer / 20) % columnCount);
+//                //places blockpos for skycheck into correct position. Row counts from furthest to closest (kinda inconsistent but oh well)
+//                BlockPos.MutableBlockPos skyCheckPos = new BlockPos.MutableBlockPos(getPos().offset(EnumFacing.UP, 2));
+//                skyCheckPos.move(getFrontFacing().getOpposite(), rowCount - row + 1);
+//                skyCheckPos.move(getFrontFacing().rotateY(), controllerPosition); //move to the furthest left
+//                skyCheckPos.move(getFrontFacing().rotateYCCW(), col); //traverse down row
+//
+//                if (wasExposed == null || wasExposed.length != rowCount * columnCount) {
+//                    wasExposed = new byte[rowCount * columnCount];
+//                    exposedBlocks = 0;
+//                    SusyLog.logger.atError().log("Detected evaporation pool with invalid wasExposed array at pos: " + this.getPos() + "; setting explosed blocks to 0");
+//                }
+//
+//                //Perform skylight check
+//                if (!getWorld().canBlockSeeSky(skyCheckPos)) {
+//                    //only decrement exposedBlocks if previously exposed block is found to no longer be exposed and one full pass has occurred
+//                    if (wasExposed[(row * columnCount) + col] != 0 && tickTimer / 20 > rowCount * columnCount) {
+//                        exposedBlocks = Math.max(0, exposedBlocks - 1);
+//                        wasExposed[(row * columnCount) + col] = 0;
+//                    }
+//                } else {
+//                    //only increment if block was not previously exposed
+//                    if (wasExposed[(row * columnCount) + col] == 0) {
+//                        if (exposedBlocks < rowCount * columnCount) ++exposedBlocks;
+//                        wasExposed[(row * columnCount) + col] = 1;
+//                    }
+//                }
+//            }
+//
+//        } //finish once a ~second check
+//
+//        inputEnergy(exposedBlocks * 50); //1kJ/s /m^2 -> 50J/t
+//
+//        //convert joules in buffer to kJ
+//        if (joulesBuffer >= 1000) {
+//            int tempBuffer = joulesBuffer;
+//            joulesBuffer = 0;
+//            //if energy was not stored into kiloJoules, place everything back into buffer manually
+//            if (!inputEnergy(tempBuffer)) joulesBuffer = tempBuffer;
+//        }
+//
+//        ++tickTimer;
+//
+//        //store relevant values
+////        writeCustomData(energyValuesID, buf -> {
+////            buf.writeInt(exposedBlocks);
+////            buf.writeByteArray(wasExposed);
+////            buf.writeInt(kiloJoules);
+////            buf.writeInt(tickTimer);
+////            buf.writeBoolean(isRecipeStalled);
+////        });
     }
+
+    public void updateExposedBlocksInstantly() { // used when a player opens GUI, idk if I need this
+        if (!variantActiveBlocks.isEmpty()) {
+            this.exposedBlocks = (int) variantActiveBlocks.parallelStream()
+                    .filter(pos -> GTUtility.canSeeSunClearly(getWorld(), pos))
+                    .count();
+        }
+    }
+
 
     @Override
     protected void addDisplayText(List<ITextComponent> textList) {
@@ -888,10 +904,12 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     @Override
     public void receiveCustomData(int dataId, PacketBuffer buf) {
         super.receiveCustomData(dataId, buf);
-        if (dataId == structuralDimensionsID) {
-            this.columnCount = buf.readInt();
-            this.rowCount = buf.readInt();
-            this.controllerPosition = buf.readInt();
+        if (dataId == GregtechDataCodes.UPDATE_STRUCTURE_SIZE) {
+            this.lDist = buf.readInt();
+            this.rDist = buf.readInt();
+            this.bDist = buf.readInt();
+
+
         } else if (dataId == coilDataID) {
             this.isHeated = buf.readBoolean();
             this.areCoilsHeating = buf.readBoolean();
@@ -941,6 +959,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         }
     }
 
+    @Override
     public ICubeRenderer getBaseTexture(IMultiblockPart sourcePart) {
         return Textures.SOLID_STEEL_CASING;
     }
@@ -982,8 +1001,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
     @Override
     protected void replaceVariantBlocksActive(boolean isActive) {
-//        super.replaceVariantBlocksActive(isActive && isRunningHeated());
-        super.replaceVariantBlocksActive(isActive);
+        super.replaceVariantBlocksActive(isActive && isRunningHeated());
     }
 
     public void checkCoilActivity() {
