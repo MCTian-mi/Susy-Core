@@ -1,23 +1,32 @@
 package supersymmetry.api.capability.impl;
 
 import gregtech.api.GTValues;
+import gregtech.api.capability.GregtechDataCodes;
 import gregtech.api.capability.impl.MultiblockRecipeLogic;
 import gregtech.api.recipes.Recipe;
 import gregtech.api.recipes.recipeproperties.IRecipePropertyStorage;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fluids.FluidStack;
+import org.jetbrains.annotations.NotNull;
 import supersymmetry.api.SusyLog;
 import supersymmetry.api.recipes.properties.EvaporationEnergyProperty;
 import supersymmetry.common.metatileentities.multi.electric.MetaTileEntityEvaporationPool;
 
 import javax.annotation.Nonnull;
 
+import java.io.IOException;
+
 import static supersymmetry.api.util.SuSyUtility.JOULES_PER_EU;
 
 public class EvapRecipeLogic extends MultiblockRecipeLogic {
     private final MetaTileEntityEvaporationPool pool;
 
+    public FluidStack currentEvaporationFluid = null; // TODO: this should be changed into Fluid instead of FluidStack
+
     public EvapRecipeLogic(MetaTileEntityEvaporationPool tileEntity) {
         super(tileEntity);
-        pool = tileEntity;
+        this.pool = tileEntity;
     }
 
     public int getJt() {
@@ -156,5 +165,48 @@ public class EvapRecipeLogic extends MultiblockRecipeLogic {
     @Override
     public long getMaximumOverclockVoltage() {
         return getEnergyCapacity() == 0 ? GTValues.V[1] : super.getMaximumOverclockVoltage();
+    }
+
+    @Override
+    protected void setupRecipe(Recipe recipe) {
+        this.currentEvaporationFluid = recipe.getFluidInputs().get(0).getInputFluidStack();
+        writeCustomData(114514, buf -> buf.writeCompoundTag(currentEvaporationFluid.writeToNBT(new NBTTagCompound())));
+        super.setupRecipe(recipe);
+    }
+
+    @Override
+    protected void completeRecipe() {
+        this.currentEvaporationFluid = null;
+        super.completeRecipe();
+    }
+
+    @Override
+    public void receiveCustomData(int dataId, @NotNull PacketBuffer buf) {
+        if (dataId == 114514) {
+            try {
+                this.currentEvaporationFluid = FluidStack.loadFluidStackFromNBT(buf.readCompoundTag());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            super.receiveCustomData(dataId, buf);
+        }
+    }
+
+    @NotNull
+    @Override
+    public NBTTagCompound serializeNBT() {
+        NBTTagCompound nbt = super.serializeNBT();
+        if (currentEvaporationFluid != null) {
+            nbt.setTag("currentEvaporationFluid", currentEvaporationFluid.writeToNBT(new NBTTagCompound()));
+        }
+        return nbt;
+    }
+
+    @Override
+    public void deserializeNBT(@NotNull NBTTagCompound compound) {
+        super.deserializeNBT(compound);
+        this.currentEvaporationFluid = compound.hasKey("currentEvaporationFluid") ?
+                FluidStack.loadFluidStackFromNBT(compound.getCompoundTag("currentEvaporationFluid")) : currentEvaporationFluid;
     }
 }
