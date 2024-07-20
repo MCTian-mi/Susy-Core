@@ -752,7 +752,8 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 ////        });
     }
 
-    public void updateExposedBlocksInstantly() { // used when a player opens GUI, idk if I need this
+    // used when a player opens GUI, idk if I need this
+    public void updateExposedBlocksInstantly() {
         if (!variantActiveBlocks.isEmpty()) {
             this.exposedBlocks = (int) variantActiveBlocks.parallelStream()
                     .filter(pos -> GTUtility.canSeeSunClearly(getWorld(), pos))
@@ -1140,15 +1141,15 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         public String build(int width) { // the width here also indicates the width of the 2nd layer
             StringBuilder builder = new StringBuilder();
 
-            builder.append(outerBorder);
-            builder.append(innerBorder);
-            builder.append(leftEdge);
+            builder.append(outerBorder)
+                    .append(innerBorder)
+                    .append(leftEdge);
             for (int i = 0; i < Math.max(0, width - 4); i++) {
                 builder.append(fill);
             }
-            builder.append(rightEdge);
-            builder.append(innerBorder);
-            builder.append(outerBorder);
+            builder.append(rightEdge)
+                    .append(innerBorder)
+                    .append(outerBorder);
 
             return builder.toString();
         }
