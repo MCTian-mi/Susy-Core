@@ -53,10 +53,12 @@ public class BlockEvaporationBed extends VariantActiveBlock<BlockEvaporationBed.
             return this.name;
         }
 
+        @Override
         public int getHarvestLevel(IBlockState state) {
             return this.harvestLevel;
         }
 
+        @Override
         public String getHarvestTool(IBlockState state) {
             return "shovel";
         }

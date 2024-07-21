@@ -20,6 +20,7 @@ import java.io.IOException;
 import static supersymmetry.api.util.SuSyUtility.JOULES_PER_EU;
 
 public class EvapRecipeLogic extends MultiblockRecipeLogic {
+
     private final MetaTileEntityEvaporationPool pool;
 
     public FluidStack currentEvaporationFluid = null; // TODO: this should be changed into Fluid instead of FluidStack
