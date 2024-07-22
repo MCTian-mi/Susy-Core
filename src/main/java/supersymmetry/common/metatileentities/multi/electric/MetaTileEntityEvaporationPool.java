@@ -1,9 +1,7 @@
 package supersymmetry.common.metatileentities.multi.electric;
 
 import codechicken.lib.render.CCRenderState;
-import codechicken.lib.render.RenderUtils;
 import codechicken.lib.render.pipeline.IVertexOperation;
-import codechicken.lib.vec.Cuboid6;
 import codechicken.lib.vec.Matrix4;
 import gregtech.api.GregTechAPI;
 import gregtech.api.block.IHeatingCoilBlockStats;
@@ -21,6 +19,8 @@ import gregtech.client.renderer.ICubeRenderer;
 import gregtech.client.renderer.texture.Textures;
 import gregtech.common.blocks.MetaBlocks;
 import gregtech.common.blocks.StoneVariantBlock;
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -40,9 +40,13 @@ import supersymmetry.api.recipes.SuSyRecipeMaps;
 import supersymmetry.api.recipes.properties.EvaporationEnergyProperty;
 import supersymmetry.common.blocks.SuSyBlocks;
 
-import java.util.*;
-
-import static codechicken.lib.fluid.FluidUtils.water;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 
 public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController {
@@ -60,8 +64,23 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
     public static final int energyValuesID = 10868607;
     byte[] wasExposed; //indexed with row*col + col with row = 0 being furthest and col 0 being leftmost when looking at controller
-    int kiloJoules = 0; //about 1000J/s on a sunny day for 1/m^2 of area
-    int joulesBuffer = 0;
+    public static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    // I know this is quite tricky, but... ahh... hmm...
+    public static final TraceabilityPredicate COILS_OR_EVABED = new TraceabilityPredicate(blockWorldState -> {
+        IBlockState blockState = blockWorldState.getBlockState();
+        if (blockState == SuSyBlocks.EVAPORATION_BED.getDefaultState() || GregTechAPI.HEATING_COILS.containsKey(blockState)) {
+            Object currentCoil = blockWorldState.getMatchContext().getOrPut("CoilType", blockState);
+            if (blockState.equals(currentCoil)) {
+                if (GregTechAPI.HEATING_COILS.containsKey(blockState)) {
+                    blockWorldState.getMatchContext().getOrPut("VABlock", new LinkedList<>()).add(blockWorldState.getPos());
+                }
+                return true;
+            }
+        }
+        return false;
+    }, () -> GregTechAPI.HEATING_COILS.entrySet().stream().sorted(Comparator.comparingInt(entry -> entry.getValue().getTier()))
+            .map(entry -> new BlockInfo(entry.getKey(), null)).toArray(BlockInfo[]::new)).addTooltips("gregtech.multiblock.pattern.error.coils")
+            .or(new TraceabilityPredicate(blockWorldState -> false, () -> new BlockInfo[]{new BlockInfo(SuSyBlocks.EVAPORATION_BED.getDefaultState())}));
     public boolean isRecipeStalled = false;
 
 
@@ -76,29 +95,18 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     private int rDist = 0;
     private int bDist = 0;
 
-
-    private int currentTemperature; // TODO: is a temperature-based mechanism fit better than the heat-based one currently have?
-
     int tickTimer = 0;
 
     int exposedBlocks = 0;
 
     private int coilTier = -1; // -1 if no coils are present
-
-    // I know this is quite tricky, but... ahh... hmm...
-    public static final TraceabilityPredicate COILS_OR_EVABED = new TraceabilityPredicate(blockWorldState -> {
-        IBlockState blockState = blockWorldState.getBlockState();
-        Object currentCoil = blockWorldState.getMatchContext().getOrPut("CoilType", blockState);
-        if (blockState.equals(currentCoil)) {
-            if (GregTechAPI.HEATING_COILS.containsKey(blockState)) {
-                blockWorldState.getMatchContext().getOrPut("VABlock", new LinkedList<>()).add(blockWorldState.getPos());
-            }
-            return true;
-        }
-        return false;
-    }, () -> GregTechAPI.HEATING_COILS.entrySet().stream().sorted(Comparator.comparingInt(entry -> entry.getValue().getTier()))
-            .map(entry -> new BlockInfo(entry.getKey(), null)).toArray(BlockInfo[]::new)).addTooltips("gregtech.multiblock.pattern.error.coils")
-            .or(new TraceabilityPredicate(blockWorldState -> false, () -> new BlockInfo[]{new BlockInfo(SuSyBlocks.EVAPORATION_BED.getDefaultState())}));
+    public CountExposedBlocks countExposedBlocks;
+    @Setter
+    @Getter
+    int kiloJoules = 0; //about 1000J/s on a sunny day for 1/m^2 of area
+    @Setter
+    @Getter
+    int joulesBuffer = 0;
 
 
 
@@ -109,6 +117,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     public MetaTileEntityEvaporationPool(ResourceLocation metaTileEntityId) {
         super(metaTileEntityId, SuSyRecipeMaps.EVAPORATION_POOL);
         this.recipeMapWorkable = new EvapRecipeLogic(this);
+        this.countExposedBlocks = new CountExposedBlocks(this);
     }
 
     public MetaTileEntity createMetaTileEntity(IGregTechTileEntity tileEntity) {
@@ -142,16 +151,11 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         });
 
         this.writeCustomData(energyValuesID, buf -> {
-            buf.writeInt(exposedBlocks);
             buf.writeByteArray(wasExposed);
             buf.writeInt(kiloJoules);
             buf.writeInt(tickTimer);
             buf.writeBoolean(isRecipeStalled);
         });
-    }
-
-    protected int getCoilTier() {
-        return coilTier;
     }
 
     @SuppressWarnings("UnusedReturnValue") // Nobody cares
@@ -336,13 +340,13 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     @Override
     public void renderMetaTileEntity(CCRenderState renderState, Matrix4 translation, IVertexOperation[] pipeline) {
         super.renderMetaTileEntity(renderState, translation, pipeline);
-        if (getWorld() != null) {
-            CCRenderState.instance().reset();
-            CCRenderState.instance().pullLightmap();
-            RenderUtils.renderFluidCuboid(water,
-                    Cuboid6.full,
-                    1, 0.8);
-        }
+//        if (getWorld() != null) {
+//            CCRenderState.instance().reset();
+//            CCRenderState.instance().pullLightmap();
+//            RenderUtils.renderFluidCuboid(water,
+//                    Cuboid6.full,
+//                    1, 0.8);
+//        }
 //        if (recipeMapWorkable.isActive() && isStructureFormed()) {
 //            if (recipeMapWorkable != null) {
 //
@@ -378,7 +382,9 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
         // Lazy updates
         if (this.tickTimer++ % 20 == 0) {
-            if (isActive()) updateExposedBlocksInstantly(); // TODO: THIS IS NOT A SOLUTION!!!
+            if (isActive()) {
+                updateExposedBlocks();
+            } // TODO: THIS IS NOT A SOLUTION!!!
         }
 
 
@@ -462,6 +468,11 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         }
     }
 
+    public void updateExposedBlocks() {
+        if (countExposedBlocks != null && !countExposedBlocks.isDone()) return;
+        this.countExposedBlocks = new CountExposedBlocks(this);
+        executor.submit(countExposedBlocks);
+    }
 
     @Override
     protected void addDisplayText(List<ITextComponent> textList) {
@@ -649,14 +660,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         return Textures.BLAST_FURNACE_OVERLAY;
     }
 
-    public int getKiloJoules() {
-        return kiloJoules;
-    }
-
-    public int getJoulesBuffer() {
-        return joulesBuffer;
-    }
-
     public int getRollingAverageJt() {
         // sunlight => 1kJ/s/m^2 -> 50J/t/m^2
         return exposedBlocks * 50 + Arrays.stream(rollingAverage).sum() / 20;
@@ -680,14 +683,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
     public boolean isHeated() {
         return isHeated;
-    }
-
-    public void setKiloJoules(int kiloJoules) {
-        this.kiloJoules = kiloJoules;
-    }
-
-    public void setJoulesBuffer(int joulesBuffer) {
-        this.joulesBuffer = joulesBuffer;
     }
 
     public boolean inputEnergy(int joules) {
@@ -813,6 +808,18 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
             builder.append('S');
             for (int i = 0; i < Math.max(0, rDist + 1); i++) builder.append(fill);
             return builder.toString();
+        }
+    }
+
+    public class CountExposedBlocks extends FutureTask<Void> {
+
+        public CountExposedBlocks(MetaTileEntityEvaporationPool pool) {
+            super(() -> {
+                if (getWorld() != null) {
+                    pool.updateExposedBlocksInstantly();
+                }
+                return null;
+            });
         }
     }
 }
