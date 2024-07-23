@@ -4,6 +4,7 @@ import gregtech.api.GTValues;
 import gregtech.api.capability.impl.MultiblockRecipeLogic;
 import gregtech.api.recipes.Recipe;
 import gregtech.api.recipes.recipeproperties.IRecipePropertyStorage;
+import lombok.SneakyThrows;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fluids.FluidStack;
@@ -13,17 +14,17 @@ import supersymmetry.api.recipes.properties.EvaporationEnergyProperty;
 import supersymmetry.common.metatileentities.multi.electric.MetaTileEntityEvaporationPool;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
+
+import static gregtech.api.capability.GregtechDataCodes.assignId;
 
 public class EvapRecipeLogic extends MultiblockRecipeLogic {
 
-    private final MetaTileEntityEvaporationPool pool;
+    private static final int UPDATE_EVAPORATING_FLUID = assignId();
 
     public FluidStack currentEvaporationFluid = null; // TODO: this should be changed into Fluid instead of FluidStack
 
     public EvapRecipeLogic(MetaTileEntityEvaporationPool tileEntity) {
         super(tileEntity);
-        this.pool = tileEntity;
     }
 
     public int getJt() {
@@ -132,6 +133,11 @@ public class EvapRecipeLogic extends MultiblockRecipeLogic {
     @Override
     protected boolean drawEnergy(int recipeEUt, boolean simulate) {
         return true;
+//        long resultEnergy = getEnergyStored() - recipeEUt;
+//        if (resultEnergy >= 0L && resultEnergy <= getEnergyCapacity()) {
+//            if (!simulate) getEnergyContainer().changeEnergy(-recipeEUt);
+//            return true;
+//        } else return false;
     }
 
     // stops multi from "filling" with energy due to -1 EuT required (?) for custom power logic
@@ -170,7 +176,8 @@ public class EvapRecipeLogic extends MultiblockRecipeLogic {
     @Override
     protected void setupRecipe(Recipe recipe) {
         this.currentEvaporationFluid = recipe.getFluidInputs().get(0).getInputFluidStack();
-        writeCustomData(114514, buf -> buf.writeCompoundTag(currentEvaporationFluid.writeToNBT(new NBTTagCompound())));
+        writeCustomData(UPDATE_EVAPORATING_FLUID, buf ->
+                buf.writeCompoundTag(currentEvaporationFluid.writeToNBT(new NBTTagCompound())));
         super.setupRecipe(recipe);
     }
 
@@ -180,14 +187,11 @@ public class EvapRecipeLogic extends MultiblockRecipeLogic {
         super.completeRecipe();
     }
 
+    @SneakyThrows
     @Override
     public void receiveCustomData(int dataId, @NotNull PacketBuffer buf) {
-        if (dataId == 114514) {
-            try {
-                this.currentEvaporationFluid = FluidStack.loadFluidStackFromNBT(buf.readCompoundTag());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        if (dataId == UPDATE_EVAPORATING_FLUID) {
+            this.currentEvaporationFluid = FluidStack.loadFluidStackFromNBT(buf.readCompoundTag());
         } else {
             super.receiveCustomData(dataId, buf);
         }

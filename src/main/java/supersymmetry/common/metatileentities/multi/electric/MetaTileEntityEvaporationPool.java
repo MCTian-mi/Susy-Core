@@ -67,7 +67,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     public static final int MIN_SIZE = 5; // 7 x 7 evapool with 9 evabed blocks
     public static final int MAX_SIZE = 30; // 32 x 32 evapool with 784 evabed blocks. CEu multis should work fine with chunk borders.
     public static final int energyValuesID = 10868607;
-    byte[] wasExposed; //indexed with row*col + col with row = 0 being furthest and col 0 being leftmost when looking at controller
     public boolean isRecipeStalled = false;
     public Executor executor;
     @Setter
@@ -81,11 +80,10 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     private int lDist = 0;
     private int rDist = 0;
     private int bDist = 0;
-    private int coilTier = -1; // -1 if no coils are present\
     // I know this is quite tricky, but... ahh... hmm...
     public static final TraceabilityPredicate COILS_OR_EVABED = new TraceabilityPredicate(blockWorldState -> {
         IBlockState blockState = blockWorldState.getBlockState();
-        if (blockState == SuSyBlocks.EVAPORATION_BED.getDefaultState() || GregTechAPI.HEATING_COILS.containsKey(blockState)) {
+        if (evaporationBedPredicate().test(blockWorldState) || GregTechAPI.HEATING_COILS.containsKey(blockState)) {
             Object currentCoil = blockWorldState.getMatchContext().getOrPut("CoilType", blockState);
             if (blockState.equals(currentCoil)) {
                 if (GregTechAPI.HEATING_COILS.containsKey(blockState)) {
@@ -98,6 +96,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     }, () -> GregTechAPI.HEATING_COILS.entrySet().stream().sorted(Comparator.comparingInt(entry -> entry.getValue().getTier()))
             .map(entry -> new BlockInfo(entry.getKey(), null)).toArray(BlockInfo[]::new)).addTooltips("gregtech.multiblock.pattern.error.coils")
             .or(new TraceabilityPredicate(blockWorldState -> false, () -> new BlockInfo[]{new BlockInfo(SuSyBlocks.EVAPORATION_BED.getDefaultState())}));
+    private int coilTier = -1; // -1 if no coils are present
 
 
 
@@ -128,7 +127,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         this.areCoilsHeating = false;
         this.coilStateMeta = -1;
 
-        this.wasExposed = new byte[0];
         this.kiloJoules = 0;
         this.isRecipeStalled = false;
 
@@ -139,9 +137,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         });
 
         this.writeCustomData(energyValuesID, buf -> {
-            buf.writeByteArray(wasExposed);
             buf.writeInt(kiloJoules);
-            buf.writeInt(tickTimer);
             buf.writeBoolean(isRecipeStalled);
         });
     }
@@ -190,6 +186,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
             buf.writeInt(this.rDist);
             buf.writeInt(this.bDist);
         });
+
         return true; //successful formation
     }
 
@@ -377,62 +374,19 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
 
         // Lazy updates
-        if (this.tickTimer++ % 100 == 0) {
-            if (isActive() && getWorld().isRemote) {
+        if (this.tickTimer++ % 20 == 0) {
+            if (isActive()) {
                 updateExposedBlocks();
-            } // TODO: THIS IS NOT A SOLUTION!!!
+            }
         }
 
 
 //        setCoilActivity(false); // solves world issue reload where coils would be active even if multi was not running
-//        if (structurePattern.getError() != null) return; //dont do processing for unformed multis
 //
-//        //ensure timer is non-negative by anding sign bit with 0
-//        tickTimer = tickTimer & 0b01111111111111111111111111111111;
+
 //        checkCoilActivity(); // make coils active if they should be
-//        rollingAverage[tickTimer % 20] = 0; // reset rolling average for this tick index
-//
-//        //should skip/cost an extra tick the first time and then anywhere from 1-9 extra when rolling over. Determines exposedblocks
-//        if (tickTimer % 10 == 0 && tickTimer != 0) {
-//            //no sunlight heat generated when raining or during night. May be incongruent with partial exposure to sun, but oh well
-//            if (getWorld().isRainingAt(getPos().offset(getFrontFacing().getOpposite(), 2)) || !getWorld().isDaytime()) {
-//                exposedBlocks = 0;
-//            }
-//            //checks for ow and skylight access to prevent beneath portal issues (-1 = the Nether, 0 = normal world)
-//            else if (getWorld().provider.getDimension() == 0) {
-//                //tickTimer is always multiple of 20 at this point, so division by 20 yields proper counter. You can treat (tickTimer/20) as 'i'
-//                int row = ((tickTimer / 20) / columnCount) % rowCount; //going left to right, further to closer checking skylight access.
-//                int col = ((tickTimer / 20) % columnCount);
-//                //places blockpos for skycheck into correct position. Row counts from furthest to closest (kinda inconsistent but oh well)
-//                BlockPos.MutableBlockPos skyCheckPos = new BlockPos.MutableBlockPos(getPos().offset(EnumFacing.UP, 2));
-//                skyCheckPos.move(getFrontFacing().getOpposite(), rowCount - row + 1);
-//                skyCheckPos.move(getFrontFacing().rotateY(), controllerPosition); //move to the furthest left
-//                skyCheckPos.move(getFrontFacing().rotateYCCW(), col); //traverse down row
-//
-//                if (wasExposed == null || wasExposed.length != rowCount * columnCount) {
-//                    wasExposed = new byte[rowCount * columnCount];
-//                    exposedBlocks = 0;
-//                    SusyLog.logger.atError().log("Detected evaporation pool with invalid wasExposed array at pos: " + this.getPos() + "; setting explosed blocks to 0");
-//                }
-//
-//                //Perform skylight check
-//                if (!getWorld().canBlockSeeSky(skyCheckPos)) {
-//                    //only decrement exposedBlocks if previously exposed block is found to no longer be exposed and one full pass has occurred
-//                    if (wasExposed[(row * columnCount) + col] != 0 && tickTimer / 20 > rowCount * columnCount) {
-//                        exposedBlocks = Math.max(0, exposedBlocks - 1);
-//                        wasExposed[(row * columnCount) + col] = 0;
-//                    }
-//                } else {
-//                    //only increment if block was not previously exposed
-//                    if (wasExposed[(row * columnCount) + col] == 0) {
-//                        if (exposedBlocks < rowCount * columnCount) ++exposedBlocks;
-//                        wasExposed[(row * columnCount) + col] = 1;
-//                    }
-//                }
-//            }
-//
-//        } //finish once a ~second check
-//
+
+
 //        inputEnergy(exposedBlocks * 50); //1kJ/s /m^2 -> 50J/t
 //
 //        //convert joules in buffer to kJ
@@ -442,8 +396,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 //            //if energy was not stored into kiloJoules, place everything back into buffer manually
 //            if (!inputEnergy(tempBuffer)) joulesBuffer = tempBuffer;
 //        }
-//
-//        ++tickTimer;
 //
 //        //store relevant values
 ////        writeCustomData(energyValuesID, buf -> {
@@ -456,7 +408,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     }
 
     // Will probably be called when a player opens GUI, idk if I need this
-    @SideOnly(Side.SERVER)
     public void updateExposedBlocksInstantly() {
         if (getWorld().isRemote || variantActiveBlocks.isEmpty()) return;
         this.exposedBlocks = (int) variantActiveBlocks.parallelStream()
@@ -464,12 +415,11 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
                 .count();
     }
 
-    @SideOnly(Side.SERVER)
     public void updateExposedBlocks() {
         executor.execute(() -> {
             if (getWorld() != null) {
                 if (getWorld().isRemote || variantActiveBlocks.isEmpty()) return;
-                this.exposedBlocks = (int) variantActiveBlocks.parallelStream()
+                this.exposedBlocks = (int) variantActiveBlocks.stream()
                         .filter(pos -> {
                             try {
                                 Thread.sleep(5);
@@ -489,7 +439,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
             // coil coefficient
             if (isStructureFormed()) {
                 // handle heating contributions
-                if (isHeated()) {
+                if (isHeated) {
                     tl.add(TextComponentUtil.translationWithColor(TextFormatting.WHITE, "gregtech.top.evaporation_pool_heated_preface").appendText(" ").appendSibling(TextComponentUtil.translationWithColor(TextFormatting.GREEN, "gregtech.top.evaporation_pool_is_heated")));
 
                 } else {
@@ -521,7 +471,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         data.setBoolean("isHeated", this.isHeated);
         data.setBoolean("areCoilsHeating", this.areCoilsHeating);
         data.setInteger("kiloJoules", this.kiloJoules);
-        data.setInteger("tickTimer", this.tickTimer);
         data.setBoolean("isRecipeStalled", this.isRecipeStalled);
         data.setInteger("coilStateMeta", this.coilStateMeta);
         return data;
@@ -534,7 +483,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         this.rDist = data.hasKey("rDist") ? data.getInteger("rDist") : rDist;
         this.bDist = data.hasKey("bDist") ? data.getInteger("bDist") : bDist;
         reinitializeStructurePattern();
-
         this.exposedBlocks = data.hasKey("exposedBlocks") ? data.getInteger("exposedBlocks") : exposedBlocks;
 
 
@@ -546,9 +494,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         }
         if (data.hasKey("areCoilsHeating")) {
             this.areCoilsHeating = data.getBoolean("areCoilsHeating");
-        }
-        if (data.hasKey("wasExposed")) {
-            this.wasExposed = data.getByteArray("wasExposed");
         }
         if (data.hasKey("kiloJoules")) {
             this.kiloJoules = data.getInteger("kiloJoules");
@@ -588,14 +533,12 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         this.lDist = buf.readInt();
         this.rDist = buf.readInt();
         this.bDist = buf.readInt();
-
+        this.exposedBlocks = buf.readInt();
 
 
 
         this.isHeated = buf.readBoolean();
         this.areCoilsHeating = buf.readBoolean();
-        this.exposedBlocks = buf.readInt();
-        this.wasExposed = buf.readByteArray();
         this.kiloJoules = buf.readInt();
         this.isRecipeStalled = buf.readBoolean();
         this.coilStateMeta = buf.readInt();
@@ -614,15 +557,12 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
 
 
-
         } else if (dataId == coilDataID) {
             this.isHeated = buf.readBoolean();
             this.areCoilsHeating = buf.readBoolean();
             this.coilStateMeta = buf.readInt();
 
         } else if (dataId == energyValuesID) {
-            this.exposedBlocks = buf.readInt();
-            this.wasExposed = buf.readByteArray();
             this.kiloJoules = buf.readInt();
             this.isRecipeStalled = buf.readBoolean();
         }
@@ -688,10 +628,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     protected void replaceVariantBlocksActive(boolean isActive) { // TODO
 //        super.replaceVariantBlocksActive(isActive && isRunningHeated());
         super.replaceVariantBlocksActive(isActive);
-    }
-
-    public boolean isHeated() {
-        return isHeated;
     }
 
     public boolean inputEnergy(int joules) {
