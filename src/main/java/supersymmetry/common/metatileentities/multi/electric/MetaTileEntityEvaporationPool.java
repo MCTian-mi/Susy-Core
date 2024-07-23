@@ -6,6 +6,7 @@ import codechicken.lib.vec.Matrix4;
 import gregtech.api.GregTechAPI;
 import gregtech.api.block.IHeatingCoilBlockStats;
 import gregtech.api.capability.GregtechDataCodes;
+import gregtech.api.gui.ModularUI;
 import gregtech.api.metatileentity.MetaTileEntity;
 import gregtech.api.metatileentity.MetaTileEntityHolder;
 import gregtech.api.metatileentity.interfaces.IGregTechTileEntity;
@@ -22,6 +23,7 @@ import gregtech.common.blocks.StoneVariantBlock;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
@@ -44,9 +46,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
 
 
 public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController {
@@ -62,9 +63,25 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     public boolean areCoilsHeating = false;
     public int coilStateMeta = -1; //order is last in order dependent ops because I'm lazy
 
+    // The sizes below indicates the total size of the evapool, excluding edges.
+    public static final int MIN_SIZE = 5; // 7 x 7 evapool with 9 evabed blocks
+    public static final int MAX_SIZE = 30; // 32 x 32 evapool with 784 evabed blocks. CEu multis should work fine with chunk borders.
     public static final int energyValuesID = 10868607;
     byte[] wasExposed; //indexed with row*col + col with row = 0 being furthest and col 0 being leftmost when looking at controller
-    public static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    public boolean isRecipeStalled = false;
+    public Executor executor;
+    @Setter
+    @Getter
+    int kiloJoules = 0; //about 1000J/s on a sunny day for 1/m^2 of area
+    @Setter
+    @Getter
+    int joulesBuffer = 0;
+    int tickTimer = 0;
+    int exposedBlocks = 0;
+    private int lDist = 0;
+    private int rDist = 0;
+    private int bDist = 0;
+    private int coilTier = -1; // -1 if no coils are present\
     // I know this is quite tricky, but... ahh... hmm...
     public static final TraceabilityPredicate COILS_OR_EVABED = new TraceabilityPredicate(blockWorldState -> {
         IBlockState blockState = blockWorldState.getBlockState();
@@ -81,35 +98,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     }, () -> GregTechAPI.HEATING_COILS.entrySet().stream().sorted(Comparator.comparingInt(entry -> entry.getValue().getTier()))
             .map(entry -> new BlockInfo(entry.getKey(), null)).toArray(BlockInfo[]::new)).addTooltips("gregtech.multiblock.pattern.error.coils")
             .or(new TraceabilityPredicate(blockWorldState -> false, () -> new BlockInfo[]{new BlockInfo(SuSyBlocks.EVAPORATION_BED.getDefaultState())}));
-    public boolean isRecipeStalled = false;
-
-
-
-
-
-    // The sizes below indicates the total size of the evapool, excluding edges.
-    public static final int MIN_SIZE = 5; // 7 x 7 evapool with 9 evabed blocks
-    public static final int MAX_SIZE = 30; // 32 x 32 evapool with 784 evabed blocks. CEu multis should work fine with chunk borders.
-
-    private int lDist = 0;
-    private int rDist = 0;
-    private int bDist = 0;
-
-    int tickTimer = 0;
-
-    int exposedBlocks = 0;
-
-    private int coilTier = -1; // -1 if no coils are present
-    public CountExposedBlocks countExposedBlocks;
-    @Setter
-    @Getter
-    int kiloJoules = 0; //about 1000J/s on a sunny day for 1/m^2 of area
-    @Setter
-    @Getter
-    int joulesBuffer = 0;
-
-
-
 
 
 
@@ -117,7 +105,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     public MetaTileEntityEvaporationPool(ResourceLocation metaTileEntityId) {
         super(metaTileEntityId, SuSyRecipeMaps.EVAPORATION_POOL);
         this.recipeMapWorkable = new EvapRecipeLogic(this);
-        this.countExposedBlocks = new CountExposedBlocks(this);
     }
 
     public MetaTileEntity createMetaTileEntity(IGregTechTileEntity tileEntity) {
@@ -127,6 +114,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     @Override
     public void invalidateStructure() {
         super.invalidateStructure();
+        this.executor = Executors.newSingleThreadExecutor();
         this.lDist = 0;
         this.rDist = 0;
         this.bDist = 0;
@@ -222,6 +210,8 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     protected void formStructure(PatternMatchContext context) {
         super.formStructure(context);
         this.coilTier = context.get("CoilType") instanceof IHeatingCoilBlockStats coilType ? coilType.getTier() : -1;
+        this.executor = Executors.newSingleThreadExecutor();
+        updateExposedBlocks();
     }
 
     @NotNull
@@ -368,6 +358,12 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     }
 
     @Override
+    protected ModularUI createUI(EntityPlayer entityPlayer) {
+//        updateExposedBlocksInstantly();
+        return super.createUI(entityPlayer);
+    }
+
+    @Override
     public void update() {
         super.update(); //means recipe logic happens before heating is added
         if (this.getWorld().isRemote) {
@@ -381,8 +377,8 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
 
         // Lazy updates
-        if (this.tickTimer++ % 20 == 0) {
-            if (isActive()) {
+        if (this.tickTimer++ % 100 == 0) {
+            if (isActive() && getWorld().isRemote) {
                 updateExposedBlocks();
             } // TODO: THIS IS NOT A SOLUTION!!!
         }
@@ -460,18 +456,31 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     }
 
     // Will probably be called when a player opens GUI, idk if I need this
+    @SideOnly(Side.SERVER)
     public void updateExposedBlocksInstantly() {
-        if (!variantActiveBlocks.isEmpty()) {
-            this.exposedBlocks = (int) variantActiveBlocks.parallelStream()
-                    .filter(pos -> GTUtility.canSeeSunClearly(getWorld(), pos))
-                    .count();
-        }
+        if (getWorld().isRemote || variantActiveBlocks.isEmpty()) return;
+        this.exposedBlocks = (int) variantActiveBlocks.parallelStream()
+                .filter(pos -> GTUtility.canSeeSunClearly(getWorld(), pos))
+                .count();
     }
 
+    @SideOnly(Side.SERVER)
     public void updateExposedBlocks() {
-        if (countExposedBlocks != null && !countExposedBlocks.isDone()) return;
-        this.countExposedBlocks = new CountExposedBlocks(this);
-        executor.submit(countExposedBlocks);
+        executor.execute(() -> {
+            if (getWorld() != null) {
+                if (getWorld().isRemote || variantActiveBlocks.isEmpty()) return;
+                this.exposedBlocks = (int) variantActiveBlocks.parallelStream()
+                        .filter(pos -> {
+                            try {
+                                Thread.sleep(5);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            return GTUtility.canSeeSunClearly(getWorld(), pos);
+                        })
+                        .count();
+            }
+        });
     }
 
     @Override
@@ -808,18 +817,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
             builder.append('S');
             for (int i = 0; i < Math.max(0, rDist + 1); i++) builder.append(fill);
             return builder.toString();
-        }
-    }
-
-    public class CountExposedBlocks extends FutureTask<Void> {
-
-        public CountExposedBlocks(MetaTileEntityEvaporationPool pool) {
-            super(() -> {
-                if (getWorld() != null) {
-                    pool.updateExposedBlocksInstantly();
-                }
-                return null;
-            });
         }
     }
 }
