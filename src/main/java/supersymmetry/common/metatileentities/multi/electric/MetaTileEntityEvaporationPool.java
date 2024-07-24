@@ -352,10 +352,8 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
 
                 var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
-//                if (progress >= 1) return;
-                var depth = (4 * (1 - progress) - 1) / 16d;
+                var depth = (6 * (1 - progress) - 1) / 16d;
                 if (depth <= 0) return;
-                var cuboid = Cuboid6.full.copy().expand(0, -0.5 - progress, 0);
                 BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
                     GlStateManager.pushMatrix();
                     GlStateManager.translate(x + pos.getX(), y + pos.getY(), z + pos.getZ());
