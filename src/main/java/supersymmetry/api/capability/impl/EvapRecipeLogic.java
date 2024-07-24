@@ -20,6 +20,8 @@ import static gregtech.api.capability.GregtechDataCodes.assignId;
 public class EvapRecipeLogic extends MultiblockRecipeLogic {
 
     private static final int UPDATE_EVAPORATING_FLUID = assignId();
+    private static final int UPDATE_PROGRESS = assignId();
+    public double progress = 0;
 
     public FluidStack currentEvaporationFluid = null; // TODO: this should be changed into Fluid instead of FluidStack
 
@@ -52,7 +54,7 @@ public class EvapRecipeLogic extends MultiblockRecipeLogic {
     protected void updateRecipeProgress() { // TODO
 
         super.updateRecipeProgress();
-
+        writeCustomData(UPDATE_PROGRESS, buf -> buf.writeDouble(getProgressPercent()));
 //        //if null then no heating can be done, otherwise add joules according to coil values and energy available
 //        boolean coilHeated = false;
 //        if (pool.coilStats != null && pool.isHeated()) {
@@ -192,6 +194,8 @@ public class EvapRecipeLogic extends MultiblockRecipeLogic {
     public void receiveCustomData(int dataId, @NotNull PacketBuffer buf) {
         if (dataId == UPDATE_EVAPORATING_FLUID) {
             this.currentEvaporationFluid = FluidStack.loadFluidStackFromNBT(buf.readCompoundTag());
+        } else if (dataId == UPDATE_PROGRESS) {
+            this.progress = buf.readDouble();
         } else {
             super.receiveCustomData(dataId, buf);
         }
@@ -204,12 +208,14 @@ public class EvapRecipeLogic extends MultiblockRecipeLogic {
         if (currentEvaporationFluid != null) {
             nbt.setTag("currentEvaporationFluid", currentEvaporationFluid.writeToNBT(new NBTTagCompound()));
         }
+        nbt.setDouble("progress", progress);
         return nbt;
     }
 
     @Override
     public void deserializeNBT(@NotNull NBTTagCompound compound) {
         super.deserializeNBT(compound);
+        this.progress = compound.hasKey("progress") ? compound.getDouble("progress") : progress;
         this.currentEvaporationFluid = compound.hasKey("currentEvaporationFluid") ?
                 FluidStack.loadFluidStackFromNBT(compound.getCompoundTag("currentEvaporationFluid")) : currentEvaporationFluid;
     }

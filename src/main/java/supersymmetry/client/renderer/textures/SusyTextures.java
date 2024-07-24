@@ -68,4 +68,5 @@ public class SusyTextures {
 
     public static final SimpleOverlayRenderer SILICON_CARBIDE_CASING = new SimpleOverlayRenderer("multiblock_casing/silicon_carbide_casing");
     public static final SimpleOverlayRenderer ULV_STRUCTURAL_CASING = new SimpleOverlayRenderer("multiblock_casing/ulv_structural_casing");
+    public static final SimpleOverlayRenderer CONCRETE_LIGHT_SMOOTH = new SimpleOverlayRenderer("stones/concrete_light/concrete_light_smooth");
 }

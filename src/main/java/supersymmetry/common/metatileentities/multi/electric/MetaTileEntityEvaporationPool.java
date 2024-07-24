@@ -1,12 +1,17 @@
 package supersymmetry.common.metatileentities.multi.electric;
 
 import codechicken.lib.render.CCRenderState;
+import codechicken.lib.render.RenderUtils;
 import codechicken.lib.render.pipeline.IVertexOperation;
+import codechicken.lib.vec.Cuboid6;
 import codechicken.lib.vec.Matrix4;
+import codechicken.lib.vec.Vector3;
+import gregtech.api.GTValues;
 import gregtech.api.GregTechAPI;
 import gregtech.api.block.IHeatingCoilBlockStats;
 import gregtech.api.capability.GregtechDataCodes;
 import gregtech.api.gui.ModularUI;
+import gregtech.api.metatileentity.IFastRenderMetaTileEntity;
 import gregtech.api.metatileentity.MetaTileEntity;
 import gregtech.api.metatileentity.MetaTileEntityHolder;
 import gregtech.api.metatileentity.interfaces.IGregTechTileEntity;
@@ -23,16 +28,23 @@ import gregtech.common.blocks.StoneVariantBlock;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +52,7 @@ import supersymmetry.api.capability.impl.EvapRecipeLogic;
 import supersymmetry.api.integration.EvaporationPoolInfoProvider;
 import supersymmetry.api.recipes.SuSyRecipeMaps;
 import supersymmetry.api.recipes.properties.EvaporationEnergyProperty;
+import supersymmetry.client.renderer.textures.SusyTextures;
 import supersymmetry.common.blocks.SuSyBlocks;
 
 import java.util.Arrays;
@@ -50,7 +63,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 
-public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController {
+public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController implements IFastRenderMetaTileEntity {
 
     /*
         For future reference: "((IGregTechTileEntity)world.getTileEntity(pos)).getMetaTileEntity() instanceof IMultiblockAbilityPart"
@@ -168,7 +181,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
             if (bDist == 0 && isBlockEdge(world, bPos, back)) bDist = i + 1; // since we pushed 1 block further
             if (lDist != 0 && rDist != 0 && bDist != 0) break;
         }
-
+//        this.boundingBox = new AxisAlignedBB(lPos.offset(right), rPos.offset(left).offset(back, bDist - 1));
         //if width or length dist exceed max, or is less than min, invalidate structure
         int width = lDist + rDist;
         if (bDist < MIN_SIZE - 1 || width < MIN_SIZE - 1 || width > MAX_SIZE - 1) {
@@ -254,6 +267,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
                 .where('C', concretePredicate)
                 .where('B', evaporationBedPredicate())
                 .where('H', COILS_OR_EVABED)
+                .where('A', air())
                 .where(' ', any())
                 .build();
     }
@@ -325,15 +339,91 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     }
 
     @Override
+    @SideOnly(Side.CLIENT)
+    public void renderMetaTileEntity(double x, double y, double z, float partialTicks) {
+        if (recipeMapWorkable.isActive() && isStructureFormed()) {
+            FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
+            if (fluidStack != null && fluidStack.amount > 0) {
+
+                BlockPos pos1 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+                        .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+                BlockPos pos2 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+                        .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+
+
+                var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
+//                if (progress >= 1) return;
+                var depth = (4 * (1 - progress) - 1) / 16d;
+                if (depth <= 0) return;
+                var cuboid = Cuboid6.full.copy().expand(0, -0.5 - progress, 0);
+                BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
+                    GlStateManager.pushMatrix();
+                    GlStateManager.translate(x + pos.getX(), y + pos.getY(), z + pos.getZ());
+                    RenderUtils.preFluidRender();
+                    CCRenderState state = CCRenderState.instance();
+                    state.lightMatrix.locate(getWorld(), pos);
+                    state.startDrawing(7, DefaultVertexFormats.POSITION_TEX);
+                    TextureAtlasSprite sprite = RenderUtils.prepareFluidRender(fluidStack, 255);
+                    RenderUtils.renderFluidQuad(
+                            new Vector3(0, depth, 0),
+                            new Vector3(0, depth, 1),
+                            new Vector3(1, depth, 1),
+                            new Vector3(1, depth, 0),
+                            sprite, 1);
+                    state.pushColour();
+                    state.draw();
+                    RenderUtils.postFluidRender();
+                    GlStateManager.popMatrix();
+                });
+            }
+        }
+    }
+
+    @Override
+    public boolean isGlobalRenderer() {
+        return false;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public boolean canRenderInLayer(BlockRenderLayer renderLayer) {
+        return renderLayer == BlockRenderLayer.TRANSLUCENT || super.canRenderInLayer(renderLayer);
+    }
+
+    @Override
+    public AxisAlignedBB getRenderBoundingBox() {
+        BlockPos pos1 = getPos().offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+                .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+        BlockPos pos2 = getPos().offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+                .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+        return new AxisAlignedBB(pos1, pos2);
+    }
+
+    @Override
     public void renderMetaTileEntity(CCRenderState renderState, Matrix4 translation, IVertexOperation[] pipeline) {
         super.renderMetaTileEntity(renderState, translation, pipeline);
-//        if (getWorld() != null) {
-//            CCRenderState.instance().reset();
-//            CCRenderState.instance().pullLightmap();
-//            RenderUtils.renderFluidCuboid(water,
-//                    Cuboid6.full,
-//                    1, 0.8);
+
+
+//        if (recipeMapWorkable.isActive() && isStructureFormed()) {
+//            FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
+//            renderState.setFluidColour(fluidStack);
+//            renderState.setBrightness(getWorld(), getPos().offset(EnumFacing.UP, 2));
+//            BlockPos pos1 = getPos().offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+//                    .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+//            BlockPos pos2 = getPos().offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+//                    .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+//
+//            LightMatrix lightMatrix = (LightMatrix) pipeline[0];
+//            Cuboid6 cuboid6 = Cuboid6.full.copy().expand(0, -0.4, 0);
+//            BlockPos.getAllInBox(pos1, pos2).forEach(blockPos -> {
+//                        lightMatrix.pos = blockPos;
+//                        Textures.renderFace(renderState, new Matrix4().translate(blockPos.getX(), blockPos.getY(), blockPos.getZ()), new IVertexOperation[]{lightMatrix}, EnumFacing.UP, cuboid6,
+//                                TextureUtils.getTexture(fluidStack.getFluid().getStill(fluidStack)),
+//                                BlockRenderLayer.TRANSLUCENT);
+//                    });
 //        }
+
+
 //        if (recipeMapWorkable.isActive() && isStructureFormed()) {
 //            if (recipeMapWorkable != null) {
 //
@@ -368,13 +458,11 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
                 //if world is clientside (remote from server) do custom rendering
                 evaporationParticles();
             }
-
-            return; //dont do logic on client
         }
 
 
         // Lazy updates
-        if (this.tickTimer++ % 20 == 0) {
+        if (!getWorld().isRemote && this.tickTimer++ % 20 == 0) {
             if (isActive()) {
                 updateExposedBlocks();
             }
@@ -487,8 +575,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
 
 
-
-
         if (data.hasKey("isHeated")) {
             this.isHeated = data.getBoolean("isHeated");
         }
@@ -569,38 +655,26 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     }
 
     @SideOnly(Side.CLIENT)
-    private void evaporationParticles() { // TODO
-//        final EnumFacing back = this.getFrontFacing().getOpposite();
-//        final EnumFacing left = back.rotateYCCW();
-//
-//        //conversion from blockpos to in world pos places particle position at corner of block such that relative direction must be accounted for
-//        //add 1 if x pos or z pos (offsets mutually exclusively non-zero for given facing) as conversion to float pos rounds down in both coords
-//        int leftOffset = ((left.getXOffset() * -1) >>> 31) + ((left.getZOffset() * -1) >>> 31);
-//        int backOffset = ((back.getXOffset() * -1) >>> 31) + ((back.getZOffset() * -1) >>> 31);
-//
-//        //place pos in closest leftmost corner
-//        final BlockPos pos = this.getPos().offset(left, controllerPosition + leftOffset).offset(back, 1 + backOffset);
-//
-//        //Spawn number of particles on range [1, 3 * colCount * rowCount/9] (~3 particles for every 3x3 = 9m^2)
-//        for (int i = 0; i < Math.max(1, columnCount * rowCount / 3); i++) {
-//            //either single line along x axis intersects all rows, or it intersects all columns. Same applies to z axis. getXOffset indicates +, -, or "0" direction of facing for given axis
-//            float xLength = (back.getXOffset() * rowCount) + (left.getXOffset() * columnCount * -1); //we start on leftmost closest corner and want to go back and to the right
-//            float zLength = (back.getZOffset() * rowCount) + (left.getZOffset() * columnCount * -1); //so we invert the sign of the left offsets to effectively get right displacement
-//
-//            //if (tickTimer % 100 == 0) SusyLog.logger.atError().log("xLength: " + xLength + ", zLength: " + zLength + ", leftOffset: " + leftOffset + ", backOffset: " + backOffset + ", pos: " + pos + ", controller pos: " + getPos());
-//
-//            float xPos = pos.getX() + (xLength * GTValues.RNG.nextFloat()); //scale x length by random amount to get output coord
-//            float yPos = pos.getY() + 0.75F; //shit out particles one quarter of a block below the surface of the interior to give effect of gases rising from bottom
-//            float zPos = pos.getZ() + (zLength * GTValues.RNG.nextFloat());
-//
-//            float ySpd = 0.4F + 0.2F * GTValues.RNG.nextFloat();
-//            getWorld().spawnParticle(EnumParticleTypes.CLOUD, xPos, yPos, zPos, 0, ySpd, 0);
-//        }
+    private void evaporationParticles() {
+        BlockPos pos1 = getPos().offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+                .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+        BlockPos pos2 = getPos().offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+                .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+
+        BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
+                    if (GTValues.RNG.nextFloat() < 0.95) return;
+                    getWorld().spawnParticle(EnumParticleTypes.CLOUD,
+                            pos.getX() + GTValues.RNG.nextFloat(),
+                            pos.getY() + 0.3 * GTValues.RNG.nextFloat(),
+                            pos.getZ() + GTValues.RNG.nextFloat(),
+                            0, 0.1 + 0.3 * GTValues.RNG.nextFloat(), 0);
+                }
+        );
     }
 
     @Override
     public ICubeRenderer getBaseTexture(IMultiblockPart sourcePart) {
-        return Textures.SOLID_STEEL_CASING;
+        return SusyTextures.CONCRETE_LIGHT_SMOOTH;
     }
 
     @NotNull
@@ -696,11 +770,11 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         // Second layer:
         //           <- EMPTY
         //  CCCCCCC  <- EDGE_2
-        //  C     C  <- INNER_2
-        //  C     C  <- INNER_2
-        //  C     C  <- INNER_2
-        //  C     C  <- INNER_2
-        //  C     C  <- INNER_2
+        //  CAAAAAC  <- INNER_2
+        //  CAAAAAC  <- INNER_2
+        //  CAAAAAC  <- INNER_2
+        //  CAAAAAC  <- INNER_2
+        //  CAAAAAC  <- INNER_2
         //  CCCCCCC  <- EDGE_2
         //           <- EMPTY
 
@@ -714,7 +788,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         // row for 2nd layer
         EDGE_2(' ', 'C', 'C', 'C', 'C'),  //  CCCCCCC
         // should I set this to air()?
-        INNER_2(' ', 'C', ' ', ' ', ' '), //  C     C
+        INNER_2(' ', 'C', 'A', 'A', 'A'), //  CAAAAAC
         EMPTY(' ', ' ', ' ', ' ', ' ');  //
 
         // rows for JEI only
