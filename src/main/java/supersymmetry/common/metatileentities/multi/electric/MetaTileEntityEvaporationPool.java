@@ -3,8 +3,10 @@ package supersymmetry.common.metatileentities.multi.electric;
 import codechicken.lib.render.CCRenderState;
 import codechicken.lib.render.RenderUtils;
 import codechicken.lib.render.pipeline.IVertexOperation;
+import codechicken.lib.texture.TextureUtils;
 import codechicken.lib.vec.Cuboid6;
 import codechicken.lib.vec.Matrix4;
+import codechicken.lib.vec.TransformationList;
 import codechicken.lib.vec.Vector3;
 import gregtech.api.GTValues;
 import gregtech.api.GregTechAPI;
@@ -21,8 +23,13 @@ import gregtech.api.metatileentity.multiblock.MultiblockDisplayText;
 import gregtech.api.metatileentity.multiblock.RecipeMapMultiblockController;
 import gregtech.api.pattern.*;
 import gregtech.api.util.*;
+import gregtech.client.renderer.CubeRendererState;
 import gregtech.client.renderer.ICubeRenderer;
+import gregtech.client.renderer.cclop.ColourOperation;
+import gregtech.client.renderer.cclop.LightMapOperation;
 import gregtech.client.renderer.texture.Textures;
+import gregtech.client.renderer.texture.custom.QuantumStorageRenderer;
+import gregtech.client.utils.BloomEffectUtil;
 import gregtech.common.blocks.MetaBlocks;
 import gregtech.common.blocks.StoneVariantBlock;
 import lombok.Getter;
@@ -47,7 +54,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.opengl.GL11;
 import supersymmetry.api.capability.impl.EvapRecipeLogic;
 import supersymmetry.api.integration.EvaporationPoolInfoProvider;
 import supersymmetry.api.recipes.SuSyRecipeMaps;
@@ -93,6 +102,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     private int lDist = 0;
     private int rDist = 0;
     private int bDist = 0;
+    private int coilTier = -1; // -1 if no coils are present
     // I know this is quite tricky, but... ahh... hmm...
     public static final TraceabilityPredicate COILS_OR_EVABED = new TraceabilityPredicate(blockWorldState -> {
         IBlockState blockState = blockWorldState.getBlockState();
@@ -109,16 +119,13 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     }, () -> GregTechAPI.HEATING_COILS.entrySet().stream().sorted(Comparator.comparingInt(entry -> entry.getValue().getTier()))
             .map(entry -> new BlockInfo(entry.getKey(), null)).toArray(BlockInfo[]::new)).addTooltips("gregtech.multiblock.pattern.error.coils")
             .or(new TraceabilityPredicate(blockWorldState -> false, () -> new BlockInfo[]{new BlockInfo(SuSyBlocks.EVAPORATION_BED.getDefaultState())}));
-    private int coilTier = -1; // -1 if no coils are present
-
-
-
 
     public MetaTileEntityEvaporationPool(ResourceLocation metaTileEntityId) {
         super(metaTileEntityId, SuSyRecipeMaps.EVAPORATION_POOL);
         this.recipeMapWorkable = new EvapRecipeLogic(this);
     }
 
+    @Override
     public MetaTileEntity createMetaTileEntity(IGregTechTileEntity tileEntity) {
         return new MetaTileEntityEvaporationPool(metaTileEntityId);
     }
@@ -142,17 +149,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
         this.kiloJoules = 0;
         this.isRecipeStalled = false;
-
-        this.writeCustomData(coilDataID, (buf) -> {
-            buf.writeBoolean(isHeated);
-            buf.writeBoolean(areCoilsHeating);
-            buf.writeInt(coilStateMeta);
-        });
-
-        this.writeCustomData(energyValuesID, buf -> {
-            buf.writeInt(kiloJoules);
-            buf.writeBoolean(isRecipeStalled);
-        });
     }
 
     @SuppressWarnings("UnusedReturnValue") // Nobody cares
@@ -338,6 +334,16 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 //        }
     }
 
+    @SideOnly(Side.CLIENT)
+    public void renderMetaTileEntityFast(CCRenderState renderState, Matrix4 translation, float partialTicks) {
+        if (recipeMapWorkable.isActive() && isStructureFormed()) {
+            FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
+            if (fluidStack != null && fluidStack.amount > 0) {
+                RenderUtils.renderFluidCuboidGL(fluidStack, Cuboid6.full.copy(), 1, 1);
+            }
+        }
+    }
+
     @Override
     @SideOnly(Side.CLIENT)
     public void renderMetaTileEntity(double x, double y, double z, float partialTicks) {
@@ -350,17 +356,32 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
                 BlockPos pos2 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
                         .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
 
-
                 var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
-                var depth = (6 * (1 - progress) - 1) / 16d;
+                var depth = (6d * (1d - progress) - 1d) / 16d;
                 if (depth <= 0) return;
+
                 BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
+
                     GlStateManager.pushMatrix();
                     GlStateManager.translate(x + pos.getX(), y + pos.getY(), z + pos.getZ());
-                    RenderUtils.preFluidRender();
+                    GlStateManager.enableBlend();
+                    GlStateManager.enableLighting();
+                    GlStateManager.enableAlpha();
+//                    RenderUtils.renderFluidCuboidGL(fluidStack, Cuboid6.full.copy(), 1, 1);
+
+
                     CCRenderState state = CCRenderState.instance();
-                    state.lightMatrix.locate(getWorld(), pos);
-                    state.startDrawing(7, DefaultVertexFormats.POSITION_TEX);
+//                    Textures.renderFace(state, new Matrix4().translate(x + pos.getX(), y + pos.getY(), z + pos.getZ()),
+//                            new IVertexOperation[]{state.lightMatrix}, EnumFacing.UP, Cuboid6.full.copy(),
+//                            RenderUtils.prepareFluidRender(fluidStack, 255), BlockRenderLayer.TRANSLUCENT);
+
+                    state.reset();
+                    state.startDrawing(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+                    RenderUtils.preFluidRender();
+                    state.lightMatrix.locate(getWorld(), getPos().add(pos));
+                    state.setPipeline(state.lightMatrix, new TransformationList(new Matrix4().translate(x + pos.getX(), y + pos.getY(), z + pos.getZ())));
+
+                    QuantumStorageRenderer.setLightingCorrectly(getWorld(), pos.add(getPos()));
                     TextureAtlasSprite sprite = RenderUtils.prepareFluidRender(fluidStack, 255);
                     RenderUtils.renderFluidQuad(
                             new Vector3(0, depth, 0),
@@ -371,6 +392,10 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
                     state.pushColour();
                     state.draw();
                     RenderUtils.postFluidRender();
+
+                    GlStateManager.disableAlpha();
+                    GlStateManager.disableLighting();
+                    GlStateManager.disableBlend();
                     GlStateManager.popMatrix();
                 });
             }
@@ -378,9 +403,10 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     }
 
     @Override
-    public boolean isGlobalRenderer() {
-        return false;
+    public boolean shouldRenderInPass(int pass) {
+        return pass == RENDER_PASS_NORMAL || pass == RENDER_PASS_TRANSLUCENT;
     }
+
 
     @Override
     @SideOnly(Side.CLIENT)
@@ -390,7 +416,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 
     @Override
     public AxisAlignedBB getRenderBoundingBox() {
-        BlockPos pos1 = getPos().offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+        BlockPos pos1 = getPos().offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP, 100)
                 .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
         BlockPos pos2 = getPos().offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
                 .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
@@ -401,43 +427,47 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     public void renderMetaTileEntity(CCRenderState renderState, Matrix4 translation, IVertexOperation[] pipeline) {
         super.renderMetaTileEntity(renderState, translation, pipeline);
 
-
+        if (recipeMapWorkable.isActive() && isStructureFormed()) {
+            EnumFacing back = getFrontFacing().getOpposite();
+            Matrix4 offset = translation.copy().translate(back.getXOffset(), 2, back.getZOffset() * 10);
+            CubeRendererState op = Textures.RENDER_STATE.get();
+            Textures.RENDER_STATE.set(new CubeRendererState(op.layer, CubeRendererState.PASS_MASK, op.world));
+            Textures.renderFace(renderState, offset,
+                    ArrayUtils.addAll(pipeline, new LightMapOperation(240, 240), new ColourOperation(0xFFFFFFFF)),
+                    EnumFacing.UP, Cuboid6.full, TextureUtils.getBlockTexture("lava_still"),
+                    BloomEffectUtil.getEffectiveBloomLayer());
+            Textures.RENDER_STATE.set(op);
+        }
 //        if (recipeMapWorkable.isActive() && isStructureFormed()) {
 //            FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
-//            renderState.setFluidColour(fluidStack);
-//            renderState.setBrightness(getWorld(), getPos().offset(EnumFacing.UP, 2));
-//            BlockPos pos1 = getPos().offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
-//                    .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
-//            BlockPos pos2 = getPos().offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
-//                    .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+//            if (fluidStack != null && fluidStack.amount > 0) {
+//                TextureAtlasSprite sprite = TextureUtils.getTexture(fluidStack.getFluid().getStill());
+//                BlockPos pos1 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+//                        .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+//                BlockPos pos2 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+//                        .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
 //
-//            LightMatrix lightMatrix = (LightMatrix) pipeline[0];
-//            Cuboid6 cuboid6 = Cuboid6.full.copy().expand(0, -0.4, 0);
-//            BlockPos.getAllInBox(pos1, pos2).forEach(blockPos -> {
-//                        lightMatrix.pos = blockPos;
-//                        Textures.renderFace(renderState, new Matrix4().translate(blockPos.getX(), blockPos.getY(), blockPos.getZ()), new IVertexOperation[]{lightMatrix}, EnumFacing.UP, cuboid6,
-//                                TextureUtils.getTexture(fluidStack.getFluid().getStill(fluidStack)),
-//                                BlockRenderLayer.TRANSLUCENT);
-//                    });
-//        }
-
-
-//        if (recipeMapWorkable.isActive() && isStructureFormed()) {
-//            if (recipeMapWorkable != null) {
+//                var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
+//                var depth =  (12 + 4 * progress) / 16d;
+//                if (depth >= 1) return;
+//                BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
+//                    GlStateManager.pushMatrix();
+//                    GlStateManager.disableBlend();
+//                    GlStateManager.translate(pos.getX(), pos.getY(), pos.getZ());
 //
-//                FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
-//                RenderUtils.renderFluidCuboidGL(fluidStack,
-//                        Cuboid6.full,
-//                        1, 0.8);
-
-
-//                Matrix4 offset = translation.copy().translate(back.getXOffset(), 2, back.getZOffset());
-////                Textures.RENDER_STATE.set(new CubeRendererState(op.layer, CubeRendererState.PASS_MASK, op.world));
-//                renderState.setFluidColour(fluidStack);
-//                renderState.setBrightness(getWorld(), getPos().offset(EnumFacing.UP, 2));
-//                Textures.renderFace(renderState, offset, pipeline, EnumFacing.UP, Cuboid6.full, fluidStillSprite,
-//                        BlockRenderLayer.CUTOUT_MIPPED);
-//                GlStateManager.resetColor();
+//                    CCRenderState state = CCRenderState.instance();
+//                    state.lightMatrix.locate(getWorld(), getPos().add(pos));
+//                    state.setFluidColour(fluidStack);
+//                    Textures.renderFace(state, translation.copy().translate(pos.getX(), pos.getY(), pos.getZ()),
+//                            new IVertexOperation[]{state.lightMatrix}, EnumFacing.UP,
+//                            Cuboid6.full.copy().expand(0, - depth, 0),
+//                            sprite, BlockRenderLayer.TRANSLUCENT);
+//
+//
+//
+//                    GlStateManager.enableBlend();
+//                    GlStateManager.popMatrix();
+//                });
 //            }
 //        }
     }
@@ -465,7 +495,6 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
                 updateExposedBlocks();
             }
         }
-
 
 //        setCoilActivity(false); // solves world issue reload where coils would be active even if multi was not running
 //
