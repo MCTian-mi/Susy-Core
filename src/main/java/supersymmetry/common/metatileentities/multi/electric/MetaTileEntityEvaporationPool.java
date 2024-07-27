@@ -6,8 +6,6 @@ import codechicken.lib.render.pipeline.IVertexOperation;
 import codechicken.lib.texture.TextureUtils;
 import codechicken.lib.vec.Cuboid6;
 import codechicken.lib.vec.Matrix4;
-import codechicken.lib.vec.TransformationList;
-import codechicken.lib.vec.Vector3;
 import gregtech.api.GTValues;
 import gregtech.api.GregTechAPI;
 import gregtech.api.block.IHeatingCoilBlockStats;
@@ -25,20 +23,15 @@ import gregtech.api.pattern.*;
 import gregtech.api.util.*;
 import gregtech.client.renderer.CubeRendererState;
 import gregtech.client.renderer.ICubeRenderer;
-import gregtech.client.renderer.cclop.ColourOperation;
-import gregtech.client.renderer.cclop.LightMapOperation;
 import gregtech.client.renderer.texture.Textures;
-import gregtech.client.renderer.texture.custom.QuantumStorageRenderer;
-import gregtech.client.utils.BloomEffectUtil;
 import gregtech.common.blocks.MetaBlocks;
 import gregtech.common.blocks.StoneVariantBlock;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
@@ -48,15 +41,14 @@ import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.opengl.GL11;
 import supersymmetry.api.capability.impl.EvapRecipeLogic;
 import supersymmetry.api.integration.EvaporationPoolInfoProvider;
 import supersymmetry.api.recipes.SuSyRecipeMaps;
@@ -102,7 +94,17 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
     private int lDist = 0;
     private int rDist = 0;
     private int bDist = 0;
+    @SideOnly(Side.CLIENT)
     private int coilTier = -1; // -1 if no coils are present
+
+    public static final TraceabilityPredicate SNOW_FREE_AIR = new TraceabilityPredicate((blockWorldState) -> {
+        if (blockWorldState.getBlockState().getBlock() == Blocks.SNOW_LAYER) {
+            blockWorldState.getWorld().setBlockToAir(blockWorldState.getPos());
+            return true;
+        }
+        return TraceabilityPredicate.AIR.test(blockWorldState);
+    });
+
     // I know this is quite tricky, but... ahh... hmm...
     public static final TraceabilityPredicate COILS_OR_EVABED = new TraceabilityPredicate(blockWorldState -> {
         IBlockState blockState = blockWorldState.getBlockState();
@@ -204,6 +206,14 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         return world.getBlockState(pos.move(direction)) == getCasingState() || world.getTileEntity(pos) instanceof MetaTileEntityHolder; // Tbh I have 0 idea why ceu cleanroom doesn't need this.
     }
 
+    public static TraceabilityPredicate air() {
+        return SNOW_FREE_AIR;
+    }
+
+    public static TraceabilityPredicate heatingCoils() {
+        return COILS_OR_EVABED;
+    }
+
     public static IBlockState getCasingState() {
         return MetaBlocks.STONE_BLOCKS.get(StoneVariantBlock.StoneVariant.SMOOTH).getState(StoneVariantBlock.StoneType.CONCRETE_LIGHT);
     }
@@ -262,7 +272,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
                 .where('S', selfPredicate())
                 .where('C', concretePredicate)
                 .where('B', evaporationBedPredicate())
-                .where('H', COILS_OR_EVABED)
+                .where('H', heatingCoils())
                 .where('A', air())
                 .where(' ', any())
                 .build();
@@ -334,79 +344,179 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
 //        }
     }
 
-    @SideOnly(Side.CLIENT)
+    @Override
     public void renderMetaTileEntityFast(CCRenderState renderState, Matrix4 translation, float partialTicks) {
         if (recipeMapWorkable.isActive() && isStructureFormed()) {
             FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
-            if (fluidStack != null && fluidStack.amount > 0) {
-                RenderUtils.renderFluidCuboidGL(fluidStack, Cuboid6.full.copy(), 1, 1);
-            }
+            if (fluidStack == null || !RenderUtils.shouldRenderFluid(fluidStack)) return;
+
+            renderState.setFluidColour(fluidStack);
+
+            BlockPos pos1 = BlockPos.ORIGIN.offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+                    .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+            BlockPos pos2 = BlockPos.ORIGIN.offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+                    .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+
+            var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
+            Cuboid6 cuboid6 = Cuboid6.full.copy().expand(0, -(8 + 4 * progress) / 16d, 0);
+
+            Textures.RENDER_STATE.set(new CubeRendererState(BlockRenderLayer.TRANSLUCENT, new boolean[]{true, true, true, true, true, true}, getWorld()));
+
+            Vec3i offset = new Vec3i(translation.m03, translation.m13, translation.m23);
+
+            BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
+                BlockPos offPos = pos.add(offset);
+                renderState.lightMatrix.locate(getWorld(), offPos);
+                Textures.renderFace(renderState, translation.copy().translate(pos.getX(), pos.getY(), pos.getZ()),
+                        new IVertexOperation[]{renderState.lightMatrix}, EnumFacing.UP, cuboid6,
+                        TextureUtils.getTexture(fluidStack.getFluid().getStill(fluidStack)), BlockRenderLayer.TRANSLUCENT);
+            });
         }
     }
 
     @Override
     @SideOnly(Side.CLIENT)
     public void renderMetaTileEntity(double x, double y, double z, float partialTicks) {
-        if (recipeMapWorkable.isActive() && isStructureFormed()) {
-            FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
-            if (fluidStack != null && fluidStack.amount > 0) {
 
-                BlockPos pos1 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
-                        .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
-                BlockPos pos2 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
-                        .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+//        if (recipeMapWorkable.isActive() && isStructureFormed()) {
+//            FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
+//            if (fluidStack == null || !RenderUtils.shouldRenderFluid(fluidStack)) return;
+//
+//            CCRenderState renderState = CCRenderState.instance();
+//
+////            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+//
+//
+////            renderState.pullLightmap();
+////            RenderUtils.translateToWorldCoords(Minecraft.getMinecraft().player, 0);
+//            renderState.setFluidColour(fluidStack);
+//
+//            BlockPos pos1 = BlockPos.ORIGIN.offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+//                    .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+//            BlockPos pos2 = BlockPos.ORIGIN.offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+//                    .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+//
+//            var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
+//
+//            Cuboid6 cuboid6 = Cuboid6.full.copy().expand(0, - (8 + 4 * progress) / 16d, 0);
+//
+////            CubeRendererState op = Textures.RENDER_STATE.get();
+////            Textures.RENDER_STATE.set(new CubeRendererState(op.layer, CubeRendererState.PASS_MASK, op.world));
+//
+//
+//
+//            BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
+//                renderState.lightMatrix.locate(getWorld(), pos);
+//                Textures.renderFace(renderState, new Matrix4().translate((double) pos.getX() + x, (double) pos.getY() + y, (double) pos.getZ() + z),
+//                        new IVertexOperation[]{renderState.lightMatrix}, EnumFacing.UP, cuboid6,
+//                        TextureUtils.getTexture(fluidStack.getFluid().getStill(fluidStack)), BlockRenderLayer.TRANSLUCENT);
+//            });
+//        }
 
-                var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
-                var depth = (6d * (1d - progress) - 1d) / 16d;
-                if (depth <= 0) return;
 
-                BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
+////        scheduleRenderUpdate();
+//        if (recipeMapWorkable.isActive() && isStructureFormed()) {
+//            FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
+//            if (fluidStack == null || !RenderUtils.shouldRenderFluid(fluidStack)) return;
+//            CCRenderState renderState = CCRenderState.instance();
+//            renderState.reset();
+//            BlockRenderLayer renderLayer = MinecraftForgeClient.getRenderLayer();
+//
+////            Tessellator tessellator = Tessellator.getInstance();
+////            BufferBuilder bufferBuilder = tessellator.getBuffer();
+//
+////            bufferBuilder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+//
+////            renderState.bind(bufferBuilder);
+//
+//            renderState.setFluidColour(fluidStack);
+//
+//            BlockPos pos1 = getPos().offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+//                    .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+//            BlockPos pos2 = getPos().offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+//                    .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+//
+//            var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
+//
+//            Cuboid6 cuboid6 = Cuboid6.full.copy().expand(0, - (8 + 4 * progress) / 16d, 0);
+//
+//            Textures.RENDER_STATE.set(new CubeRendererState(renderLayer, new boolean[]{false, true, false, false, false, false}, getWorld()));
+//
+//            BlockPos.getAllInBox(pos1, pos2).forEach(blockPos -> {
+//                renderState.lightMatrix.locate(getWorld(), blockPos);
+//                Textures.renderFace(renderState, new Matrix4().translate(blockPos.getX(), blockPos.getY(), blockPos.getZ()),
+//                        new IVertexOperation[] {renderState.lightMatrix}, EnumFacing.UP, cuboid6,
+//                        TextureUtils.getTexture(fluidStack.getFluid().getStill(fluidStack)),
+//                        BlockRenderLayer.TRANSLUCENT);
+//            });
+//
+//            Textures.RENDER_STATE.remove();
+//        }
 
-                    GlStateManager.pushMatrix();
-                    GlStateManager.translate(x + pos.getX(), y + pos.getY(), z + pos.getZ());
-                    GlStateManager.enableBlend();
-                    GlStateManager.enableLighting();
-                    GlStateManager.enableAlpha();
-//                    RenderUtils.renderFluidCuboidGL(fluidStack, Cuboid6.full.copy(), 1, 1);
 
+//        if (recipeMapWorkable.isActive() && isStructureFormed()) {
+//            FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
+//            if (fluidStack != null && fluidStack.amount > 0) {
+//
+//                BlockPos pos1 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+//                        .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+//                BlockPos pos2 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+//                        .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+//
+//
+//                var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
+////                if (progress >= 1) return;
+//                var depth = (4 * (1 - progress) - 1) / 16d;
+//                if (depth <= 0) return;
+//                var cuboid = Cuboid6.full.copy().expand(0, -0.5 - progress, 0);
+//                BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
+//                    GlStateManager.pushMatrix();
+//                    GlStateManager.translate(x + pos.getX(), y + pos.getY(), z + pos.getZ());
+//                    RenderUtils.preFluidRender();
+//                    CCRenderState state = CCRenderState.instance();
+//                    state.lightMatrix.locate(getWorld(), pos);
+//                    state.startDrawing(7, DefaultVertexFormats.POSITION_TEX);
+//                    TextureAtlasSprite sprite = RenderUtils.prepareFluidRender(fluidStack, 255);
+//                    RenderUtils.renderFluidQuad(
+//                            new Vector3(0, depth, 0),
+//                            new Vector3(0, depth, 1),
+//                            new Vector3(1, depth, 1),
+//                            new Vector3(1, depth, 0),
+//                            sprite, 1);
+//                    state.pushColour();
+//                    state.draw();
+//                    RenderUtils.postFluidRender();
+//                    GlStateManager.popMatrix();
+//                });
+//            }
+//        }
+    }
 
-                    CCRenderState state = CCRenderState.instance();
-//                    Textures.renderFace(state, new Matrix4().translate(x + pos.getX(), y + pos.getY(), z + pos.getZ()),
-//                            new IVertexOperation[]{state.lightMatrix}, EnumFacing.UP, Cuboid6.full.copy(),
-//                            RenderUtils.prepareFluidRender(fluidStack, 255), BlockRenderLayer.TRANSLUCENT);
+    private static float getRed(int color) {
+        return (color >> 16 & 0xFF) / 255.0F;
+    }
 
-                    state.reset();
-                    state.startDrawing(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-                    RenderUtils.preFluidRender();
-                    state.lightMatrix.locate(getWorld(), getPos().add(pos));
-                    state.setPipeline(state.lightMatrix, new TransformationList(new Matrix4().translate(x + pos.getX(), y + pos.getY(), z + pos.getZ())));
+    private static float getGreen(int color) {
+        return (color >> 8 & 0xFF) / 255.0F;
+    }
 
-                    QuantumStorageRenderer.setLightingCorrectly(getWorld(), pos.add(getPos()));
-                    TextureAtlasSprite sprite = RenderUtils.prepareFluidRender(fluidStack, 255);
-                    RenderUtils.renderFluidQuad(
-                            new Vector3(0, depth, 0),
-                            new Vector3(0, depth, 1),
-                            new Vector3(1, depth, 1),
-                            new Vector3(1, depth, 0),
-                            sprite, 1);
-                    state.pushColour();
-                    state.draw();
-                    RenderUtils.postFluidRender();
+    private static float getBlue(int color) {
+        return (color & 0xFF) / 255.0F;
+    }
 
-                    GlStateManager.disableAlpha();
-                    GlStateManager.disableLighting();
-                    GlStateManager.disableBlend();
-                    GlStateManager.popMatrix();
-                });
-            }
-        }
+    public static void color(int color) {
+        GlStateManager.color(getRed(color), getGreen(color), getBlue(color), (color >> 24 & 0xFF) / 255f);
     }
 
     @Override
     public boolean shouldRenderInPass(int pass) {
-        return pass == RENDER_PASS_NORMAL || pass == RENDER_PASS_TRANSLUCENT;
+        return pass == RENDER_PASS_TRANSLUCENT;
     }
 
+    @Override
+    public boolean isGlobalRenderer() {
+        return true;
+    }
 
     @Override
     @SideOnly(Side.CLIENT)
@@ -420,55 +530,38 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
                 .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
         BlockPos pos2 = getPos().offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
                 .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
-        return new AxisAlignedBB(pos1, pos2);
+//        return new AxisAlignedBB(pos1, pos2);
+        return new AxisAlignedBB(new BlockPos(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE), new BlockPos(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE));
+//        return new AxisAlignedBB(new BlockPos(0, 0, 0));
     }
 
     @Override
     public void renderMetaTileEntity(CCRenderState renderState, Matrix4 translation, IVertexOperation[] pipeline) {
         super.renderMetaTileEntity(renderState, translation, pipeline);
 
-        if (recipeMapWorkable.isActive() && isStructureFormed()) {
-            EnumFacing back = getFrontFacing().getOpposite();
-            Matrix4 offset = translation.copy().translate(back.getXOffset(), 2, back.getZOffset() * 10);
-            CubeRendererState op = Textures.RENDER_STATE.get();
-            Textures.RENDER_STATE.set(new CubeRendererState(op.layer, CubeRendererState.PASS_MASK, op.world));
-            Textures.renderFace(renderState, offset,
-                    ArrayUtils.addAll(pipeline, new LightMapOperation(240, 240), new ColourOperation(0xFFFFFFFF)),
-                    EnumFacing.UP, Cuboid6.full, TextureUtils.getBlockTexture("lava_still"),
-                    BloomEffectUtil.getEffectiveBloomLayer());
-            Textures.RENDER_STATE.set(op);
-        }
+// Fancy rendering but with no respect to renderBoundings
 //        if (recipeMapWorkable.isActive() && isStructureFormed()) {
 //            FluidStack fluidStack = ((EvapRecipeLogic) recipeMapWorkable).currentEvaporationFluid;
-//            if (fluidStack != null && fluidStack.amount > 0) {
-//                TextureAtlasSprite sprite = TextureUtils.getTexture(fluidStack.getFluid().getStill());
-//                BlockPos pos1 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
-//                        .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
-//                BlockPos pos2 = new BlockPos(0, 0, 0).offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
-//                        .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
+//            renderState.setFluidColour(fluidStack);
 //
-//                var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
-//                var depth =  (12 + 4 * progress) / 16d;
-//                if (depth >= 1) return;
-//                BlockPos.getAllInBox(pos1, pos2).forEach(pos -> {
-//                    GlStateManager.pushMatrix();
-//                    GlStateManager.disableBlend();
-//                    GlStateManager.translate(pos.getX(), pos.getY(), pos.getZ());
+//            BlockPos pos1 = getPos().offset(getFrontFacing().getOpposite(), 2).offset(EnumFacing.UP)
+//                    .offset(RelativeDirection.LEFT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), lDist - 1);
+//            BlockPos pos2 = getPos().offset(getFrontFacing().getOpposite(), bDist).offset(EnumFacing.UP)
+//                    .offset(RelativeDirection.RIGHT.getRelativeFacing(getFrontFacing(), getUpwardsFacing(), isFlipped()), rDist - 1);
 //
-//                    CCRenderState state = CCRenderState.instance();
-//                    state.lightMatrix.locate(getWorld(), getPos().add(pos));
-//                    state.setFluidColour(fluidStack);
-//                    Textures.renderFace(state, translation.copy().translate(pos.getX(), pos.getY(), pos.getZ()),
-//                            new IVertexOperation[]{state.lightMatrix}, EnumFacing.UP,
-//                            Cuboid6.full.copy().expand(0, - depth, 0),
-//                            sprite, BlockRenderLayer.TRANSLUCENT);
+//            var progress = ((EvapRecipeLogic) recipeMapWorkable).progress;
 //
+//            Cuboid6 cuboid6 = Cuboid6.full.copy().expand(0, - (8 + 4 * progress) / 16d, 0);
 //
+//            CubeRendererState op = Textures.RENDER_STATE.get();
+//            Textures.RENDER_STATE.set(new CubeRendererState(op.layer, CubeRendererState.PASS_MASK, op.world));
 //
-//                    GlStateManager.enableBlend();
-//                    GlStateManager.popMatrix();
-//                });
-//            }
+//            BlockPos.getAllInBox(pos1, pos2).forEach(blockPos -> {
+//                        renderState.lightMatrix.locate(getWorld(), blockPos);
+//                        Textures.renderFace(renderState, new Matrix4().translate(blockPos.getX(), blockPos.getY(), blockPos.getZ()), pipeline, EnumFacing.UP, cuboid6,
+//                                TextureUtils.getTexture(fluidStack.getFluid().getStill(fluidStack)),
+//                                BlockRenderLayer.TRANSLUCENT);
+//            });
 //        }
     }
 
@@ -483,6 +576,7 @@ public class MetaTileEntityEvaporationPool extends RecipeMapMultiblockController
         super.update(); //means recipe logic happens before heating is added
         if (this.getWorld().isRemote) {
             if (this.isActive() && !isRecipeStalled) {
+//                scheduleRenderUpdate();
                 //if world is clientside (remote from server) do custom rendering
                 evaporationParticles();
             }
