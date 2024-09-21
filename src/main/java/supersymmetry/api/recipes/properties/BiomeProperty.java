@@ -11,6 +11,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Set;
 
 public class BiomeProperty extends RecipeProperty<BiomeProperty.BiomePropertyList> {
 
@@ -69,17 +70,17 @@ public class BiomeProperty extends RecipeProperty<BiomeProperty.BiomePropertyLis
         BiomePropertyList list = castValue(value);
 
         if (list.whiteListBiomes.size() > 0)
-            minecraft.fontRenderer.drawString(I18n.format("gregtech.recipe.biomes",
+            minecraft.fontRenderer.drawString(I18n.format("susy.recipe.biomes",
                     getBiomesForRecipe(castValue(value).whiteListBiomes)), x, y, color);
         if (list.blackListBiomes.size() > 0)
-            minecraft.fontRenderer.drawString(I18n.format("gregtech.recipe.biomes_blocked",
+            minecraft.fontRenderer.drawString(I18n.format("susy.recipe.biomes_blocked",
                     getBiomesForRecipe(castValue(value).blackListBiomes)), x, y, color);
 
         if (list.whiteListBiomeTypes.size() > 0)
-            minecraft.fontRenderer.drawString(I18n.format("gregtech.recipe.biomeTypes",
+            minecraft.fontRenderer.drawString(I18n.format("susy.recipe.biomeTypes",
                     getBiomeTypesForRecipe(castValue(value).whiteListBiomeTypes)), x, y, color);
         if (list.blackListBiomeTypes.size() > 0)
-            minecraft.fontRenderer.drawString(I18n.format("gregtech.recipe.biomeTypes_blocked",
+            minecraft.fontRenderer.drawString(I18n.format("susy.recipe.biomeTypes_blocked",
                     getBiomeTypesForRecipe(castValue(value).blackListBiomeTypes)), x, y, color);
     }
 
@@ -123,13 +124,9 @@ public class BiomeProperty extends RecipeProperty<BiomeProperty.BiomePropertyLis
         }
 
         public boolean checkBiome(Biome biome) {
-            if (blackListBiomes.contains(biome) || !whiteListBiomes.contains(biome)) return false;
-            boolean foundWhitelist = whiteListBiomeTypes.isEmpty();
-            for (BiomeDictionary.Type type : BiomeDictionary.getTypes(biome)) {
-                if (blackListBiomeTypes.contains(type)) return false;
-                if (!foundWhitelist && whiteListBiomeTypes.contains(type)) foundWhitelist = true;
-            }
-            return foundWhitelist;
+            Set<BiomeDictionary.Type> biomeTypes = BiomeDictionary.getTypes(biome);
+            return (whiteListBiomes.contains(biome) || biomeTypes.stream().anyMatch(whiteListBiomeTypes::contains))
+                    & !(blackListBiomes.contains(biome) || biomeTypes.stream().anyMatch(blackListBiomeTypes::contains));
         }
     }
 }
