@@ -4,6 +4,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -25,6 +26,10 @@ public class ElytraFlyingUtils {
                             entity.isRiding() || entity.isInWater() || isInLavaSafe(entity)));
         }
         return false;
+    }
+
+    public static boolean canTakeOff(EntityPlayerMP player) {
+        return !player.onGround && player.motionY < 0.0D && !player.isElytraFlying() && !player.isInWater() && !isInLavaSafe(player);
     }
 
     // non-chunkloading copy of Entity.isInLava()

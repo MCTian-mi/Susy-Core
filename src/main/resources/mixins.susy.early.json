@@ -1,5 +1,5 @@
 {
-  "package" : "supersymmetry.mixins.early",
+  "package" : "supersymmetry.mixins.minecraft",
   "refmap" : "mixins.susy.refmap.json",
   "target" : "@env(DEFAULT)",
   "minVersion" : "0.8",
