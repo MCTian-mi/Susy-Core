@@ -1,6 +1,7 @@
 package supersymmetry;
 
 import gregtech.GTInternalTags;
+import gregtech.api.capability.SimpleCapabilityManager;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
@@ -8,6 +9,7 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import org.jetbrains.annotations.NotNull;
+import supersymmetry.api.capability.IElytraFlyingProvider;
 import supersymmetry.api.sound.SusySounds;
 import supersymmetry.common.CommonProxy;
 import supersymmetry.common.SusyMetaEntities;
@@ -55,6 +57,8 @@ public class Supersymmetry {
 
         SuSyMetaTileEntities.init();
         SusyMetaEntities.init();
+
+        SimpleCapabilityManager.registerCapabilityWithNoDefault(IElytraFlyingProvider.class);
     }
 
     @Mod.EventHandler
