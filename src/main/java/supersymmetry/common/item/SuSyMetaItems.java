@@ -22,7 +22,7 @@ public class SuSyMetaItems {
     public static MetaValueItem PUMP_STEAM;
     public static MetaValueItem AIR_VENT;
     public static MetaValueItem TRACK_SEGMENT;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem ELYTRA;
+    public static ArmorMetaItem<?>.ArmorMetaValueItem JET_WINGPACK;
 
     public static void initMetaItems() {
         metaItem = new StandardMetaItem();

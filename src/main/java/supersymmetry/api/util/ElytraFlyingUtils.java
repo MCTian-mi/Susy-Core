@@ -28,8 +28,8 @@ public class ElytraFlyingUtils {
         return false;
     }
 
-    public static boolean canTakeOff(EntityPlayerMP player) {
-        return !player.onGround && player.motionY < 0.0D && !player.isElytraFlying() && !player.isInWater() && !isInLavaSafe(player);
+    public static boolean canTakeOff(EntityPlayerMP player, boolean ignoreOnGround) {
+        return (ignoreOnGround || (!player.onGround && player.motionY < 0.0D)) && !player.isElytraFlying() && !player.isInWater() && !isInLavaSafe(player);
     }
 
     // non-chunkloading copy of Entity.isInLava()
