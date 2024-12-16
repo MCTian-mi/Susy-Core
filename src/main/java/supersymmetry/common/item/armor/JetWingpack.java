@@ -139,7 +139,7 @@ public class JetWingpack extends ArmorLogicSuite implements IItemHUDProvider {
         }
 
         if (world.isRemote) {
-            handleSounds(player, engineActive);
+            handleSounds(player, engineActive && drainFuel(itemStack, getEnergyPerUse(), true));
         }
 
         if (engineActive && player.isElytraFlying() && drainFuel(itemStack, getEnergyPerUse(), true)) {
