@@ -37,6 +37,7 @@ import supersymmetry.common.blocks.SuSyMetaBlocks;
 import supersymmetry.common.blocks.SusyStoneVariantBlock;
 import supersymmetry.common.item.SuSyMetaItems;
 import supersymmetry.common.materials.SusyMaterials;
+import supersymmetry.datafix.SuSyDataFixers;
 import supersymmetry.loaders.SuSyWorldLoader;
 import supersymmetry.loaders.SusyOreDictionaryLoader;
 import supersymmetry.loaders.recipes.SuSyRecipeLoader;
@@ -57,6 +58,7 @@ public class CommonProxy {
     }
 
     public void load() {
+        SuSyDataFixers.init();
         SuSyWorldLoader.init();
         if ((boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment")) {
             new MobHordeEvent((p) -> new EntityZombie(p.world), 4, 8, "zombies").setMaximumDistanceUnderground(10).setNightOnly(true);

@@ -2,12 +2,12 @@ package supersymmetry.loaders;
 
 import biomesoplenty.api.biome.BOPBiomes;
 import biomesoplenty.api.biome.IExtendedBiome;
-import net.minecraftforge.fml.common.Loader;
+import gregtech.api.util.Mods;
 
 public class SuSyWorldLoader {
 
     public static void init() {
-        if (Loader.isModLoaded("biomesoplenty")) { // TODO GT2.8+: GTValues.MODID_BOP
+        if (Mods.BiomesOPlenty.isModLoaded()) {
             BOPBiomes.REG_INSTANCE.getPresentBiomes().forEach(biome -> {
                 IExtendedBiome actualBiome = BOPBiomes.REG_INSTANCE.getExtendedBiome(biome);
                 if (actualBiome != null) {
