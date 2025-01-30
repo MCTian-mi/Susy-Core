@@ -113,7 +113,7 @@ public class StockFilter implements INBTSerializable<NBTTagCompound>, Predicate<
     @NotNull
     public ModularPanel createPopupPanel(PanelSyncManager syncManager) { // TODO: loc
         return Mui2MetaTileEntity.createPopupPanel("simple_stock_filter", 86, 101).padding(4)
-                .child(IKey.str("Stock Filter").asWidget().pos(5, 5))
+                .child(IKey.str("susy.gui.stock_interactor.title.stock_filter").asWidget().pos(5, 5))
                 .child(createWidgets(syncManager).top(22));
     }
 

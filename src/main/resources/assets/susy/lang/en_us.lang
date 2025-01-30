@@ -877,9 +877,6 @@ gregtech.block_group_members.latex_logs.name=Rubber Log
 
 
 # Stock Interfaces
-susy.stock_interfaces.pull=%s will try to pull from trains.
-susy.stock_interfaces.push=%s will try to push to trains.
-
 gregtech.machine.stock_controller.name=Locomotive Controller
 susy.stock_interfaces.locomotive_controller.description=Controls nearby locomotives thrust and break depending on redstone input
 
@@ -895,13 +892,15 @@ susy.stock_interfaces.item_exchanger.description=Transfers items in and out of n
 gregtech.machine.stock_content_reader.name=Stock Reader
 susy.stock_interfaces.stock_reader.description=Outputs redstone signal based on the inventory/tank of the stock in front of it
 
-susy.gui.stock_filter.filter_button.tooltip.enabled=Will interact with %s
-susy.gui.stock_filter.filter_button.tooltip.disabled=Will not interact with %s
-susy.gui.stock_interactor.render_bounding_box.tooltip.enabled=Render Interaction Area
-susy.gui.stock_interactor.render_bounding_box.tooltip.disabled=Render Interaction Area
+susy.gui.stock_interactor.button.render_bounding_box.tooltip.enabled=Render Interaction Area
+susy.gui.stock_interactor.button.render_bounding_box.tooltip.disabled=Render Interaction Area
 
-susy.machine.stock_interactor.tab.filter=Stock Filter
-susy.machine.stock_interactor.tab.config=Config
+susy.gui.stock_interactor.button.stock_filter.tooltip=Open Stock Filter GUI
+susy.gui.stock_interactor.button.controller_setting.tooltip=Open Controller Settings GUI
+susy.gui.stock_interactor.button.render_bounding_box.tooltip=Render Interaction Area
+
+susy.gui.stock_interactor.title.stock_filter=Stock Filter
+susy.gui.stock_interactor.title.controller_setting=Controller Settings
 
 # Extra recipe info
 susy.recipe.dimensions=Dimensions: %s

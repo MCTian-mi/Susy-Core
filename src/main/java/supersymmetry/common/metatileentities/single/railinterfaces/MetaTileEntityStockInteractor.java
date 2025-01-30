@@ -152,14 +152,16 @@ public abstract class MetaTileEntityStockInteractor extends Mui2MetaTileEntity i
                                 .marginBottom(2).widthRel(1f)
                                 .child(new ToggleButton()
                                         .overlay(SusyGuiTextures.RENDER_AREA_OVERLAY.asIcon().size(16))
+                                        .addTooltipLine(IKey.lang("susy.gui.stock_interactor.button.render_bounding_box.tooltip").get())
                                         .value(renderBoundingBoxValue))
-                                .child(IKey.lang("Render AABB").asWidget()
+                                .child(IKey.lang("susy.gui.stock_interactor.button.render_bounding_box").asWidget()
                                         .align(Alignment.CenterRight).height(18))
                         )
                         .child(Flow.row().coverChildrenHeight()
                                 .marginBottom(2).widthRel(1f)
                                 .child(new ButtonWidget<>()
                                         .overlay(SusyGuiTextures.FILTER_SETTINGS_OVERLAY.asIcon().size(16))
+                                        .addTooltipLine(IKey.lang("susy.gui.stock_interactor.button.stock_filter.tooltip"))
                                         .onMousePressed(mouseButton -> {
                                             if (!panel.isPanelOpen()) {
                                                 panel.openPanel();
@@ -169,7 +171,7 @@ public abstract class MetaTileEntityStockInteractor extends Mui2MetaTileEntity i
                                             return true;
                                         })
                                 )
-                                .child(IKey.lang("Stock Filter").asWidget()
+                                .child(IKey.lang("susy.gui.stock_interactor.button.stock_filter").asWidget()
                                         .align(Alignment.CenterRight).height(18))
                         )
                 );
