@@ -1,7 +1,5 @@
 package supersymmetry.common.metatileentities.multi.electric;
 
-import gregicality.multiblocks.common.block.GCYMMetaBlocks;
-import gregicality.multiblocks.common.block.blocks.BlockUniqueCasing;
 import gregtech.api.capability.GregtechDataCodes;
 import gregtech.api.metatileentity.MetaTileEntity;
 import gregtech.api.metatileentity.interfaces.IGregTechTileEntity;
@@ -28,13 +26,19 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
+import software.bernie.example.registry.BlockRegistry;
 import supersymmetry.client.renderer.textures.SusyTextures;
 
 import static supersymmetry.api.metatileentity.multiblock.SuSyPredicates.metalSheets;
 
 public class MetaTileEntityEccentricRollCrusher extends RecipeMapMultiblockController {
 
-    protected byte metalSheet = -1;
+    /**
+     * Identifier used for input hatch base textures
+     * -1 for None, 0~15 for normal metal sheets and 16~31 for large ones.
+     * This is getting on server-side and sync to client side later.
+     */
+    protected byte metalSheetIdentifier = -1;
 
     public MetaTileEntityEccentricRollCrusher(ResourceLocation metaTileEntityId, RecipeMap<?> recipeMap) {
         super(metaTileEntityId, recipeMap);
@@ -53,7 +57,7 @@ public class MetaTileEntityEccentricRollCrusher extends RecipeMapMultiblockContr
     }
 
     private static IBlockState getRollState() { // TODO: unique casing!!!
-        return GCYMMetaBlocks.UNIQUE_CASING.getState(BlockUniqueCasing.UniqueCasingType.CRUSHING_WHEELS);
+        return BlockRegistry.BOTARIUM_BLOCK.getDefaultState();
     }
 
     private static IBlockState getJewState() { // TODO: unique casing.
@@ -76,7 +80,6 @@ public class MetaTileEntityEccentricRollCrusher extends RecipeMapMultiblockContr
         TraceabilityPredicate metalSheets = metalSheets();
 
         return FactoryBlockPattern.start()
-                //      12345678    12345678    12345678    12345678    12345678
                 .aisle("  CCDC  ", "  CCGC  ", "  CCMX  ", "    MMX ", "     MMX")
                 .aisle("CCCJ#CD ", "CGJ#R#C ", "  J##M  ", "   J##M ", "     ##N")
                 .aisle("  PJ#CD ", " PJ#R#C ", " HJ##M  ", " H J##M ", "     ##N")
@@ -84,7 +87,8 @@ public class MetaTileEntityEccentricRollCrusher extends RecipeMapMultiblockContr
                 .aisle("  CCDC  ", "  CSGC  ", "  CCMX  ", "    MMX ", "     MMX")
                 .where(' ', any())
                 .where('#', air())
-                .where('C', casings.or(autoAbilities(true, true, false, true, true, true, false)))
+                .where('C', casings.or(autoAbilities(true, true,
+                        false, true, true, true, false)))
                 .where('D', casings.or(abilities(MultiblockAbility.EXPORT_ITEMS)))
                 .where('G', states(getGearBoxState()))
                 .where('P', states(getPipeCasingState()))
@@ -100,28 +104,31 @@ public class MetaTileEntityEccentricRollCrusher extends RecipeMapMultiblockContr
 
     protected void formStructure(PatternMatchContext context) {
         super.formStructure(context);
-        this.metalSheet = context.get("MetalSheet");
+        this.metalSheetIdentifier = context.get("MetalSheet");
         World world = getWorld();
         if (world != null && !world.isRemote) {
-            writeCustomData(GregtechDataCodes.UPDATE_COLOR, buf -> buf.writeByte(metalSheet));
+            writeCustomData(GregtechDataCodes.UPDATE_COLOR,
+                    buf -> buf.writeByte(metalSheetIdentifier));
         }
     }
 
     @Override
     public void invalidateStructure() {
         super.invalidateStructure();
-        this.metalSheet = -1;
+        this.metalSheetIdentifier = -1;
         World world = getWorld();
         if (world != null && !world.isRemote) {
-            writeCustomData(GregtechDataCodes.UPDATE_COLOR, buf -> buf.writeByte(metalSheet));
+            writeCustomData(GregtechDataCodes.UPDATE_COLOR,
+                    buf -> buf.writeByte(metalSheetIdentifier));
         }
     }
 
     @Override
     @SideOnly(Side.CLIENT)
     public ICubeRenderer getBaseTexture(IMultiblockPart part) {
-        if (metalSheet >= 0 && part instanceof IMultiblockAbilityPart<?> abilityPart && abilityPart.getAbility() == MultiblockAbility.IMPORT_ITEMS) {
-            return SusyTextures.METAL_SHEETS[metalSheet];
+        if (metalSheetIdentifier >= 0 && part instanceof IMultiblockAbilityPart<?> abilityPart
+                && abilityPart.getAbility() == MultiblockAbility.IMPORT_ITEMS) {
+            return SusyTextures.METAL_SHEETS[metalSheetIdentifier];
         }
         return Textures.SOLID_STEEL_CASING;
     }
@@ -129,7 +136,7 @@ public class MetaTileEntityEccentricRollCrusher extends RecipeMapMultiblockContr
     @Override
     public void receiveCustomData(int dataId, PacketBuffer buf) {
         if (dataId == GregtechDataCodes.UPDATE_COLOR) {
-            this.metalSheet = buf.readByte();
+            this.metalSheetIdentifier = buf.readByte();
         } else {
             super.receiveCustomData(dataId, buf);
         }
@@ -138,13 +145,13 @@ public class MetaTileEntityEccentricRollCrusher extends RecipeMapMultiblockContr
     @Override
     public void writeInitialSyncData(PacketBuffer buf) {
         super.writeInitialSyncData(buf);
-        buf.writeByte(metalSheet);
+        buf.writeByte(metalSheetIdentifier);
     }
 
     @Override
     public void receiveInitialSyncData(PacketBuffer buf) {
         super.receiveInitialSyncData(buf);
-        this.metalSheet = buf.readByte();
+        this.metalSheetIdentifier = buf.readByte();
     }
 
     @Override
