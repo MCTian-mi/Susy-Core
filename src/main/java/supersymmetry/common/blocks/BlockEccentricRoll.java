@@ -27,10 +27,10 @@ import supersymmetry.common.tileentities.TileEntityEccentricRoll;
 import javax.annotation.Nonnull;
 
 import static gregtech.common.items.tool.rotation.CustomBlockRotations.BLOCK_DIRECTIONAL_BEHAVIOR;
+import static net.minecraft.block.BlockDirectional.FACING;
 
 public class BlockEccentricRoll extends VariantBlock<BlockEccentricRoll.RollType> implements ITileEntityProvider {
 
-    public static final PropertyDirection FACING = PropertyDirection.create("facing");
     public static final PropertyBool ACTIVE = PropertyBool.create("active");
 
     public BlockEccentricRoll() {
@@ -96,12 +96,12 @@ public class BlockEccentricRoll extends VariantBlock<BlockEccentricRoll.RollType
     public IBlockState getStateFromMeta(int meta) {
         // (InActive) North... -> 0...=5
         // (Active) North... -> 6...=11
-        int facing = meta / 6;
-        boolean active = meta % 6 != 0;
+        int facing = meta % 6;
+        boolean active = meta > 5;
 
         EnumFacing enumfacing = EnumFacing.byIndex(facing);
         return getDefaultState()
-                .withProperty(VARIANT, RollType.STEEL)
+                .withProperty(VARIANT, VALUES[meta / 12])
                 .withProperty(FACING, enumfacing)
                 .withProperty(ACTIVE, active);
     }
