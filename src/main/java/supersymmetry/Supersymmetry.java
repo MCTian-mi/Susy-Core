@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import supersymmetry.api.capability.SuSyCapabilities;
 import supersymmetry.api.metatileentity.MetaTileEntityGuiFactory;
 import supersymmetry.api.sound.SusySounds;
+import supersymmetry.client.renderer.handler.DrillHeadRenderer;
 import supersymmetry.client.renderer.handler.EccentricRollRenderer;
 import supersymmetry.common.CommonProxy;
 import supersymmetry.common.SusyMetaEntities;
@@ -30,6 +31,7 @@ import supersymmetry.common.covers.SuSyCoverBehaviors;
 import supersymmetry.common.event.DimensionBreathabilityHandler;
 import supersymmetry.common.item.SuSyMetaItems;
 import supersymmetry.common.metatileentities.SuSyMetaTileEntities;
+import supersymmetry.common.tileentities.TileEntityDrillHead;
 import supersymmetry.common.tileentities.TileEntityEccentricRoll;
 import supersymmetry.loaders.SuSyIRLoader;
 
@@ -99,5 +101,6 @@ public class Supersymmetry {
     @Mod.EventHandler
     public void registerRenderers(FMLPreInitializationEvent event) {
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityEccentricRoll.class, new EccentricRollRenderer());
+        ClientRegistry.bindTileEntitySpecialRenderer(TileEntityDrillHead.class, new DrillHeadRenderer());
     }
 }

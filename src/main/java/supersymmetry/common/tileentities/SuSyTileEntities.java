@@ -10,6 +10,7 @@ public class SuSyTileEntities {
 
     public static void register() {
         registerTileEntity(TileEntityEccentricRoll.class, "eccentric_roll");
+        registerTileEntity(TileEntityDrillHead.class, "drill_head");
     }
 
     private static void registerTileEntity(@NotNull Class<? extends TileEntity> teClazz, @NotNull String name) {
