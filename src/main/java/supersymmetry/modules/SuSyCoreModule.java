@@ -21,7 +21,7 @@ public class SuSyCoreModule implements IGregTechModule {
 
     @Override
     public @NotNull Logger getLogger() {
-        return SusyLog.logger;
+        return SusyLog. logger;
     }
 
     @Override
