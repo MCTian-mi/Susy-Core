@@ -21,6 +21,12 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
+      - name: Debug SSH key
+        run: |
+          ls -la ~/.ssh
+          cat ~/.ssh/id_ed25519 | head
+          ssh -i ~/.ssh/id_ed25519 -T git@github.com || true
+
       - name: Checkout code
         uses: actions/checkout@v5
         with:
