@@ -17,7 +17,7 @@ import supersymmetry.common.network.SPacketRemoveFluidState;
                 name = "SuSy Core",
                 description = "Core module of SuSy Core, so this should be called SuSy Core Core ngl.",
                 coreModule = true)
-public class SuSyCoreModule implements IGregTechModule {
+public class SuSyCoreModule     implements IGregTechModule {
 
     @Override
     public @NotNull Logger getLogger() {
