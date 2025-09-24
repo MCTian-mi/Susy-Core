@@ -26,7 +26,7 @@ public class SuSyCoreModule implements IGregTechModule {
 
     @Override
     public void registerPackets() {
-        GregTechAPI     .networkHandler.registerPacket(SPacketRemoveFluidState.class);
+        GregTechAPI      .networkHandler.registerPacket(SPacketRemoveFluidState.class);
         GregTechAPI.    networkHandler.registerPacket(SPacketFirstJoin.class);
         getLogger() .info("Hey");
     }
