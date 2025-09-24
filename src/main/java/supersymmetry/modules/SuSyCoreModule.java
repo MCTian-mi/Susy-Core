@@ -17,17 +17,17 @@ import supersymmetry.common.network.SPacketRemoveFluidState;
                 name = "SuSy Core",
                 description = "Core module of SuSy Core, so this should be called SuSy Core Core ngl.",
                 coreModule = true)
-public class SuSyCoreModule     implements IGregTechModule {
+public class SuSyCoreModule implements IGregTechModule {
 
     @Override
     public @NotNull Logger getLogger() {
-        return SusyLog.     logger;
+        return SusyLog.logger;
     }
 
     @Override
     public void registerPackets() {
-        GregTechAPI         .networkHandler.registerPacket(SPacketRemoveFluidState.class);
-        GregTechAPI.    networkHandler.registerPacket(SPacketFirstJoin.class);
-        getLogger() .info("Hey");
+        GregTechAPI.networkHandler.registerPacket(SPacketRemoveFluidState.class);
+        GregTechAPI.networkHandler.registerPacket(SPacketFirstJoin.class);
+        getLogger().info("Hey");
     }
 }
