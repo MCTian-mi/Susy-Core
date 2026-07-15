@@ -195,5 +195,7 @@ public final class SusyTagPrefixes {
             .generateItem(true)
             .generationCondition(mat -> mat.hasFlag(SuSyMaterialFlags.GENERATE_SPUTTERING_TARGET));
 
+    public static void init() {}
+
     private SusyTagPrefixes() {}
 }

@@ -37,7 +37,7 @@ public class SuSyAddon implements IGTAddon {
     @Override
     public void registerTagPrefixes() {
         // Touch the holder so its static TagPrefix fields initialize + self-register.
-        SusyTagPrefixes.class.getName();
+        SusyTagPrefixes.init();
     }
 
     @Override
