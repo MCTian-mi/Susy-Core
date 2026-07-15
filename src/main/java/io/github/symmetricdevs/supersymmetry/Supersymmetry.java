@@ -3,6 +3,7 @@ package io.github.symmetricdevs.supersymmetry;
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyRecipeTypes;
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyWorldgenRecipeTypes;
+import io.github.symmetricdevs.supersymmetry.common.data.SusyBlocks;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyCreativeModeTabs;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyMachines;
 import io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials;
@@ -56,7 +57,10 @@ public class Supersymmetry {
         SusyCreativeModeTabs.init();
         SusyRegistration.REGISTRATE.creativeModeTab(SusyCreativeModeTabs.SUPERSYMMETRY);
 
-        // Content holders (added in later phases: blocks, items, machines, ...).
+        // Content holders (added in later phases: items, covers, ...). Blocks register
+        // here (before registerRegistrate) — the 4c casing foundation the multiblocks
+        // reference.
+        SusyBlocks.init();
 
         // Register for the material lifecycle events fired on the mod bus
         // (MaterialRegistryEvent / MaterialEvent / PostMaterialEvent below).
