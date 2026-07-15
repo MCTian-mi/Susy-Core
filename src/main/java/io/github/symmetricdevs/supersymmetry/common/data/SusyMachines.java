@@ -15,9 +15,13 @@ import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
+import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
+import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import com.gregtechceu.gtceu.api.registry.registrate.MachineBuilder;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
+import com.gregtechceu.gtceu.common.data.machines.GTMachineUtils;
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.EnergyHatchPartMachine;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.FluidHatchPartMachine;
@@ -25,6 +29,11 @@ import com.gregtechceu.gtceu.common.machine.multiblock.part.ItemBusPartMachine;
 import com.gregtechceu.gtceu.common.machine.storage.CrateMachine;
 import com.gregtechceu.gtceu.common.machine.storage.DrumMachine;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
+
+import io.github.symmetricdevs.supersymmetry.common.machine.electric.CatalystSimpleMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.electric.ContinuousSimpleMachine;
+
+import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.fluids.FluidType;
@@ -86,6 +95,24 @@ public final class SusyMachines {
     public static final it.unimi.dsi.fastutil.ints.Int2IntFunction defaultTankSizeFunction = tier ->
         (tier <= GTValues.LV ? 8 : tier == GTValues.MV ? 12 : tier == GTValues.HV ? 16 : tier == GTValues.EV ? 32 : 64)
                 * FluidType.BUCKET_VOLUME;
+
+    /** Reactor-line tank sizing (1.12.2 {@code SuSyUtility.reactorTankSizeFunction}), mB. */
+    public static final it.unimi.dsi.fastutil.ints.Int2IntFunction reactorTankSizeFunction = tier ->
+        tier <= GTValues.LV ? 12000 : tier == GTValues.MV ? 16000 : tier == GTValues.HV ? 20000
+                : tier == GTValues.EV ? 36000 : 64000;
+
+    /** Collector tank sizing (1.12.2 {@code SuSyUtility.collectorTankSizeFunction}), mB. */
+    public static final it.unimi.dsi.fastutil.ints.Int2IntFunction collectorTankSizeFunction = tier ->
+        tier <= GTValues.LV ? 16000 : tier == GTValues.MV ? 24000 : tier == GTValues.HV ? 32000 : 64000;
+
+    /** Bulk tank sizing (1.12.2 {@code SuSyUtility.bulkTankSizeFunction}), mB. */
+    public static final it.unimi.dsi.fastutil.ints.Int2IntFunction bulkTankSizeFunction = tier ->
+        tier <= GTValues.LV ? 12000 : tier == GTValues.MV ? 18000 : tier == GTValues.HV ? 24000
+                : tier == GTValues.EV ? 48000 : 64000;
+
+    /** Bigger "large" tank sizing (GTCEu {@code GTMachineUtils.largeTankSizeFunction}), mB. */
+    public static final it.unimi.dsi.fastutil.ints.Int2IntFunction largeTankSizeFunction = tier ->
+        (tier <= GTValues.LV ? 32 : tier == GTValues.MV ? 48 : 64) * FluidType.BUCKET_VOLUME;
 
     // ==================================================================
     // Phase 4a — Storage: drums, plastic cans, crates, locked crates
@@ -246,6 +273,81 @@ public final class SusyMachines {
     // IParticleBeamProvider capability), dumping hatch, component scanner/redstone
     // controller (rocket scope). Deferred with rocketry/space.
 
+    // ==================================================================
+    // Phase 4b — Simple tiered electric machines (LV..OpV)
+    // ==================================================================
+    // The bulk of 1.12.2's registerSimpleMTE / registerCatalystMTE /
+    // registerContinuousMachineMTE calls. Each becomes a MachineDefinition[] across
+    // ELECTRIC_TIERS. Custom SusyTextures overlays are not yet ported (Phase 6) — a
+    // GTCEu machine model is used as the placeholder per type.
+
+    // -- plain SimpleTieredMachine -------------------------------------------
+    public static final MachineDefinition[] VACUUM_CHAMBER = registerSimpleMachines("vacuum_chamber",
+            SuSyRecipeTypes.VACUUM_CHAMBER_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] BATCH_REACTOR = registerSimpleMachines("batch_reactor",
+            SuSyRecipeTypes.BATCH_REACTOR_RECIPES, reactorTankSizeFunction);
+    public static final MachineDefinition[] CRYSTALLIZER = registerSimpleMachines("crystallizer",
+            SuSyRecipeTypes.CRYSTALLIZER_RECIPES, reactorTankSizeFunction);
+    public static final MachineDefinition[] DRYER = registerSimpleMachines("dryer",
+            SuSyRecipeTypes.DRYER_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] ION_EXCHANGE_COLUMN = registerSimpleMachines("ion_exchange_column",
+            SuSyRecipeTypes.ION_EXCHANGE_COLUMN_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] ZONE_REFINER = registerSimpleMachines("zone_refiner",
+            SuSyRecipeTypes.ZONE_REFINER_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] TUBE_FURNACE = registerSimpleMachines("tube_furnace",
+            SuSyRecipeTypes.TUBE_FURNACE_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] UV_LIGHT_BOX = registerSimpleMachines("uv_light_box",
+            SuSyRecipeTypes.UV_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] CVD = registerSimpleMachines("cvd",
+            SuSyRecipeTypes.CVD_RECIPES, largeTankSizeFunction);
+    public static final MachineDefinition[] ION_IMPLANTER = registerSimpleMachines("ion_implanter",
+            SuSyRecipeTypes.ION_IMPLANTATION_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] ALD = registerSimpleMachines("ald",
+            SuSyRecipeTypes.ALD_RECIPES, largeTankSizeFunction);
+    public static final MachineDefinition[] SPUTTER_DEPOSITION = registerSimpleMachines("sputter_deposition",
+            SuSyRecipeTypes.SPUTTER_DEPOSITION_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] SCREEN_PRINTER = registerSimpleMachines("screen_printer",
+            SuSyRecipeTypes.SCREEN_PRINTER_RECIPES, defaultTankSizeFunction, GTValues.tiersBetween(GTValues.LV, GTValues.EV));
+    public static final MachineDefinition[] EVAPORATION_DEPOSITION = registerSimpleMachines("evaporation_deposition",
+            SuSyRecipeTypes.EVAPORATION_DEPOSITION_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] FLUID_COMPRESSOR = registerSimpleMachines("fluid_compressor",
+            SuSyRecipeTypes.FLUID_COMPRESSOR_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] FLUID_DECOMPRESSOR = registerSimpleMachines("fluid_decompressor",
+            SuSyRecipeTypes.FLUID_DECOMPRESSOR_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] WEAPONS_FACTORY = registerSimpleMachines("weapons_factory",
+            SuSyRecipeTypes.WEAPONS_FACTORY_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] ELECTROSTATIC_SEPARATOR = registerSimpleMachines("electrostatic_separator",
+            SuSyRecipeTypes.ELECTROSTATIC_SEPARATOR_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] POLISHING_MACHINE = registerSimpleMachines("polishing_machine",
+            SuSyRecipeTypes.POLISHING_MACHINE_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] TEXTILE_SPINNER = registerSimpleMachines("textile_spinner",
+            SuSyRecipeTypes.SPINNING_RECIPES, defaultTankSizeFunction);
+    public static final MachineDefinition[] RESISTANCE_FURNACE = registerSimpleMachines("resistance_furnace",
+            SuSyRecipeTypes.RESISTANCE_FURNACE_RECIPES, defaultTankSizeFunction);
+
+    // -- catalyst machines (CatalystSimpleMachine) ---------------------------
+    public static final MachineDefinition[] VULCANIZING_PRESS = registerCatalystMachines("vulcanizing_press",
+            SuSyRecipeTypes.VULCANIZATION_RECIPES, defaultTankSizeFunction, GTValues.tiersBetween(GTValues.LV, GTValues.EV));
+    public static final MachineDefinition[] ROASTER = registerCatalystMachines("roaster",
+            SuSyRecipeTypes.ROASTER_RECIPES, bulkTankSizeFunction);
+
+    // -- continuous machines (ContinuousSimpleMachine: catalyst + parallel) ---
+    public static final MachineDefinition[] CONTINUOUS_STIRRED_TANK_REACTOR = registerContinuousMachines(
+            "continuous_stirred_tank_reactor", SuSyRecipeTypes.CSTR_RECIPES, reactorTankSizeFunction);
+    public static final MachineDefinition[] FIXED_BED_REACTOR = registerContinuousMachines("fixed_bed_reactor",
+            SuSyRecipeTypes.FIXED_BED_REACTOR_RECIPES, reactorTankSizeFunction);
+    public static final MachineDefinition[] TRICKLE_BED_REACTOR = registerContinuousMachines("trickle_bed_reactor",
+            SuSyRecipeTypes.TRICKLE_BED_REACTOR_RECIPES, reactorTankSizeFunction);
+    public static final MachineDefinition[] BUBBLE_COLUMN_REACTOR = registerContinuousMachines(
+            "bubble_column_reactor", SuSyRecipeTypes.BUBBLE_COLUMN_REACTOR_RECIPES, reactorTankSizeFunction);
+
+    // TODO)) Phase 4b remainder: 6 steam machines (vulcanizing_press/roaster/mixer/
+    // vacuum_chamber/batch_reactor/distiller bronze+steel), generators (fuel cell,
+    // single combustion), and the pseudo-multi latex collectors — need the Modern
+    // steam/generator bases. Single-slot bespoke singles (phase_separator,
+    // bath_condenser, latex_collector, curtain_coater, milling) port with their
+    // bespoke logic.
+
     public static void init() {}
 
     private SusyMachines() {}
@@ -270,6 +372,68 @@ public final class SusyMachines {
             definitions[tier] = builder.apply(tier, register);
         }
         return definitions;
+    }
+
+    /**
+     * One {@link SimpleTieredMachine} per tier running {@code recipeType} with
+     * stock non-perfect overclocking. Mirrors {@code GTMachineUtils.registerSimpleMachines}.
+     * TODO)) Phase 6: point {@code workableTieredHullModel} at the SuSy machine
+     * overlay textures (1.12.2 {@code SusyTextures}); GTCEu's hull model is the
+     * placeholder.
+     */
+    public static MachineDefinition[] registerSimpleMachines(String name,
+            GTRecipeType recipeType, Int2IntFunction tankScalingFunction, int... tiers) {
+        return registerTieredMachines(name,
+                (holder, tier) -> new SimpleTieredMachine(holder, tier, tankScalingFunction),
+                (tier, builder) -> simpleTieredBuilder(name, recipeType, tankScalingFunction, tier, builder),
+                tiers);
+    }
+
+    /** {@code registerSimpleMachines} across {@link #ELECTRIC_TIERS}. */
+    public static MachineDefinition[] registerSimpleMachines(String name,
+            GTRecipeType recipeType, Int2IntFunction tankScalingFunction) {
+        return registerSimpleMachines(name, recipeType, tankScalingFunction, ELECTRIC_TIERS);
+    }
+
+    /**
+     * One {@link CatalystSimpleMachine} per tier — the recipe modifier lives in the
+     * machine's {@code doModifyRecipe} (catalyst gating + discount + yield on top of
+     * the base non-perfect OC).
+     */
+    public static MachineDefinition[] registerCatalystMachines(String name,
+            GTRecipeType recipeType, Int2IntFunction tankScalingFunction, int... tiers) {
+        return registerTieredMachines(name,
+                (holder, tier) -> new CatalystSimpleMachine(holder, tier, tankScalingFunction),
+                (tier, builder) -> simpleTieredBuilder(name, recipeType, tankScalingFunction, tier, builder),
+                tiers);
+    }
+
+    /**
+     * One {@link ContinuousSimpleMachine} per tier — catalyst behaviour plus SuSy
+     * pure-parallel batching, both applied in the machine's {@code doModifyRecipe}.
+     */
+    public static MachineDefinition[] registerContinuousMachines(String name,
+            GTRecipeType recipeType, Int2IntFunction tankScalingFunction) {
+        return registerTieredMachines(name,
+                (holder, tier) -> new ContinuousSimpleMachine(holder, tier, tankScalingFunction),
+                (tier, builder) -> simpleTieredBuilder(name, recipeType, tankScalingFunction, tier, builder),
+                ELECTRIC_TIERS);
+    }
+
+    /** Shared builder body for simple/catalyst/continuous tiered machines. */
+    private static MachineDefinition simpleTieredBuilder(String name, GTRecipeType recipeType,
+            Int2IntFunction tankScalingFunction, int tier, MachineBuilder<MachineDefinition, ?> builder) {
+        return builder
+                .langValue("%s %s %s".formatted(GTValues.VLVH[tier], FormattingUtil.toEnglishName(name),
+                        GTValues.VLVT[tier]))
+                .editableUI(SimpleTieredMachine.EDITABLE_UI_CREATOR.apply(SuSyValues.susyId(name), recipeType))
+                .rotationState(RotationState.NON_Y_AXIS)
+                .recipeType(recipeType)
+                .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+                .workableTieredHullModel(GTCEu.id("block/machines/" + name))
+                .tooltips(GTMachineUtils.workableTiered(tier, GTValues.V[tier], GTValues.V[tier] * 64, recipeType,
+                        tankScalingFunction.applyAsInt(tier), true))
+                .register();
     }
 
     /** Drum (fluid storage barrel). Mirrors {@code GTMachineUtils.registerDrum}. */
