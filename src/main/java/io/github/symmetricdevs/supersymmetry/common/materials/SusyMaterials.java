@@ -5,6 +5,7 @@ import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.DustProperty;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.FluidPipeProperties;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.FluidProperty;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.IMaterialProperty;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.IngotProperty;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.OreProperty;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
@@ -107,68 +108,69 @@ public class SusyMaterials {
         GTMaterials.Quartzite.removeProperty(PropertyKey.ORE);
         GTMaterials.Mica.removeProperty(PropertyKey.ORE);
 
+        // Deliberate override: 1.12.2 explicitly replaced Lead's fluid-pipe stats,
+        // so this one intentionally removes-then-sets rather than fill-only.
         GTMaterials.Lead.removeProperty(PropertyKey.FLUID_PIPE);
         GTMaterials.Lead.setProperty(PropertyKey.FLUID_PIPE,
                 new FluidPipeProperties(1200, 8, true, true, false, false, 1));
 
         // Add dusts and fluids for elements that do not have them
-        GTMaterials.Iodine.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Scandium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Germanium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Selenium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Bromine.setProperty(PropertyKey.FLUID,
+        putProperty(GTMaterials.Iodine, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Scandium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Germanium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Selenium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Bromine, PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-        GTMaterials.Rubidium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Strontium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Zirconium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Technetium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Tellurium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Praseodymium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Promethium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Gadolinium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Terbium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Dysprosium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Holmium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Erbium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Thulium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Ytterbium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Hafnium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Rhenium.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Thallium.setProperty(PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Rubidium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Strontium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Zirconium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Technetium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Tellurium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Praseodymium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Promethium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Gadolinium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Terbium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Dysprosium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Holmium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Erbium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Thulium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Ytterbium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Hafnium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Rhenium, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Thallium, PropertyKey.DUST, new DustProperty());
 
-        GTMaterials.CalciumChloride.setProperty(PropertyKey.FLUID,
+        putProperty(GTMaterials.CalciumChloride, PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-        GTMaterials.MagnesiumChloride.setProperty(PropertyKey.FLUID,
+        putProperty(GTMaterials.MagnesiumChloride, PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-        GTMaterials.RockSalt.setProperty(PropertyKey.FLUID,
+        putProperty(GTMaterials.RockSalt, PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-        GTMaterials.Salt.setProperty(PropertyKey.FLUID,
+        putProperty(GTMaterials.Salt, PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-        GTMaterials.SodiumHydroxide.setProperty(PropertyKey.FLUID,
+        putProperty(GTMaterials.SodiumHydroxide, PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-        GTMaterials.Sodium.setProperty(PropertyKey.FLUID,
+        putProperty(GTMaterials.Sodium, PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
 
-        GTMaterials.Phosphorus.setProperty(PropertyKey.INGOT, new IngotProperty());
-        GTMaterials.Phosphorus.setProperty(PropertyKey.FLUID,
+        putProperty(GTMaterials.Phosphorus, PropertyKey.INGOT, new IngotProperty());
+        putProperty(GTMaterials.Phosphorus, PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder().temperature(317)));
         GTMaterials.Phosphorus.setMaterialARGB(0xfffed6);
 
         GTMaterials.HydrochloricAcid.setFormula("(H2O)(HCl)", true);
         GTMaterials.HydrofluoricAcid.setFormula("(H2O)(HF)", true);
 
-        GTMaterials.Dimethyldichlorosilane.removeProperty(PropertyKey.FLUID);
-        GTMaterials.Dimethyldichlorosilane.setProperty(PropertyKey.FLUID,
+        putProperty(GTMaterials.Dimethyldichlorosilane, PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
 
-        GTMaterials.Iron3Chloride.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Nitrochlorobenzene.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Dichlorobenzene.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Dichlorobenzidine.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.PhthalicAcid.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.DiphenylIsophtalate.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.Diaminobenzidine.setProperty(PropertyKey.DUST, new DustProperty());
-        GTMaterials.PolyvinylAcetate.setProperty(PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Iron3Chloride, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Nitrochlorobenzene, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Dichlorobenzene, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Dichlorobenzidine, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.PhthalicAcid, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.DiphenylIsophtalate, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.Diaminobenzidine, PropertyKey.DUST, new DustProperty());
+        putProperty(GTMaterials.PolyvinylAcetate, PropertyKey.DUST, new DustProperty());
 
         GTMaterials.Platinum.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
         GTMaterials.Cobalt.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
@@ -176,8 +178,21 @@ public class SusyMaterials {
         GTMaterials.Rhodium.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
         GTMaterials.Copper.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
 
-        GTMaterials.Electrum.setProperty(PropertyKey.ORE, new OreProperty());
+        putProperty(GTMaterials.Electrum, PropertyKey.ORE, new OreProperty());
 
         GTMaterials.Hydrogen.addFlags(MaterialFlags.FLAMMABLE);
+    }
+
+    /**
+     * Add a material property only if the material does not already have one.
+     * GTCEu-Modern's {@code Material.setProperty} throws if the property is already
+     * present (1.12.2 silently overwrote). Where the material already defines the
+     * property we keep the original values — these additions only fill in a
+     * property the material lacks, so an existing definition is never replaced.
+     */
+    private static <T extends IMaterialProperty> void putProperty(Material material, PropertyKey<T> key, T property) {
+        if (!material.hasProperty(key)) {
+            material.setProperty(key, property);
+        }
     }
 }

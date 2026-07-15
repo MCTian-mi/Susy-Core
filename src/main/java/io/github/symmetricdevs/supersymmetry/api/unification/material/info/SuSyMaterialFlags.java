@@ -69,10 +69,16 @@ public final class SuSyMaterialFlags {
      * property (and a molten fluid) but generate no Alloy Blast Smelter recipe —
      * they are produced in the continuous caster (a SuSy machine from a later
      * phase) instead. Maps the 1.12.2 GCYM-backed flag onto native API.
+     * <p>
+     * Only {@link PropertyKey#FLUID} is required: the alloys this is applied to
+     * (Aluminium Alloy 6061/7075) are {@code ingot().liquid()} with no explicit
+     * blast property, so {@code BLAST}/{@code ALLOY_BLAST} are not present at
+     * flag-verification time. The molten output and ABS recipe suppression are
+     * wired separately (the alloy-blast recipe producer is no-op'd; see
+     * {@code SuSyNoAlloyBlastRecipeProducer}).
      */
     public static final MaterialFlag CONTINUOUSLY_CAST = new MaterialFlag.Builder("continuously_cast")
-            .requireProps(PropertyKey.DUST, PropertyKey.FLUID, PropertyKey.ALLOY_BLAST)
-            .requireFlags(MaterialFlags.DISABLE_ALLOY_BLAST)
+            .requireProps(PropertyKey.FLUID)
             .build();
 
     public static final MaterialFlag GENERATE_PINS = new MaterialFlag.Builder("generate_pins")
