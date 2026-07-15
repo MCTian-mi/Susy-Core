@@ -45,7 +45,6 @@ val legacySourceExcludes = listOf(
     "common/event/",
     "common/faction/",
     "common/item/",
-    "common/metatileentities/",
     "common/mui/",
     "common/network/",
     "common/recipes/",
@@ -67,6 +66,21 @@ tasks.withType<JavaCompile>().configureEach {
     exclude("${susyPackage}common/CommonProxy.java")
     exclude("${susyPackage}common/EventHandlers.java")
     exclude("${susyPackage}common/SusyMetaEntities.java")
+    // Phase 4 machines: the legacy common/metatileentities/** tree is superseded by
+    // common/data/SusyMachines.java and is deleted as it is ported. Exclude only the
+    // legacy sources kept for reference in later sub-phases (4b/4c + deferred scope).
+    exclude("${susyPackage}common/metatileentities/SuSyMetaTileEntities.java") // 1.12.2 registry checklist
+    exclude("${susyPackage}common/metatileentities/logistics/**")
+    exclude("${susyPackage}common/metatileentities/multi/**")
+    exclude("${susyPackage}common/metatileentities/single/**")
+    exclude("${susyPackage}common/metatileentities/multiblockpart/MetaTileEntityBeamLineHatch.java")
+    exclude("${susyPackage}common/metatileentities/multiblockpart/MetaTileEntityComponentRedstoneController.java")
+    exclude("${susyPackage}common/metatileentities/multiblockpart/MetaTileEntityComponentScanner.java")
+    exclude("${susyPackage}common/metatileentities/multiblockpart/MetaTileEntityPrimitiveItemBus.java")
+    exclude("${susyPackage}common/metatileentities/multiblockpart/MetaTileEntityStrandBus.java")
+    exclude("${susyPackage}common/metatileentities/multiblockpart/SusyMetaTileEntityDumpingHatch.java")
+    exclude("${susyPackage}common/metatileentities/multiblockpart/SusyMetaTileEntityEnergyHatch.java")
+    exclude("${susyPackage}common/metatileentities/multiblockpart/SusyMetaTileEntitySubstationEnergyHatch.java")
     // Deferred ImmersiveRailroading bridge (no 1.20.1 IR port; rocketry/space scope).
     exclude("cam72cam/**")
 }

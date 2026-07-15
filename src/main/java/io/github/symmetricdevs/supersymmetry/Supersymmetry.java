@@ -4,6 +4,7 @@ import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyRecipeTypes;
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyWorldgenRecipeTypes;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyCreativeModeTabs;
+import io.github.symmetricdevs.supersymmetry.common.data.SusyMachines;
 import io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials;
 import io.github.symmetricdevs.supersymmetry.config.SusyConfig;
 
@@ -12,6 +13,7 @@ import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.PostMaterialEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.registry.MaterialRegistry;
+import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 
 import net.minecraft.resources.ResourceLocation;
@@ -40,8 +42,8 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 @Mod(Supersymmetry.MOD_ID)
 public class Supersymmetry {
 
-    public static final String MOD_ID = "supersymmetry";
-    public static final String NAME = "Supersymmetry";
+    public static final String MOD_ID = BuildConfig.MOD_ID;
+    public static final String MOD_NAME = BuildConfig.MOD_NAME;
 
     public static MaterialRegistry MATERIAL_REGISTRY;
 
@@ -65,6 +67,11 @@ public class Supersymmetry {
         // after the recipe_category registry is frozen.
         FMLJavaModLoadingContext.get().getModEventBus()
                 .addGenericListener(GTRecipeType.class, this::registerRecipeTypes);
+
+        // Machines register in the same window (they reference recipe types, so they
+        // must come after them).
+        FMLJavaModLoadingContext.get().getModEventBus()
+                .addGenericListener(MachineDefinition.class, this::registerMachines);
 
         // Hook the single GTRegistrate to the mod event bus.
         SusyRegistration.REGISTRATE.registerRegistrate();
@@ -93,5 +100,14 @@ public class Supersymmetry {
     public void registerRecipeTypes(GTCEuAPI.RegisterEvent<ResourceLocation, GTRecipeType> event) {
         SuSyRecipeTypes.init();
         SuSyWorldgenRecipeTypes.init();
+    }
+
+    /**
+     * Fired by GTCEu during its registration window, after recipe types. Force
+     * class-load of {@link SusyMachines} so its static fields self-register every
+     * {@link MachineDefinition} into {@code GTRegistries.MACHINES}.
+     */
+    public void registerMachines(GTCEuAPI.RegisterEvent<ResourceLocation, MachineDefinition> event) {
+        SusyMachines.init();
     }
 }
