@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "supersymmetry:block/machine/rotary_kiln_v2",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/machine/rotary_kiln_v2"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/machine/rotary_kiln_v2",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/machine/rotary_kiln_v2",
+      "y": 270
+    }
+  }
+}

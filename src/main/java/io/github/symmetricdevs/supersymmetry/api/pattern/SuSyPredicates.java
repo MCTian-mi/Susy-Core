@@ -81,6 +81,15 @@ public final class SuSyPredicates {
     }
 
     /**
+     * Pure replacement for legacy axial predicates such as {@code hiddenGearTooth}.
+     * The post-form fixup applies the resolved direction's axis to a
+     * {@link net.minecraft.world.level.block.RotatedPillarBlock}.
+     */
+    public static TraceabilityPredicate axialOrientation(Block expectedBlock, RelativeDirection direction) {
+        return recordOrientation(expectedBlock, direction);
+    }
+
+    /**
      * Curtain-coater conveyor predicate. Only one belt tier exists in the port, so the
      * legacy same-type check is implicit; the important behaviour is recording the
      * controller-relative travel direction for the post-form facing fixup.

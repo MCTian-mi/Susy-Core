@@ -37,6 +37,7 @@ import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.fluids.FluidType;
 
 import java.util.Locale;
@@ -66,6 +67,7 @@ import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.MagneticR
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SingleColumnCryogenicDistillationPlantMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyOrientationFixupMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSySinteringOvenMachine;
+import java.util.ArrayList;
 import java.util.Comparator;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_PTFE_INERT;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.MACHINE_CASING_ULV;
@@ -818,6 +820,52 @@ public static final MultiblockMachineDefinition PRESSURE_SWING_ADSORBER = REGIST
             })
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/blast_furnace")) // TODO Phase 6: real overlay is machines/multiblocks/rotary_kiln (SusyTextures.ROTARY_KILN_OVERLAY)
+            .register();
+
+    // ---- rotary_kiln_v2 ----
+    public static final MultiblockMachineDefinition ROTARY_KILN_V2 = REGISTRATE
+            .multiblock("rotary_kiln_v2", SuSyOrientationFixupMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.ROTARY_KILN_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> {
+                TraceabilityPredicate casing = Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                        .setMinGlobalLimited(6);
+                TraceabilityPredicate maintenance = Predicates.abilities(PartAbility.MAINTENANCE)
+                        .setExactLimit(1);
+                return FactoryBlockPattern.start()
+                        .aisle("F         F", "LD   B   DR", "LDCCCBCCCDR", "GD   B   DG")
+                        .aisle("     F     ", "LDCCCBCCCDR", "L#########R", "LDCCCBCCCDR")
+                        .aisle("F         F", "LD   B   DR", "LDCCCSCCCDR", "GD   B   DG")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()))
+                        .where('C', Predicates.blocks(SusyBlocks.WEAR_RESISTANT_LINED_MILL_SHELL.get()))
+                        .where('D', SuSyPredicates.axialOrientation(
+                                SusyBlocks.STEEL_GIRTH_GEAR_TOOTH.get(), RelativeDirection.LEFT))
+                        .where('F', Predicates.frames(GTMaterials.Steel))
+                        .where('G', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
+                        .where('L', casing
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        false, false, true, false, false, true))
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        true, false, false, false, false, false).setMinGlobalLimited(0))
+                                .or(maintenance))
+                        .where('R', casing
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        false, false, false, true, true, false))
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        true, false, false, false, false, false).setMinGlobalLimited(0))
+                                .or(maintenance))
+                        .where(' ', Predicates.any())
+                        .where('#', Predicates.air())
+                        .build();
+            })
+            // TODO)) Phase 6: hide the rotating shell/gear blocks and restore the
+            // Gecko-equivalent drum/gear animation and real rotary-kiln overlay.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
             .register();
 
     // ---- scrap_recycler (GT casings only; register even though in rocket pkg) ----
@@ -1718,6 +1766,56 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
             // is intentionally not carried forward.
             // TODO)) Decide whether attrition recipes should gain explicit pure parallel.
             // TODO)) Phase 6: real abrasion-resistant CTM + ATTRITION_SCRUBBER_OVERLAY.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
+            .register();
+
+    public static final MultiblockMachineDefinition ECCENTRIC_ROLL_CRUSHER = REGISTRATE
+            .multiblock("eccentric_roll_crusher", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.ECCENTRIC_ROLL_CRUSHER_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> {
+                TraceabilityPredicate steelCasings = Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                        .setMinGlobalLimited(22);
+                ArrayList<Block> sheetBlocks = new ArrayList<>();
+                GTBlocks.METAL_SHEETS.values().forEach(entry -> sheetBlocks.add(entry.get()));
+                GTBlocks.LARGE_METAL_SHEETS.values().forEach(entry -> sheetBlocks.add(entry.get()));
+                TraceabilityPredicate metalSheets = SuSyPredicates.sameTypeVariant(
+                        "EccentricRollCrusherMetalSheet",
+                        "susy.multiblock.pattern.error.metal_sheets",
+                        sheetBlocks.toArray(Block[]::new));
+
+                return FactoryBlockPattern.start()
+                        .aisle("  CCDC  ", "  CCGC  ", "  CCMX  ", "    MMX ", "     MMX")
+                        .aisle("JJJJ#CD ", "JHJ#R#C ", "  J##M  ", "   J##M ", "     ##N")
+                        .aisle("  BJ#CD ", " BJ#R#C ", " PJ##M  ", " P J##M ", "     ##N")
+                        .aisle("JJJJ#CD ", "JHJ#R#C ", "  J##M  ", "   J##M ", "     ##N")
+                        .aisle("  CCDC  ", "  CSGC  ", "  CCMX  ", "    MMX ", "     MMX")
+                        .where(' ', Predicates.any())
+                        .where('#', Predicates.air())
+                        .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()))
+                        .where('C', steelCasings
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        true, false, false, false, false, false))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('D', steelCasings.or(Predicates.abilities(PartAbility.EXPORT_ITEMS)))
+                        .where('G', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
+                        .where('H', Predicates.blocks(SusyBlocks.HYDRAULIC_MECHANICAL_GEARBOX.get()))
+                        .where('J', Predicates.blocks(SusyBlocks.ABRASION_RESISTANT_CASING.get()))
+                        .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                        .where('R', Predicates.blocks(SusyBlocks.STEEL_ECCENTRIC_ROLL.get()))
+                        .where('X', Predicates.frames(GTMaterials.Steel))
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('M', metalSheets)
+                        .where('N', metalSheets.or(Predicates.abilities(PartAbility.IMPORT_ITEMS)))
+                        .build();
+            })
+            // TODO)) Phase 5: directional/active eccentric-roll block, reduced collision
+            // box, and active collision damage. Phase 6: roll animation, selected-sheet
+            // hatch appearance, and the dedicated controller overlay.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
             .register();

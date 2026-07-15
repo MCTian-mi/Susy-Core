@@ -5,6 +5,7 @@ import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMa
 
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import io.github.symmetricdevs.supersymmetry.api.pattern.SuSyPredicates;
@@ -54,9 +55,11 @@ public class SuSyOrientationFixupMachine extends WorkableElectricMultiblockMachi
                 var pos = fixup.getLeft();
                 var facing = SuSyPredicates.resolveFacing(this, fixup.getRight());
                 var state = level.getBlockState(pos);
-                var oriented = state.hasProperty(BlockStateProperties.FACING) ?
-                        SuSyPredicates.withFacing(state, facing) :
-                        SuSyPredicates.withHorizontalFacing(state, facing);
+                var oriented = state.hasProperty(RotatedPillarBlock.AXIS) ?
+                        state.setValue(RotatedPillarBlock.AXIS, facing.getAxis()) :
+                        state.hasProperty(BlockStateProperties.FACING) ?
+                                SuSyPredicates.withFacing(state, facing) :
+                                SuSyPredicates.withHorizontalFacing(state, facing);
                 if (oriented != state) {
                     level.setBlockAndUpdate(pos, oriented);
                 }

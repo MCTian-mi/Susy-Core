@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 
 import java.util.function.Supplier;
 
@@ -167,6 +168,20 @@ public final class SusyBlocks {
                 .register();
     }
 
+    /** Axial casing whose working axis is corrected after multiblock formation. */
+    private static BlockEntry<RotatedPillarBlock> createAxialOrientableCasingBlock(String name,
+                                                                                   ResourceLocation texture) {
+        return REGISTRATE.block(name, RotatedPillarBlock::new)
+                .initialProperties(() -> Blocks.IRON_BLOCK)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::solid)
+                .blockstate((ctx, prov) -> prov.axisBlock(ctx.get(), texture, texture))
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
     // Placeholder textures (guaranteed to exist in GTCEu). The real SuSy texture for
     // each block is recorded in a trailing TODO)) comment with its 1.12.2 path.
     private static final ResourceLocation TEX_STEEL = com.gregtechceu.gtceu.GTCEu
@@ -281,7 +296,7 @@ public final class SusyBlocks {
     public static final BlockEntry<Block> STEEL_DRILL_BIT = createCasingBlock("steel_drill_bit", TEX_STEEL); // TODO)) tex .../drill_bit/steel
     public static final BlockEntry<Block> STEEL_DRILL_HEAD = createCasingBlock("steel_drill_head", TEX_STEEL); // TODO)) tex .../drill_head/steel
     public static final BlockEntry<Block> STEEL_ECCENTRIC_ROLL = createCasingBlock("steel_eccentric_roll", TEX_STEEL); // TODO)) custom collision box + animated part (BlockEccentricRoll, IAnimatablePartBlock); tex .../eccentric_roll/steel
-    public static final BlockEntry<Block> STEEL_GIRTH_GEAR_TOOTH = createCasingBlock("steel_girth_gear_tooth", TEX_STEEL); // TODO)) rotatable (BlockGirthGearTooth, axial); tex .../girth_gear_tooth/steel
+    public static final BlockEntry<RotatedPillarBlock> STEEL_GIRTH_GEAR_TOOTH = createAxialOrientableCasingBlock("steel_girth_gear_tooth", TEX_STEEL); // TODO)) Phase 6: real translucent axial model; tex .../girth_gear_tooth/steel
     public static final BlockEntry<Block> LAUNCH_PAD = createCasingBlock("launch_pad", TEX_STEEL); // TODO)) rocket scope (BlockSupport); tex .../support/lv
 
     // Sintering bricks (SinteringOven). 1.12.2 active + magnetoplated flag. Register the

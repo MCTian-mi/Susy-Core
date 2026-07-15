@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "supersymmetry:block/machine/eccentric_roll_crusher",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/machine/eccentric_roll_crusher"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/machine/eccentric_roll_crusher",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/machine/eccentric_roll_crusher",
+      "y": 270
+    }
+  }
+}
