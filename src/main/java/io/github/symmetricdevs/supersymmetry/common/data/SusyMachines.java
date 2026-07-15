@@ -341,12 +341,41 @@ public final class SusyMachines {
     public static final MachineDefinition[] BUBBLE_COLUMN_REACTOR = registerContinuousMachines(
             "bubble_column_reactor", SuSyRecipeTypes.BUBBLE_COLUMN_REACTOR_RECIPES, reactorTankSizeFunction);
 
-    // TODO)) Phase 4b remainder: 6 steam machines (vulcanizing_press/roaster/mixer/
-    // vacuum_chamber/batch_reactor/distiller bronze+steel), generators (fuel cell,
-    // single combustion), and the pseudo-multi latex collectors — need the Modern
-    // steam/generator bases. Single-slot bespoke singles (phase_separator,
-    // bath_condenser, latex_collector, curtain_coater, milling) port with their
-    // bespoke logic.
+    // ==================================================================
+    // Phase 4b — Steam machines (bronze LP / steel HP pairs)
+    // ==================================================================
+    // 1.12.2 registerSimpleSteamMTE calls -> GTCEu registerSimpleSteamMachines
+    // (SimpleSteamMachine). Each field is a Pair<low-pressure bronze, high-pressure
+    // steel> MachineDefinition.
+    public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_VULCANIZING_PRESS =
+            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "vulcanizing_press",
+                    SuSyRecipeTypes.VULCANIZATION_RECIPES);
+    public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_ROASTER =
+            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "roaster", SuSyRecipeTypes.ROASTER_RECIPES);
+    public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_MIXER =
+            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "mixer",
+                    com.gregtechceu.gtceu.common.data.GTRecipeTypes.MIXER_RECIPES);
+    public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_VACUUM_CHAMBER =
+            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "vacuum_chamber",
+                    SuSyRecipeTypes.VACUUM_CHAMBER_RECIPES);
+    public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_BATCH_REACTOR =
+            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "batch_reactor",
+                    SuSyRecipeTypes.BATCH_REACTOR_RECIPES);
+    public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_DISTILLER =
+            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "distiller",
+                    com.gregtechceu.gtceu.common.data.GTRecipeTypes.DISTILLERY_RECIPES);
+
+    // TODO)) Phase 4b generators — these are bespoke RecipeLogic machines, not config:
+    //  - FuelCellGenerator (EV/IV): temperature simulation — preheat with hot gas to a
+    //    threshold before it generates; gate checkRecipe on temperature.
+    //  - SuSySingleCombustion (LV/MV/HV): lubricant + coolant tanks, drains per N ops,
+    //    lubricant boosts duration; gate on sufficient fluids + not energy-full.
+    // Both need a custom SimpleGeneratorMachine subclass with @Persisted state + a
+    // gating RecipeLogic (and their fluids — SuSyFluidFilters/lubricant/coolant are
+    // Phase 5). Port as bespoke machines; do NOT use registerSimpleGenerator.
+    //  - Steam boilers (SuSyCoalBoiler/SuSyLiquidBoiler/LargeBoiler/LargeHammer) and
+    //    pseudo-multi latex collectors port with the steam/boiler base + multiblock
+    //    scope (4c).
 
     public static void init() {}
 
