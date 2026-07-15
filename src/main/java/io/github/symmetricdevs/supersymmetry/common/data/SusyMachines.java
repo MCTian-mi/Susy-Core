@@ -56,6 +56,7 @@ import com.gregtechceu.gtceu.api.pattern.Predicates;
 import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
 import com.gregtechceu.gtceu.common.data.GTBlocks;
+import com.gregtechceu.gtceu.common.data.GCYMBlocks;
 import com.gregtechceu.gtceu.client.util.TooltipHelper;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.DistillationTowerMachine;
 import io.github.symmetricdevs.supersymmetry.api.recipes.logic.SuSyParallelLogic;
@@ -1520,6 +1521,148 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
             // TODO)) Phase 6: 1.12.2 front overlay was FLUID_COMPRESSOR_OVERLAY (solid steel casing base).
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/generator/large_combustion_engine"))
+            .register();
+
+    // ==================================================================
+    // Phase 4c Bucket D1: plain recipe multiblocks.
+    // Plain 1.12.2 RecipeMapMultiblockControllers with no bespoke logic — standard
+    // WorkableElectricMultiblockMachine + an overclock RecipeModifier. Textures are
+    // GTCEu placeholders pending Phase 6 (real SuSy paths recorded per machine).
+    // ==================================================================
+
+    // ---- advanced_arc_furnace (perfect OC: 1.12.2 MultiblockRecipeLogic(this,true)) ----
+    public static final MultiblockMachineDefinition ADVANCED_ARC_FURNACE = REGISTRATE
+            .multiblock("advanced_arc_furnace", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.ADVANCED_ARC_FURNACE_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+            .pattern(definition -> FactoryBlockPattern
+                    .start(RelativeDirection.RIGHT, RelativeDirection.FRONT, RelativeDirection.UP)
+                    .aisle(" AAA ", " AAA ", " EEE ", "     ")
+                    .aisle("AAAAA", "A#C#A", "E#C#E", " ACA ")
+                    .aisle("CAAAC", "C###C", "C###C", "CAAAC")
+                    .aisle("AAAAA", "A###A", "E###E", " AAA ")
+                    .aisle(" AAA ", " ASA ", " EEE ", "     ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('A', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()).setMinGlobalLimited(28)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes())))
+                    .where('C', Predicates.blocks(SusyBlocks.CARBON_ELECTRODE_ASSEMBLY.get()))
+                    .where('D', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .where('E', Predicates.blocks(GTBlocks.FIREBOX_STEEL.get()))
+                    .where(' ', Predicates.any())
+                    .where('#', Predicates.air())
+                    .build())
+            // TODO)) Phase 6: swap the front overlay to the real SuSy 'arc_furnace'
+            // overlay (1.12.2 getFrontOverlay() -> SusyTextures.ARC_FURNACE_OVERLAY);
+            // blast_furnace is the placeholder. Base = SOLID_STEEL_CASING.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    public static final MultiblockMachineDefinition ELECTRIC_DISCHARGE_MACHINE = REGISTRATE
+            .multiblock("electric_discharge_machine", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .recipeType(SuSyRecipeTypes.EDM_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .appearanceBlock(() -> GCYMBlocks.CASING_NONCONDUCTING.get())
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("CCCCC", "CCCCC", "CCCCC", "CCCCC", " CCC ")
+                    .aisle("CCCCC", "C C C", "C E C", "C C C", " CCC ")
+                    .aisle("CCCCC", "C   C", "C   C", "C   C", " CCC ")
+                    .aisle(" CSC ", " GGG ", " GGG ", " CCC ", "     ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('C', Predicates.blocks(GCYMBlocks.CASING_NONCONDUCTING.get())
+                            .setMinGlobalLimited(45)
+                            .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                    .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                            .or(Predicates.abilities(PartAbility.MAINTENANCE)
+                                    .setExactLimit(1))
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                    .setMinGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
+                                    .setMinGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
+                                    .setMinGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS)))
+                    .where('E', Predicates.blocks(SusyBlocks.COPPER_TUNGSTEN_EDM_ELECTRODE.get()))
+                    .where('G', Predicates.blocks(GTBlocks.CASING_LAMINATED_GLASS.get()))
+                    .build())
+            // TODO)) Phase 6: real textures — base gregtech:blocks/casings/gcym/nonconducting_casing,
+            //  front overlay susy:blocks/multiblock/edm_overlay (SusyTextures.EDM_OVERLAY).
+            .workableCasingModel(GTCEu.id("block/casings/gcym/nonconducting_casing"),
+                    GTCEu.id("block/multiblock/gcym/large_electrolyzer"))
+            .register();
+
+    public static final MultiblockMachineDefinition GAS_ATOMIZER = REGISTRATE
+            .multiblock("gas_atomizer", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.GAS_ATOMIZER_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("  O  ", "  P  ", "  P  ", "  M  ", "     ", "     ", " EIE ", "     ")
+                    .aisle("     ", "  P  ", "     ", "     ", "     ", " HHH ", " EXE ", " HHH ")
+                    .aisle("R   R", "R P R", "CCCCC", " HHH ", " HHH ", " HHH ", " HXH ", " HHH ")
+                    .aisle(" CCC ", " CPC ", "CHHHC", "HHHHH", "HXXXH", "HXXXH", "HXXXH", " HHH ")
+                    .aisle(" CCC ", " CXC ", "CHXHC", "HHXHH", "HXXXH", "HXXXH", "HXXXH", " HFH ")
+                    .aisle(" CCC ", " CCC ", "CHHHC", "HHHHH", "HXXXH", "HXXXH", "HXXXH", " HHH ")
+                    .aisle("R   R", "R   R", "CCSCC", " HHH ", " HHH ", " HHH ", " HHH ", "     ")
+                    .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .where('H', Predicates.blocks(SusyBlocks.SILICON_CARBIDE_CASING.get()))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes())))
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('M', Predicates.abilities(PartAbility.MUFFLER))
+                    .where('O', Predicates.abilities(PartAbility.EXPORT_ITEMS))
+                    .where('F', Predicates.abilities(PartAbility.IMPORT_FLUIDS))
+                    .where('I', Predicates.abilities(PartAbility.IMPORT_ITEMS))
+                    .where('E', Predicates.blocks(SusyBlocks.CARBON_ELECTRODE_ASSEMBLY.get()))
+                    .where('R', Predicates.frames(GTMaterials.Steel))
+                    .where('X', Predicates.air())
+                    .where(' ', Predicates.any())
+                    .build())
+            // TODO)) Phase 6: real textures — base .../solid/machine_casing_solid_steel,
+            //  front overlay SusyTextures.GAS_ATOMIZER_OVERLAY (susy:blocks/multiblock/gas_atomizer_overlay).
+            //  GTCEu has no gas_atomizer overlay; multiblock_workable is the placeholder.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    public static final MultiblockMachineDefinition PRECISE_MILLING_MACHINE = REGISTRATE
+            .multiblock("precise_milling_machine", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
+            .recipeType(SuSyRecipeTypes.MILLING_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("BBBBBB", "CCCCCC", "CGGGGC", "CCCCCC")
+                    .aisle("BBBBBB", "C    C", "CDDDDC", "CCCCCC")
+                    .aisle("BBBBBB", "C    C", "C    C", "CCCCCC")
+                    .aisle("BBBBBB", "CWWWWS", "CWWWWC", "CCCCCC")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()).setMinGlobalLimited(18)
+                            .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                    .setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                            .or(Predicates.abilities(PartAbility.MAINTENANCE)
+                                    .setExactLimit(1)))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STAINLESS_CLEAN.get()).setMinGlobalLimited(35)
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                    .setMinGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
+                                    .setMinGlobalLimited(1)))
+                    .where('D', Predicates.blocks(SusyBlocks.STEEL_DRILL_BIT.get()))
+                    .where('G', Predicates.blocks(GTBlocks.CASING_STAINLESS_STEEL_GEARBOX.get()))
+                    .where('W', Predicates.blocks(GTBlocks.CASING_TEMPERED_GLASS.get()))
+                    .build())
+            // TODO)) Phase 6: real base .../metal_casing/stainless_clean (+ drill-bit steel,
+            //  tempered glass); overlay SusyTextures.MILLING_OVERLAY (gregtech:blocks/multiblock/milling).
+            //  GTCEu has no milling overlay; multiblock_workable is the placeholder.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
             .register();
 
     public static void init() {}
