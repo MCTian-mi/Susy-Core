@@ -57,8 +57,12 @@ import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
 import com.gregtechceu.gtceu.common.data.GTBlocks;
 import com.gregtechceu.gtceu.client.util.TooltipHelper;
+import com.gregtechceu.gtceu.common.machine.multiblock.electric.DistillationTowerMachine;
 import io.github.symmetricdevs.supersymmetry.api.recipes.logic.SuSyParallelLogic;
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyRecipeTypes;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.LowPressureCryogenicDistillationPlant;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SingleColumnCryogenicDistillationPlantMachine;
+import java.util.Comparator;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_PTFE_INERT;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.MACHINE_CASING_ULV;
 
@@ -1066,6 +1070,228 @@ public static final MultiblockMachineDefinition PRESSURE_SWING_ADSORBER = REGIST
             // 1.12.2 used Textures.BLAST_FURNACE_OVERLAY -> GTCEu blast_furnace placeholder
             // (swap for the real MHD overlay in Phase 6).
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_robust_tungstensteel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ==================================================================
+    // Phase 4c — Bucket B: ordered distillation towers
+    // 1.12.2 MetaTileEntityOrderedDT (+ DistillationTowerRecipeLogic / per-layer
+    // EXPORT_FLUIDS hatches) maps natively onto Modern DistillationTowerMachine:
+    // output index == Y layer, parts Y-sorted via .partSorter. Dynamic height via
+    // .setRepeatable. The two cryo plants carry a // TODO)) for the
+    // ICryogenicProvider/Receiver cross-machine link (Bucket D, SuSyPredicates).
+    // ==================================================================
+
+    // ---- high_temperature_distillation_tower ----
+    public static final MultiblockMachineDefinition HIGH_TEMPERATURE_DISTILLATION_TOWER = REGISTRATE
+            .multiblock("high_temperature_distillation_tower", DistillationTowerMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> SusyBlocks.SILICON_CARBIDE_CASING.get())
+            .recipeType(SuSyRecipeTypes.HIGH_TEMPERATURE_DISTILLATION_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern
+                    .start(RelativeDirection.RIGHT, RelativeDirection.FRONT, RelativeDirection.UP)
+                    .aisle("YSY", "YYY", "YYY")
+                    .aisle("XXX", "X#X", "XXX").setRepeatable(1, 11)
+                    .aisle("XXX", "XXX", "XXX")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('Y', Predicates.blocks(SusyBlocks.SILICON_CARBIDE_CASING.get())
+                            .or(Predicates.abilities(PartAbility.EXPORT_ITEMS).setMaxGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.INPUT_ENERGY).setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                            .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS).setMaxGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMaxGlobalLimited(1)))
+                    .where('X', Predicates.blocks(SusyBlocks.SILICON_CARBIDE_CASING.get())
+                            .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS_1X).setMinLayerLimited(1).setMaxLayerLimited(1))
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('#', Predicates.air())
+                    .build())
+            .partSorter(Comparator.comparingInt(p -> p.self().getPos().getY()))
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/distillation_tower")) // TODO)) Phase 6: real silicon-carbide casing tex + SusyTextures.HTDT_OVERLAY
+            .register();
+
+    // ---- sieve_distillation_tower (has sieve-tray interior blocks (SusyBlocks.SIEVE_TRAY) inside the tower) ----
+    public static final MultiblockMachineDefinition SIEVE_DISTILLATION_TOWER = REGISTRATE
+            .multiblock("sieve_distillation_tower", DistillationTowerMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> SusyBlocks.SIEVE_TRAY.get())
+            .recipeType(SuSyRecipeTypes.SIEVE_DISTILLATION_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .allowExtendedFacing(false)
+            .pattern(definition -> FactoryBlockPattern
+                    .start(RelativeDirection.RIGHT, RelativeDirection.FRONT, RelativeDirection.UP)
+                    .aisle("YSY", "YYY", "YYY")
+                    .aisle("FXF", "X#X", "FXF").setRepeatable(1, 11)
+                    .aisle("XXX", "XXX", "XXX")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('Y', Predicates.blocks(GTBlocks.CASING_STAINLESS_CLEAN.get())
+                            .or(Predicates.abilities(PartAbility.EXPORT_ITEMS).setMaxGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMaxGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.INPUT_ENERGY).setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                            .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS).setMinGlobalLimited(1).setMaxGlobalLimited(2)))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_STAINLESS_CLEAN.get())
+                            .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS_1X).setMaxLayerLimited(1))
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('#', Predicates.blocks(SusyBlocks.SIEVE_TRAY.get()))
+                    .where('F', Predicates.frames(GTMaterials.StainlessSteel))
+                    .build())
+            .partSorter(java.util.Comparator.comparingInt(p -> p.self().getPos().getY()))
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/distillation_tower")) // TODO Phase 6: real casing tex + SusyTextures.SDT_OVERLAY
+            .register();
+
+    // ---- vacuum_distillation_tower (ExtendedDTLogicHandler (3 fluid outputs per layer) — verify Modern DistillationTowerMachine output-per-layer and note if it differs) ----
+    public static final MultiblockMachineDefinition VACUUM_DISTILLATION_TOWER = REGISTRATE
+            .multiblock("vacuum_distillation_tower", DistillationTowerMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.VACUUM_DISTILLATION_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start(RelativeDirection.RIGHT, RelativeDirection.FRONT, RelativeDirection.UP)
+                    .aisle(" CSC  ", "CCCCCC", "CCCCCC", "CCCCCC", " CCC  ")
+                    .aisle(" CGC  ", "C#F#CC", "IFFF#P", "C#F#CC", " CCC  ")
+                    .aisle(" CCC  ", "C#F#CC", "CFFFCC", "C#F#CC", " CCC  ")
+                    .aisle(" XXX  ", "X#F#D ", "XFFFD ", "X#F#D ", " XXX  ").setRepeatable(1, 12)
+                    .aisle(" DDD  ", "DDDDD ", "DDDDD ", "DDDDD ", " DDD  ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('G', Predicates.blocks(GTBlocks.CASING_TEMPERED_GLASS.get()))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .where('F', Predicates.frames(GTMaterials.Steel))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .or(Predicates.abilities(PartAbility.INPUT_ENERGY).setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                            .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS).setMaxGlobalLimited(2))
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMaxGlobalLimited(1)))
+                    .where('I', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .or(Predicates.abilities(PartAbility.EXPORT_ITEMS).setMaxGlobalLimited(1)))
+                    .where('D', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS_1X).setMaxLayerLimited(1))
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('#', Predicates.air())
+                    .build())
+            .partSorter(Comparator.comparingInt(p -> p.self().getPos().getY()))
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/distillation_tower"))  // TODO)) Phase 6: real casing tex + SusyTextures.VDT_OVERLAY
+            .register();
+
+    // ---- high_pressure_cryogenic_distillation_plant (ExtendedDTLogicHandler; high pressure variant) ----
+    public static final MultiblockMachineDefinition HIGH_PRESSURE_CRYOGENIC_DISTILLATION_PLANT = REGISTRATE
+            .multiblock("high_pressure_cryogenic_distillation_plant", DistillationTowerMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+            .recipeType(SuSyRecipeTypes.HIGH_PRESSURE_CRYOGENIC_DISTILLATION_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern
+                    .start(RelativeDirection.RIGHT, RelativeDirection.FRONT, RelativeDirection.UP)
+                    .aisle("CCC", "CCC", "CCC")
+                    .aisle("CSC", "CFC", "CCC")
+                    .aisle("XXX", "XFX", "XXX").setRepeatable(1, 16)
+                    .aisle("DDD", "DDD", "DDD")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                            .or(Predicates.abilities(PartAbility.INPUT_ENERGY).setMinGlobalLimited(1)
+                                    .setMaxGlobalLimited(2))
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMaxGlobalLimited(1))
+                            .or(Predicates.autoAbilities(true, false, false).setExactLimit(1)))
+                    .where('F', Predicates.blocks(SusyBlocks.SIEVE_TRAY.get()))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                            .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS_1X).setMaxLayerLimited(1))
+                            .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS_1X).setMaxLayerLimited(4)))
+                    .where('D', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get()))
+                    .where('#', Predicates.air())
+                    .build())
+            .allowExtendedFacing(false)
+            .partSorter(java.util.Comparator.comparingInt(p -> p.self().getPos().getY()))
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
+                    GTCEu.id("block/multiblock/distillation_tower"))  // TODO)) Phase 6: real casing tex + SusyTextures.HPCDT_OVERLAY
+            .register();
+
+    // ---- low_pressure_cryogenic_distillation_plant ----
+public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLATION_PLANT = REGISTRATE
+        .multiblock("low_pressure_cryogenic_distillation_plant", LowPressureCryogenicDistillationPlant::new)
+        .rotationState(RotationState.NON_Y_AXIS)
+        .appearanceBlock(() -> GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+        .recipeType(SuSyRecipeTypes.LOW_PRESSURE_CRYOGENIC_DISTILLATION_RECIPES)
+        .recipeModifiers(GTRecipeModifiers.OC_NON_PERFECT)
+        .pattern(definition -> FactoryBlockPattern
+                .start(RelativeDirection.RIGHT, RelativeDirection.FRONT, RelativeDirection.UP)
+                .aisle("DDD", "DDD", "DDD")
+                .aisle("CSC", "CFC", "CCC")
+                .aisle("XXX", "XFX", "XXX").setRepeatable(1, 16)
+                .aisle("DED", "EZE", "DED")
+                .aisle("DDD", "DDD", "DDD")
+                .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                .where('C', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                        .or(Predicates.abilities(PartAbility.INPUT_ENERGY).setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                        .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMaxGlobalLimited(1))
+                        .or(Predicates.autoAbilities(true, false, false).setExactLimit(1)))
+                .where('F', Predicates.blocks(SusyBlocks.STRUCTURAL_PACKING.get()))
+                .where('X', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                        .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS_1X).setMaxLayerLimited(1))
+                        .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS_1X).setMaxLayerLimited(4)))
+                .where('D', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get()))
+                .where('E', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                        .or(Predicates.abilities(PartAbility.PASSTHROUGH_HATCH)))
+                .where('Z', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get()))
+                .where('#', Predicates.air())
+                .build())
+        .allowExtendedFacing(false)
+        .partSorter(java.util.Comparator.comparingInt(p -> p.self().getPos().getY()))
+        .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
+                GTCEu.id("block/multiblock/distillation_tower")) // TODO)) Phase 6: real casing tex + SusyTextures.LPCDT_OVERLAY
+        .register();
+
+    // ---- single_column_cryogenic_distillation_plant ----
+    // ---- single_column_cryogenic_distillation_plant (ordered DT; cryo receiver link deferred) ----
+    public static final MultiblockMachineDefinition SINGLE_COLUMN_CRYOGENIC_DISTILLATION_PLANT = REGISTRATE
+            .multiblock("single_column_cryogenic_distillation_plant",
+                    holder -> new SingleColumnCryogenicDistillationPlantMachine(holder))
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false) // 1.12.2 allowsExtendedFacing() == false
+            .appearanceBlock(() -> GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+            .recipeType(SuSyRecipeTypes.SINGLE_COLUMN_CRYOGENIC_DISTILLATION_RECIPES)
+            // 1.12.2 MetaTileEntityOrderedDT 2-arg ctor -> hasPerfectOC=false -> non-perfect OC.
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern
+                    .start(RelativeDirection.RIGHT, RelativeDirection.FRONT, RelativeDirection.UP)
+                    .aisle("CCC", "CCC", "CCC")
+                    .aisle("CSC", "CFC", "CCC")
+                    .aisle("XXX", "XFX", "XXX").setRepeatable(1, 16)
+                    .aisle("CCC", "CCC", "CCC")
+                    .aisle("CEC", "E E", "CEC")
+                    .aisle("DDD", "DED", "DDD")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                            .or(Predicates.abilities(PartAbility.INPUT_ENERGY).setMinGlobalLimited(1).setMaxGlobalLimited(2))
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMaxGlobalLimited(1))
+                            // 1.12.2 autoAbilities(false,true,false,false,false,false,false) = muffler only (no maintenance).
+                            .or(Predicates.autoAbilities(false, true, false).setExactLimit(1)))
+                    .where('F', Predicates.blocks(SusyBlocks.STRUCTURAL_PACKING.get()))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                            // 1.12.2 EXPORT_FLUIDS excluding MetaTileEntityMultiFluidHatch (setMaxLayerLimited(1))
+                            // -> Modern single-tank EXPORT_FLUIDS_1X.
+                            .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS_1X).setMaxLayerLimited(1))
+                            // 1.12.2 IMPORT_FLUIDS excluding MetaTileEntityMultiFluidHatch (setMaxLayerLimited(4)).
+                            .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS_1X).setMaxLayerLimited(4)))
+                    .where('D', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get()))
+                    .where('E', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                            .or(Predicates.abilities(PartAbility.PASSTHROUGH_HATCH)))
+                    .where('#', Predicates.air())
+                    // 1.12.2 cryogenicRecieverPredicate() (SIDE-EFFECTING: linked the adjacent Bath
+                    // Condenser / ICryogenicReceiver at match time). Modern predicates are pure, so
+                    // this matches anything for now; the cross-machine cryo link is re-established in
+                    // SingleColumnCryogenicDistillationPlantMachine.onStructureFormed — see its TODO))
+                    // (Bucket D, with the ICryogenicProvider/ICryogenicReceiver capability port).
+                    .where(' ', Predicates.any())
+                    .build())
+            // REQUIRED for per-Y-layer fluid outputs (output index = layer), matching the 1.12.2
+            // multiblockPartSorter UP.getSorter: parts sorted bottom-up so DistillationTowerMachine
+            // walks the fluid export hatches in ascending Y.
+            .partSorter(java.util.Comparator.comparingInt(p -> p.self().getPos().getY()))
+            // TODO)) Phase 6: real front overlay is the SuSy cryo-DT overlay (SusyTextures); 1.12.2
+            // used Textures.BLAST_FURNACE_OVERLAY, so blast_furnace is the placeholder. Base casing
+            // tex = frostproof (1.12.2 Textures.FROST_PROOF_CASING), confirmed.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
                     GTCEu.id("block/multiblock/blast_furnace"))
             .register();
 
