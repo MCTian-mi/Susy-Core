@@ -1,21 +1,13 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.internal.impldep.org.apache.http.client.methods.RequestBuilder.options
 
 plugins {
     java
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.serialization)
 }
 
 val utf8: String = Charsets.UTF_8.name()
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = utf8
-}
-
-val compileKotlin = tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        freeCompilerArgs = listOf("-XXLanguage:+ContextParameters")
-    }
 }
 
 tasks.javadoc {
@@ -33,8 +25,4 @@ java {
         languageVersion.set(JavaLanguageVersion.of(21))
         vendor.set(JvmVendorSpec.AZUL)
     }
-}
-
-dependencies {
-    implementation(libs.kotlinForForge)
 }

@@ -15,7 +15,7 @@ import io.github.symmetricdevs.supersymmetry.api.unification.material.properties
  * Modern uses {@code new TagPrefix(name)} + chainable setters rather than the
  * 1.12.2 positional constructor, and each prefix self-registers on construction —
  * so "registering" is just class-loading this holder, done from
- * {@code SupersymmetryGTAddon#registerTagPrefixes()} (which runs after icon types
+ * {@code SuSyAddon#registerTagPrefixes()} (which runs after icon types
  * and materials are initialized).
  * <p>
  * The 1.12.2 ore-stone prefixes (oreGabbro, oreGneiss, ...) are NOT here: Modern

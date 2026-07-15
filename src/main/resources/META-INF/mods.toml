@@ -32,13 +32,6 @@ ordering = "AFTER"
 side = "BOTH"
 
 [[dependencies.${mod_id}]]
-modId = "kotlinforforge"
-mandatory = true
-versionRange = "[4.10,)"
-ordering = "AFTER"
-side = "BOTH"
-
-[[dependencies.${mod_id}]]
 modId = "jei"
 mandatory = false
 versionRange = "[15.20.0,)"

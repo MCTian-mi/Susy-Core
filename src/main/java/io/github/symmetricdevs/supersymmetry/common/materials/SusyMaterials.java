@@ -104,9 +104,13 @@ public class SusyMaterials {
      * should be re-expressed as a datagen/recipe-level exclusion.
      */
     public static void changeProperties() {
-        GTMaterials.Soapstone.removeProperty(PropertyKey.ORE);
-        GTMaterials.Quartzite.removeProperty(PropertyKey.ORE);
-        GTMaterials.Mica.removeProperty(PropertyKey.ORE);
+        // NOTE: the 1.12.2 removeProperty(ORE) on Soapstone/Quartzite/Mica is NOT
+        // ported. GTCEu-Modern's stock ore veins reference these materials (e.g. the
+        // Kyanite vein's .surfaceRock(Mica)), and their surface-rock blocks are only
+        // generated when the material keeps its ORE property — removing it makes the
+        // ore-vein datapack reload throw "No surface rock registered for material".
+        // SuSy's intent (don't spawn these as ores) is achieved by not defining veins
+        // for them in the worldgen phase instead of by stripping the property.
 
         // Deliberate override: 1.12.2 explicitly replaced Lead's fluid-pipe stats,
         // so this one intentionally removes-then-sets rather than fill-only.

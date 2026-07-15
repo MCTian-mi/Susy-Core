@@ -30,7 +30,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
  * {@code init()} that forces class loading so its field initializers run the
  * registrate/registry calls. GTCEu-driven content (machines, recipe types,
  * materials) is registered later on the appropriate {@code GTCEuAPI.RegisterEvent}
- * / {@code MaterialEvent} hooks (see {@code SupersymmetryGTAddon}).
+ * / {@code MaterialEvent} hooks (see {@code SuSyAddon}).
  * <p>
  * The material lifecycle runs on the mod event bus: {@link MaterialRegistryEvent}
  * creates our material registry, {@link MaterialEvent} registers our materials,

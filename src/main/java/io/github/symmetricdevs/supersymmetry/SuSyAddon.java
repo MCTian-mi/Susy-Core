@@ -19,7 +19,7 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
  * the relevant subsystems are ported.
  */
 @GTAddon
-public class SupersymmetryGTAddon implements IGTAddon {
+public class SuSyAddon implements IGTAddon {
 
     @Override
     public GTRegistrate getRegistrate() {

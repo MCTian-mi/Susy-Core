@@ -26,7 +26,6 @@ mixinExtras-common = { module = "io.github.llamalad7:mixinextras-common", versio
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
-kotlinForForge = { module = "thedarkcolour:kotlinforforge", version.ref = "kotlinForForge" }
 
 [plugins]
 modDevGradle = { id = "net.neoforged.moddev.legacyforge", version.ref = "modDevGradle" }
@@ -35,5 +34,3 @@ shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 minotaur = { id = "com.modrinth.minotaur", version.ref = "minotaur" }
 curseforgeGradle = { id = "net.darkhax.curseforgegradle", version.ref = "curseforgeGradle" }
 buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

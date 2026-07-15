@@ -108,7 +108,7 @@ legacyForge {
 if (generateTags) {
     buildConfig {
         packageName(modGroup)
-        useKotlinOutput()
+        useJavaOutput()
         buildConfigField("MOD_ID", modId)
         buildConfigField("MOD_NAME", modName)
         buildConfigField("net.minecraft.resources.ResourceLocation", "TEMPLATE_RL", "ResourceLocation.fromNamespaceAndPath(MOD_ID, \"\")")
