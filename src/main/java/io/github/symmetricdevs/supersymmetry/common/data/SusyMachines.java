@@ -72,6 +72,7 @@ import java.util.Comparator;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_PTFE_INERT;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.MACHINE_CASING_ULV;
 import io.github.symmetricdevs.supersymmetry.api.pattern.SuSyPredicates;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.BallMillMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyRotationGeneratorMachine;
 
 /**
@@ -1816,6 +1817,60 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
             // TODO)) Phase 5: directional/active eccentric-roll block, reduced collision
             // box, and active collision damage. Phase 6: roll animation, selected-sheet
             // hatch appearance, and the dedicated controller overlay.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
+            .register();
+
+    public static final MultiblockMachineDefinition BALL_MILL = REGISTRATE
+            .multiblock("ball_mill", BallMillMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.BALL_MILL_RECIPES)
+            .recipeModifiers(BallMillMachine::fixedParallel32, GTRecipeModifiers.OC_NON_PERFECT)
+            .tooltips(Component.translatable("gtceu.universal.tooltip.parallel", BallMillMachine.PARALLEL_LIMIT),
+                    Component.translatable("susy.multiblock.ball_mill.tooltip.mill_balls",
+                            BallMillMachine.MILL_BALL_REQUIREMENT))
+            .pattern(definition -> {
+                TraceabilityPredicate shell = Predicates.blocks(SusyBlocks.WEAR_RESISTANT_LINED_MILL_SHELL.get());
+                return FactoryBlockPattern.start()
+                        .aisle(" XMMMXXXXXXXX", "  NMM        ", "             ", "  G          ", "  G          ",
+                                "  G          ", "             ", "             ")
+                        .aisle(" X          X", "             ", "  G          ", "  HCCCCCCCCH ", "  HCCCCCCCCH ",
+                                "  HCCCCCCCCH ", "  G          ", "             ")
+                        .aisle(" X          X", " XG         X", " XHCCCCCCCCHX", " XH#####D##HX", " XH#####D##HX",
+                                " XH#####D##H ", "  HCCCCCCCCH ", "  G          ")
+                        .aisle(" X          X", "  G          ", "  HCCCCCCCCH ", "OXH#####D##HY", "AA######D###Y",
+                                "ZXH#####D##HI", "  HCCCCCCCCH ", "  G          ")
+                        .aisle(" X          X", " XG         X", " XHCCCCCCCCHX", " XH#####D##HX", " XH#####D##HX",
+                                " XH#####D##H ", "  HCCCCCCCCH ", "  G          ")
+                        .aisle(" X          X", "             ", "  G          ", "  HCCCCCCCCH ", "  HCCCCCCCCH ",
+                                "  HCCCCCCCCH ", "  G          ", "             ")
+                        .aisle(" XMMMXXXXXXXX", "  NSM        ", "             ", "  G          ", "  G          ",
+                                "  G          ", "             ", "             ")
+                        .where('M', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        true, false, false, false, false, false))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('Y', Predicates.abilities(PartAbility.IMPORT_ITEMS).or(shell))
+                        .where('Z', Predicates.abilities(PartAbility.EXPORT_FLUIDS).or(shell))
+                        .where('I', Predicates.abilities(PartAbility.IMPORT_FLUIDS).or(shell))
+                        .where('O', Predicates.abilities(PartAbility.EXPORT_ITEMS).or(shell))
+                        .where('A', shell)
+                        .where('C', shell)
+                        .where('H', Predicates.blocks(SusyBlocks.WEAR_RESISTANT_LINED_SHELL_HEAD.get()))
+                        .where('D', Predicates.blocks(SusyBlocks.INTERMEDIATE_DIAPHRAGM.get()))
+                        .where('G', SuSyPredicates.axialOrientation(
+                                SusyBlocks.STEEL_GIRTH_GEAR_TOOTH.get(), RelativeDirection.LEFT))
+                        .where('N', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
+                        .where('X', Predicates.frames(GTMaterials.Steel))
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('#', Predicates.air())
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            // TODO)) Phase 6: hide the shell/head/diaphragm blocks while formed and
+            // restore the dedicated Ball Mill drum animation and controller overlay.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
             .register();

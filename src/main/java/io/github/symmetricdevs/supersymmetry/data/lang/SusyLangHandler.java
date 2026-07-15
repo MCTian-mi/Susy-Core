@@ -12,6 +12,11 @@ public final class SusyLangHandler {
         provider.add("susy.multiblocks.sintering_oven.use_plasma.negative", "No");
         provider.add("susy.multiblock.pattern.error.sintering_bricks", "All sintering bricks must be the same type");
         provider.add("susy.multiblock.pattern.error.metal_sheets", "All metal sheets must be the same type");
+        provider.add("susy.multiblock.ball_mill.tooltip.mill_balls",
+                "Requires %s mill balls to function.");
+        provider.add("susy.multiblock.ball_mill.error.missing_mill_balls",
+                "Not enough mill balls were found for the recipe!");
+        provider.add("tagprefix.mill_ball", "%s Mill Ball");
         provider.add("susy.recipe_modifier.plasma_metadata_required",
                 "This sintering recipe does not declare whether it uses plasma");
         provider.add("susy.recipe_modifier.plasma_resistant_bricks_required",

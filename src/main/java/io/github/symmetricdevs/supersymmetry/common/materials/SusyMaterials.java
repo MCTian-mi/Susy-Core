@@ -14,6 +14,8 @@ import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKeys;
 import com.gregtechceu.gtceu.common.data.GTMaterials;
 
 import io.github.symmetricdevs.supersymmetry.api.unification.material.info.SuSyMaterialFlags;
+import io.github.symmetricdevs.supersymmetry.api.unification.material.properties.MillBallProperty;
+import io.github.symmetricdevs.supersymmetry.api.unification.material.properties.SuSyPropertyKey;
 
 /**
  * Static handles for every SuSy material, plus the {@code PostMaterialEvent}
@@ -183,6 +185,12 @@ public class SusyMaterials {
         GTMaterials.Copper.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
 
         putProperty(GTMaterials.Electrum, PropertyKey.ORE, new OreProperty());
+
+        // The only Java-defined 1.12.2 mill-ball material was Steel with this
+        // debug-era durability. Keep it as the compatibility bootstrap until the
+        // deferred bulk material data supplies production mill-ball materials.
+        // Fill-only: a material pack may provide a deliberate value first.
+        putProperty(GTMaterials.Steel, SuSyPropertyKey.MILL_BALL, new MillBallProperty(23_123));
 
         GTMaterials.Hydrogen.addFlags(MaterialFlags.FLAMMABLE);
     }

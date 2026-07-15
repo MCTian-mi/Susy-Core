@@ -5,6 +5,7 @@
   "block.supersymmetry.advanced_steam_turbine": "Advanced Steam Turbine",
   "block.supersymmetry.aluminium_gearbox": "Aluminium Gearbox",
   "block.supersymmetry.attrition_scrubber": "Attrition Scrubber",
+  "block.supersymmetry.ball_mill": "Ball Mill",
   "block.supersymmetry.basic_intake_casing": "Basic Intake Casing",
   "block.supersymmetry.basic_serpentine": "Basic Serpentine",
   "block.supersymmetry.basic_steam_turbine": "Basic Steam Turbine",
@@ -508,6 +509,8 @@
   "material.supersymmetry.supreme_lubricant": "Supreme Lubricant",
   "material.supersymmetry.warm_perfluoro_2_methyl_3_pentanone": "Warm Perfluoro 2 Methyl 3 Pentanone",
   "susy.machine.parallel_pure": "Can parallel to output up to §b%s§r§7 items at once",
+  "susy.multiblock.ball_mill.error.missing_mill_balls": "Not enough mill balls were found for the recipe!",
+  "susy.multiblock.ball_mill.tooltip.mill_balls": "Requires %s mill balls to function.",
   "susy.multiblock.magnetic_refrigerator.min_temperature": "§bTemperature Limit: %s",
   "susy.multiblock.pattern.error.metal_sheets": "All metal sheets must be the same type",
   "susy.multiblock.pattern.error.sintering_bricks": "All sintering bricks must be the same type",
@@ -517,5 +520,6 @@
   "susy.recipe_modifier.coil_temperature_too_high": "The installed cooling coils cannot reach the recipe's required temperature",
   "susy.recipe_modifier.cooling_temperature_required": "This cooling recipe does not define a required temperature",
   "susy.recipe_modifier.plasma_metadata_required": "This sintering recipe does not declare whether it uses plasma",
-  "susy.recipe_modifier.plasma_resistant_bricks_required": "Plasma recipes require magneto-plated sintering bricks"
+  "susy.recipe_modifier.plasma_resistant_bricks_required": "Plasma recipes require magneto-plated sintering bricks",
+  "tagprefix.mill_ball": "%s Mill Ball"
 }

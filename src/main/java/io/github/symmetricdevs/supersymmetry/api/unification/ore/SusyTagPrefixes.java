@@ -4,6 +4,7 @@ import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags;
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 
+import io.github.symmetricdevs.supersymmetry.api.item.MillBallItem;
 import io.github.symmetricdevs.supersymmetry.api.unification.material.info.SuSyMaterialFlags;
 import io.github.symmetricdevs.supersymmetry.api.unification.material.info.SuSyMaterialIconTypes;
 import io.github.symmetricdevs.supersymmetry.api.unification.material.properties.SuSyPropertyKey;
@@ -172,8 +173,10 @@ public final class SusyTagPrefixes {
     public static final TagPrefix millBall = new TagPrefix("millBall")
             .materialAmount(GTValues.M)
             .materialIconType(SuSyMaterialIconTypes.millBall)
+            .langValue("%s Mill Ball")
             .unificationEnabled(true)
             .generateItem(true)
+            .itemConstructor(MillBallItem::new)
             .maxStackSize(1)
             .generationCondition(mat -> mat.hasProperty(SuSyPropertyKey.MILL_BALL));
 
