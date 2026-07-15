@@ -1,23 +1,23 @@
-package supersymmetry;
+package io.github.symmetricdevs.supersymmetry;
 
-import static gregtech.api.metatileentity.multiblock.MultiblockControllerBase.blocks;
+import net.minecraft.resources.ResourceLocation;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.util.ResourceLocation;
+/**
+ * Mod-wide constants and small helpers. Ported from the 1.12.2 {@code SuSyValues}
+ * / {@code Supersymmetry} pair — the {@code susyId(...)} ResourceLocation helper
+ * carries over with the namespace now {@code supersymmetry}. The 1.12.2 tier-material
+ * array and rocket-hull/model handles are reintroduced with the subsystems that use
+ * them (materials, rocketry).
+ */
+public final class SuSyValues {
 
-import gregtech.api.pattern.TraceabilityPredicate;
-import gregtech.api.unification.material.MarkerMaterials.*;
-import gregtech.api.unification.material.Material;
+    public static final Logger LOGGER = LogManager.getLogger(Supersymmetry.MOD_ID);
 
-public class SuSyValues {
+    private SuSyValues() {}
 
-    public static Material[] TierMaterials = new Material[] { Tier.ULV, Tier.LV, Tier.MV, Tier.HV, Tier.EV, Tier.IV,
-            Tier.LuV, Tier.ZPM, Tier.UV, Tier.UHV, Tier.UEV, Tier.UIV, Tier.UXV, Tier.OpV, Tier.MAX };
-    public static String MODID_IMMERSIVERAILROADING = "immersiverailroading";
-    public static String MODID_LITTLE_TILES = "littletiles";
-
-    public static final ModelResourceLocation modelRocket = new ModelResourceLocation(
-            new ResourceLocation(Supersymmetry.MODID, "soyuz"), "inventory");
-
-    public static TraceabilityPredicate rocketHullBlocks = blocks();
+    public static ResourceLocation susyId(String path) {
+        return ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, path);
+    }
 }
