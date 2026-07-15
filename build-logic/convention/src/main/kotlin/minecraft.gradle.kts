@@ -1,6 +1,7 @@
 
 import net.neoforged.moddevgradle.dsl.RunModel
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.gradle.api.file.DuplicatesStrategy
 
 plugins {
     alias(libs.plugins.modDevGradle)
@@ -83,6 +84,7 @@ legacyForge {
                 "--all",
                 "--output", file("src/generated/resources").absolutePath,
                 "--existing", file("src/main/resources/").absolutePath,
+                "--existing-mod", "gtceu",
             )
         }
 
@@ -124,6 +126,8 @@ if (useMixin) {
 }
 
 tasks.processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     if (!useMixin) exclude("*mixin*.json")
 
     val templateTokens = mapOf(
