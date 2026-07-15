@@ -49,6 +49,18 @@ import io.github.symmetricdevs.supersymmetry.common.machine.storage.PlasticCanMa
 import static com.gregtechceu.gtceu.api.GTValues.VN;
 import static com.gregtechceu.gtceu.api.GTValues.VNF;
 import static com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties.IS_FORMED;
+import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
+import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
+import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
+import com.gregtechceu.gtceu.api.pattern.Predicates;
+import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
+import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
+import com.gregtechceu.gtceu.common.data.GTBlocks;
+import com.gregtechceu.gtceu.client.util.TooltipHelper;
+import io.github.symmetricdevs.supersymmetry.api.recipes.logic.SuSyParallelLogic;
+import io.github.symmetricdevs.supersymmetry.common.data.SuSyRecipeTypes;
+import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_PTFE_INERT;
+import static com.gregtechceu.gtceu.common.data.GTBlocks.MACHINE_CASING_ULV;
 
 /**
  * SuSy machine registry. Ported from the 1.12.2 {@code SuSyMetaTileEntities}
@@ -376,6 +388,686 @@ public final class SusyMachines {
     //  - Steam boilers (SuSyCoalBoiler/SuSyLiquidBoiler/LargeBoiler/LargeHammer) and
     //    pseudo-multi latex collectors port with the steam/boiler base + multiblock
     //    scope (4c).
+
+    // ==================================================================
+    // Phase 4c — Multiblock controllers (Bucket A1: GT-casing simple recipe multis)
+    // Ported from 1.12.2 RecipeMapMultiblockController.createStructurePattern onto the
+    // GTCEu-Modern .multiblock/.pattern idiom. Plain WorkableElectricMultiblockMachine
+    // controllers (no bespoke class) — recipe behaviour via .recipeModifier. Front
+    // overlays are GTCEu placeholders pending the Phase 6 SusyTextures port.
+    // ==================================================================
+
+    // ---- coking_tower (perfect OC (1.12.2 MultiblockRecipeLogic(this,true))) ----
+    public static final MultiblockMachineDefinition COKING_TOWER = REGISTRATE
+            .multiblock("coking_tower", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(GTBlocks.CASING_STEEL_SOLID)
+            .recipeType(SuSyRecipeTypes.COKING_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+            .pattern(definition -> FactoryBlockPattern
+                    .start(RelativeDirection.RIGHT, RelativeDirection.FRONT, RelativeDirection.UP)
+                    .aisle(" CCSCCF", "PCP PCP")
+                    .aisle(" CFCFCF", "PCP PCP")
+                    .aisle(" CFCFCF", "PCP PCP")
+                    .aisle(" CFCFCF", "PPP PPP")
+                    .aisle(" CFCFCF", "  P   P")
+                    .aisle(" CCCCCF", "  P   P")
+                    .aisle("  FFFFF", "  P   P")
+                    .aisle("  FF FF", "  P   P")
+                    .aisle("  FF FF", "  P   P")
+                    .aisle("  FF FF", "  P   P")
+                    .aisle("  FF FF", "       ")
+                    .aisle("  FF FF", "       ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .where('F', Predicates.frames(GTMaterials.Steel))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()).setMinGlobalLimited(20)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes())))
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- catalytic_reformer (muffler) ----
+    public static final MultiblockMachineDefinition CATALYTIC_REFORMER = REGISTRATE
+            .multiblock("catalytic_reformer", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false) // 1.12.2 RecipeMapMultiblockController default (not overridden)
+            .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
+            .recipeType(SuSyRecipeTypes.CATALYTIC_REFORMER_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("F   F", "XXXPX", "XXXPX", "XXXPX")
+                    .aisle("     ", "XXXPX", "X###M", "XXXPX")
+                    .aisle("F   F", "XXXPX", "XSXPX", "XXXPX")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_STAINLESS_CLEAN.get(), GTBlocks.CASING_TITANIUM_STABLE.get())
+                            .setMinGlobalLimited(24)
+                            // 1.12.2 autoAbilities(energyIn, maintenance, itemIn, itemOut, fluidIn, fluidOut, muffler)
+                            // = (T,T,T,T,T,T,F): energy-in + item in/out + fluid in/out, no energy-out, no muffler
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, false, true, true, true, true))
+                            // ... plus maintenance (no muffler/parallel); muffler is its own 'M' hatch below
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get(), GTBlocks.CASING_TITANIUM_PIPE.get()))
+                    .where('F', Predicates.frames(GTMaterials.StainlessSteel, GTMaterials.Titanium))
+                    .where('M', Predicates.abilities(PartAbility.MUFFLER))
+                    .where(' ', Predicates.any())
+                    .where('#', Predicates.air())
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace")) // TODO)) Phase 6: SusyTextures.CATALYTIC_REFORMER_OVERLAY
+            .register();
+
+    // ---- electrolytic_cell (perfect OC) ----
+    public static final MultiblockMachineDefinition ELECTROLYTIC_CELL = REGISTRATE
+            .multiblock("electrolytic_cell", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.ELECTROLYTIC_CELL_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("CCCCC", "CCCCC", "CCCCC")
+                    .aisle("CCCCC", "CPPPC", "CPPPC")
+                    .aisle("CCCCC", "CPPPC", "CPPPC")
+                    .aisle("CCCCC", "CCSCC", "CCCCC")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()).setMinGlobalLimited(30)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes())))
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- fermentation_vat (muffler) ----
+public static final MultiblockMachineDefinition FERMENTATION_VAT = REGISTRATE
+        .multiblock("fermentation_vat", WorkableElectricMultiblockMachine::new)
+        .rotationState(RotationState.NON_Y_AXIS)
+        .appearanceBlock(MACHINE_CASING_ULV)
+        .recipeType(SuSyRecipeTypes.FERMENTATION_VAT_RECIPES)
+        .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+        .pattern(definition -> FactoryBlockPattern.start()
+                .aisle("     ", "     ", " XXX ", " XXX ", " XXX ", "     ")
+                .aisle(" F F ", " XXX ", "X###X", "X###X", "X###X", " XXX ")
+                .aisle("     ", " XXX ", "X###X", "X###X", "X###X", " XMX ")
+                .aisle(" F F ", " XXX ", "X###X", "X###X", "X###X", " XXX ")
+                .aisle("     ", "     ", " XXX ", " XSX ", " XXX ", "     ")
+                .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                .where('X', Predicates.blocks(MACHINE_CASING_ULV.get())
+                        .setMinGlobalLimited(40)
+                        .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, true, true, true, true,
+                                true)))
+                .where('F', Predicates.frames(GTMaterials.Steel))
+                .where('M', Predicates.abilities(PartAbility.MUFFLER))
+                .where(' ', Predicates.any())
+                .where('#', Predicates.air())
+                .build())
+        .workableCasingModel(GTCEu.id("block/casings/voltage/ulv/side"),
+                GTCEu.id("block/multiblock/pyrolyse_oven"))
+        .register();
+
+    // ---- large_weapons_factory ----
+    public static final MultiblockMachineDefinition LARGE_WEAPONS_FACTORY = REGISTRATE
+            .multiblock("large_weapons_factory", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.LARGE_WEAPONS_FACTORY_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> {
+                TraceabilityPredicate casingPredicate = Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                        .setMinGlobalLimited(4);
+                return FactoryBlockPattern.start()
+                        .aisle("FBF", "FFF")
+                        .aisle("CBC", " A ")
+                        .aisle("CBC", " A ")
+                        .aisle("CBC", "EAE")
+                        .aisle("CBC", "EAE")
+                        .aisle("CBC", " A ")
+                        .aisle("CBC", " A ")
+                        .aisle("DDD", "DSD")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('A', casingPredicate)
+                        .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
+                        .where('C', Predicates.frames(GTMaterials.Steel)
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, true, false, false,
+                                        false, false)
+                                        .setExactLimit(1)))
+                        .where('D', casingPredicate
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, true, false,
+                                        true, false)))
+                        .where('E', casingPredicate
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, false, false, false,
+                                        false, false)))
+                        .where('F', casingPredicate
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, false, true,
+                                        false, false)))
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace")) // TODO Phase 6: real overlay is
+                                                                // SusyTextures.LARGE_WEAPONS_FACTORY_OVERLAY
+            .register();
+
+    // ---- multi_stage_flash_distiller (perfect OC) ----
+    public static final MultiblockMachineDefinition MULTI_STAGE_FLASH_DISTILLER = REGISTRATE
+            .multiblock("multi_stage_flash_distiller", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(GTBlocks.CASING_STEEL_SOLID)
+            .recipeType(SuSyRecipeTypes.MULTI_STAGE_FLASH_DISTILLATION_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+            .tooltipBuilder((stack, components) -> components.add(Component
+                    .translatable("gtceu.machine.perfect_oc")
+                    .withStyle(TooltipHelper.RAINBOW_HSL_SLOW)))
+            .pattern(definition -> {
+                // Casing (min 70) and the shared maintenance+energy predicate, reused
+                // across several chars exactly as in the 1.12.2 createStructurePattern.
+                TraceabilityPredicate casingPredicate = Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                        .setMinGlobalLimited(70);
+                TraceabilityPredicate maintenanceEnergy = Predicates
+                        .abilities(PartAbility.INPUT_ENERGY).setMinGlobalLimited(1).setMaxGlobalLimited(2)
+                        .setPreviewCount(1)
+                        .or(Predicates.abilities(PartAbility.MAINTENANCE).setMinGlobalLimited(1).setMaxGlobalLimited(1));
+                return FactoryBlockPattern.start()
+                        .aisle(" EEEB", " BEEB", " BEEB", " EEEB", "  BBB")
+                        .aisle(" AAA ", " B#B ", " B#BB", " AAA ", "  B  ")
+                        .aisle("CAAAB", "CAAAB", "CAAAB", "CAAAC", "CCBCC")
+                        .aisle(" DDD ", " DDD ", " DDD ", " DDD ", "  B  ")
+                        .aisle(" DDD ", " D#D ", " D#D ", " DDD ", "  B  ")
+                        .aisle("CDDDC", "CDDDC", "CDDDC", "CDDDC", "CCBCC")
+                        .aisle(" AAA ", " BAB ", " BAB ", " AAA ", "  B  ")
+                        .aisle(" AAA ", " B#B ", " B#B ", " AAA ", "  B  ")
+                        .aisle("CAAAC", "CAAAC", "CAAAC", "CAAAC", "CCBCC")
+                        .aisle(" DDD ", " DDD ", " DDD ", " DDD ", "  B  ")
+                        .aisle(" DDD ", " D#D ", " D#D ", " DDD ", "  B  ")
+                        .aisle("CDDDC", "CDDDC", "CDDDC", "CDDDC", "CCBCC")
+                        .aisle(" AAAB", " BABB", " BABB", " AAAB", "  BBB")
+                        .aisle(" AAAC", " B#BC", " B#BC", " AAAC", "  BCC")
+                        .aisle(" FFF ", " FSF ", " FFF ", " FFF ", "  B  ")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                        .where('C', Predicates.frames(GTMaterials.Steel))
+                        .where('A', casingPredicate
+                                .or(maintenanceEnergy))
+                        .where('D', Predicates.blocks(GTBlocks.CASING_STAINLESS_CLEAN.get())
+                                .or(maintenanceEnergy))
+                        .where('E', casingPredicate
+                                .or(maintenanceEnergy)
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                        .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS))))
+                        .where('F', casingPredicate
+                                .or(maintenanceEnergy)
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                        .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS))))
+                        .where(' ', Predicates.any())
+                        .where('#', Predicates.air())
+                        .build();
+            })
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- ore_sorter ----
+    public static final MultiblockMachineDefinition ORE_SORTER = REGISTRATE
+            .multiblock("ore_sorter", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.ORE_SORTER_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle(" C C ", " C C ", " C C ", " D D ")
+                    .aisle("     ", "     ", "     ", " D D ")
+                    .aisle("ABBBA", "ABBBA", "ABBBA", " D D ")
+                    .aisle("ABBBA", "B###B", "ABBBA", " D D ")
+                    .aisle("ABSBA", "ABBBA", "ABBBA", " D D ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.get())))
+                    .where('A', Predicates.frames(GTMaterials.Steel))
+                    .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .setMinGlobalLimited(16)
+                            // 1.12.2 autoAbilities(true,true,true,true,false,false,false) =
+                            //   energyIn + maintenance + itemIn + itemOut (no fluids, no muffler)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, false, true, true, false, false))
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get())
+                            // 1.12.2 autoAbilities(false,false,false,false,true,true,false) =
+                            //   fluidIn + fluidOut only
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, false, false, true, true)))
+                    .where('D', Predicates.frames(GTMaterials.Aluminium))
+                    .where(' ', Predicates.any())
+                    .where('#', Predicates.air())
+                    .build())
+            // TODO)) Phase 6: real front overlay is SusyTextures.ORE_SORTER_OVERLAY
+            // (1.12.2 ore_sorter overlay); blast_furnace is the placeholder.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- polymerization_tank (perfect OC) ----
+public static final MultiblockMachineDefinition POLYMERIZATION_TANK = REGISTRATE
+        .multiblock("polymerization_tank", WorkableElectricMultiblockMachine::new)
+        .rotationState(RotationState.NON_Y_AXIS)
+        .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+        .recipeType(SuSyRecipeTypes.POLYMERIZATION_RECIPES)
+        .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+        .pattern(definition -> FactoryBlockPattern.start()
+                .aisle("F F", "XXX", "XXX", "XXX", "XXX")
+                .aisle("   ", "XPX", "XPX", "XPX", "XPX")
+                .aisle("F F", "XSX", "XXX", "XXX", "XXX")
+                .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                .where('F', Predicates.frames(GTMaterials.Steel))
+                .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                .where('X', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()).setMinGlobalLimited(20)
+                        .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, true, false, false, false, false))
+                        .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, false, false, true, false).setMaxGlobalLimited(3))
+                        .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, false, false, false, true).setMaxGlobalLimited(2))
+                        .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, true, true, false, false).setMaxGlobalLimited(1)))
+                .build())
+        // TODO)) Phase 6: replace blast_furnace placeholder overlay with the real
+        // polymerization_tank overlay (1.12.2 SusyTextures.POLYMERIZATION_TANK_OVERLAY).
+        .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"), GTCEu.id("block/multiblock/blast_furnace"))
+        .register();
+
+    // ---- pressure_swing_adsorber ----
+public static final MultiblockMachineDefinition PRESSURE_SWING_ADSORBER = REGISTRATE
+        .multiblock("pressure_swing_adsorber", WorkableElectricMultiblockMachine::new)
+        .rotationState(RotationState.NON_Y_AXIS)
+        .appearanceBlock(() -> GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+        .recipeType(SuSyRecipeTypes.PRESSURE_SWING_ADSORBER_RECIPES)
+        .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+        .pattern(definition -> FactoryBlockPattern.start()
+                .aisle("AAA", "AAA", "AAA", "AAA")
+                .aisle("AAA", "ABA", "ABA", "AAA")
+                .aisle("AAA", "ASA", "AAA", "AAA")
+                .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                .where('A', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                        .setMinGlobalLimited(25)
+                        .or(Predicates.autoAbilities(definition.getRecipeTypes()))
+                        .or(Predicates.autoAbilities(true, false, false)))
+                .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                .build())
+        // TODO(Phase 6): swap placeholder overlay for SusyTextures.PRESSURE_SWING_ABSORBER_OVERLAY
+        .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
+                GTCEu.id("block/multiblock/blast_furnace"))
+        .register();
+
+    // ---- quencher (complex ability layout) ----
+    public static final MultiblockMachineDefinition QUENCHER = REGISTRATE
+            .multiblock("quencher", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
+            .recipeType(SuSyRecipeTypes.QUENCHER_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> {
+                // Common casing constraint (1.12.2: states(getCasingState()).setMinGlobalLimited(15)).
+                TraceabilityPredicate casingPredicate = Predicates.blocks(GTBlocks.CASING_STAINLESS_CLEAN.get())
+                        .setMinGlobalLimited(15);
+                return FactoryBlockPattern.start()
+                        .aisle("GGBBF", "GG   ", "     ")
+                        .aisle("GABC ", "GG D ", " CDD ")
+                        .aisle("GGB F", "GG   ", "     ")
+                        .aisle("  AAA", "  AAA", "     ")
+                        .aisle("  ASA", "  AAA", "     ")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.get())))
+                        .where('A', casingPredicate)
+                        .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                        .where('C', Predicates.blocks(GTBlocks.CASING_STAINLESS_STEEL_GEARBOX.get()))
+                        .where('D', Predicates.frames(GTMaterials.StainlessSteel))
+                        // 1.12.2 autoAbilities 7-arg order: (energyIn, maintenance, itemIn, itemOut,
+                        // fluidIn, fluidOut, muffler). 'F' = exactly one FLUID_OUT hatch OR exactly
+                        // one FLUID_IN hatch (coolant in / exhaust out through the pipe ring).
+                        .where('F', Predicates
+                                .autoAbilities(definition.getRecipeTypes(), false, false, false, false, false, true)
+                                .setExactLimit(1)
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, false, false,
+                                        true, false)
+                                        .setExactLimit(1)))
+                        // 'G' = casing + energyIn + maintenance + itemIn + itemOut (no muffler, no fluid).
+                        .where('G', casingPredicate
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, false, true, true,
+                                        false, false))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            // TODO)) Phase 6: front overlay placeholder is blast_furnace; real 1.12.2 overlay is
+            // SusyTextures.QUENCHER_OVERLAY ("machines/multiblocks/quencher").
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- reaction_furnace (muffler) ----
+    public static final MultiblockMachineDefinition REACTION_FURNACE = REGISTRATE
+            .multiblock("reaction_furnace", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_INVAR_HEATPROOF.get())
+            .recipeType(SuSyRecipeTypes.REACTION_FURNACE_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("     ", "     ", " P P ", " P P ", " P P ")
+                    .aisle("F   F", "FBBBF", "XPXPX", "XXXXX", " P P ")
+                    .aisle("     ", "XBBBX", "XP#PX", "XPMPX", " P P ")
+                    .aisle("F   F", "FBBBF", "XXSXX", "XXXXX", "     ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_INVAR_HEATPROOF.get()).setMinGlobalLimited(13)
+                            // 1.12.2 autoAbilities(true, true, true, true, true, true, false):
+                            // (energyIn, maintenance, itemIn, itemOut, fluidIn, fluidOut, muffler=false).
+                            // Muffler is handled by the explicit 'M' below, so it is not re-added here.
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, false, true, true, true, true))
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .where('F', Predicates.frames(GTMaterials.Invar))
+                    .where('M', Predicates.abilities(PartAbility.MUFFLER))
+                    .where('B', Predicates.blocks(GTBlocks.FIREBOX_STEEL.get()))
+                    .where('#', Predicates.air())
+                    .where(' ', Predicates.any())
+                    .build())
+            // TODO)) Phase 6: swap the front overlay to the real SuSy 'pyrolyse_oven'
+            // overlay (1.12.2 getFrontOverlay() -> Textures.PYROLYSE_OVEN_OVERLAY);
+            // blast_furnace is the placeholder. Base = HEAT_PROOF_CASING.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_heatproof"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- rotary_kiln ----
+    public static final MultiblockMachineDefinition ROTARY_KILN = REGISTRATE
+            .multiblock("rotary_kiln", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.ROTARY_KILN_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> {
+                // Different characters use common constraints. Copied from GCyM (1.12.2).
+                TraceabilityPredicate casingPredicate = Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                        .setMinGlobalLimited(8);
+                TraceabilityPredicate maintenance = Predicates.abilities(PartAbility.MAINTENANCE)
+                        .setMaxGlobalLimited(1);
+                return FactoryBlockPattern.start()
+                        .aisle("A    A    A", "A    A    A", "L    A    R", "LCCCCMCCCCR", "L    A    R")
+                        .aisle("A    A    A", "A    A    A", "LCCCCMCCCCR", "L#########R", "LCCCCMCCCCR")
+                        .aisle("A    A    A", "A    A    A", "L    A    R", "LCCCCSCCCCR", "L    A    R")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('A', Predicates.frames(GTMaterials.Steel))
+                        .where('C', Predicates.blocks(GTBlocks.LIGHT_CONCRETE.get()))
+                        .where('L', casingPredicate
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, true, false, false, true))
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, false, false, false, false, false).setMinGlobalLimited(0))
+                                .or(maintenance))
+                        .where('R', casingPredicate
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, false, true, true, false))
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, false, false, false, false, false).setMinGlobalLimited(0))
+                                .or(maintenance))
+                        .where('M', casingPredicate
+                                .or(maintenance))
+                        .where(' ', Predicates.any())
+                        .where('#', Predicates.air())
+                        .build();
+            })
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace")) // TODO Phase 6: real overlay is machines/multiblocks/rotary_kiln (SusyTextures.ROTARY_KILN_OVERLAY)
+            .register();
+
+    // ---- scrap_recycler (GT casings only; register even though in rocket pkg) ----
+    public static final MultiblockMachineDefinition SCRAP_RECYCLER = REGISTRATE
+            .multiblock("scrap_recycler", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_TITANIUM_STABLE.get())
+            .recipeType(SuSyRecipeTypes.SCRAP_RECYCLER_RECIPES)
+            // 1.12.2 used `new MultiblockRecipeLogic(this, true)` -> perfect overclocking.
+            .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+            .pattern(definition -> {
+                TraceabilityPredicate casing = Predicates.blocks(GTBlocks.CASING_TITANIUM_STABLE.get());
+                return FactoryBlockPattern.start()
+                        .aisle(" CCC ", "CCCCC", "COOOC", "CCCCC", " CCC ")
+                        .aisle(" CCC ", "PAAAP", "PAAAP", "PAAAP", " CDC ")
+                        .aisle(" CCC ", "PAAAP", "PAAAP", "PAAAP", " CDC ")
+                        .aisle(" CCC ", "PAAAP", "PAAAP", "PAAAP", " CDC ")
+                        .aisle(" CCC ", "PAAAP", "PAAAP", "PAAAP", " CDC ")
+                        .aisle(" CCC ", "PAAAP", "PAAAP", "PAAAP", " CDC ")
+                        .aisle(" CCC ", "CISIC", "CCCCC", "PAAAP", " CCC ")
+                        .where(' ', Predicates.any())
+                        .where('A', Predicates.air())
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('P', Predicates.blocks(GTBlocks.CASING_TITANIUM_PIPE.get()))
+                        .where('C', casing)
+                        // 1.12.2 autoAbilities(false, true, true, false, false, false, false)
+                        //   = itemImport + maintenance (no energy/muffler).
+                        .where('I', casing.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        false, false, true, false, false, false))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        // 1.12.2 autoAbilities(false, true, false, true, false, false, false)
+                        //   = itemExport + maintenance.
+                        .where('O', casing.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        false, false, false, true, false, false))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        // 1.12.2 autoAbilities(true, true, false, false, false, false, false)
+                        //   = energyIn + maintenance.
+                        .where('D', casing.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        true, false, false, false, false, false))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .build();
+            })
+            // Base casing matches the 1.12.2 getBaseTexture (Textures.STABLE_TITANIUM_CASING).
+            // Front overlay is a PLACEHOLDER: 1.12.2 did not override getFrontOverlay for this
+            // machine, so it used the default RecipeMapMultiblockController overlay. Phase 6
+            // should point this at the correct scrap-recycler / default-multiblock overlay.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_stable_titanium"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- condenser (NoEnergy: recipes EUt(0); verify no INPUT_ENERGY ability) ----
+    public static final MultiblockMachineDefinition CONDENSER = REGISTRATE
+            .multiblock("condenser", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+            .recipeType(SuSyRecipeTypes.CONDENSER_RECIPES)
+            // NOENERGY: CONDENSER_RECIPES is EUt(0) and has no EU IO; the pattern exposes no
+            // INPUT_ENERGY hatch (checkEnergyIn=false below), so a plain
+            // WorkableElectricMultiblockMachine runs these without energy. OC_NON_PERFECT
+            // matches the 1.12.2 NoEnergyMultiblockRecipeLogic's standardOverclockingLogic.
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .allowExtendedFacing(false) // 1.12.2 allowsExtendedFacing() == false
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("CCC", "CCC", "CCC", "CCC")
+                    .aisle("CCC", "C C", "C C", "CCC")
+                    .aisle("CCC", "CSC", "CCC", "CCC")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('C',
+                            Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                                    .setMinGlobalLimited(27)
+                                    .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, true, false,
+                                            false, true, true)))
+                    .where(' ', Predicates.air())
+                    .build())
+            // base texture confirmed (frostproof casing, same as Vacuum Freezer); front overlay
+            // is a PLACEHOLDER — 1.12.2 used SusyTextures.CONDENSER_OVERLAY (Phase 6 swap).
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- heat_exchanger (NoEnergy: recipes EUt(0); verify no INPUT_ENERGY ability) ----
+    public static final MultiblockMachineDefinition HEAT_EXCHANGER = REGISTRATE
+            .multiblock("heat_exchanger", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.HEAT_EXCHANGER_RECIPES)
+            // NoEnergy multiblock: HEAT_EXCHANGER_RECIPES runs at EUt(0) (no setEUIO(IO.IN)),
+            // so the pattern grants NO INPUT_ENERGY ability. 1.12.2 spoofed energy via
+            // NoEnergyMultiblockRecipeLogic; Modern handles EUt(0) recipes natively, so a plain
+            // WorkableElectricMultiblockMachine + non-perfect OC modifier is sufficient.
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("CCC", "BCB", "ACA")
+                    .aisle("CCC", "CDC", "ACA")
+                    .aisle("CCC", "CDC", "ACA")
+                    .aisle("CCC", "CDC", "ACA")
+                    .aisle("CCC", "CDC", "ACA")
+                    .aisle("CCC", "CDC", "ACA")
+                    .aisle("CCC", "CDC", "ACA")
+                    .aisle("CCC", "CDC", "ACA")
+                    .aisle("CCC", "BSB", "ACA")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('A', Predicates.frames(GTMaterials.Steel))
+                    // 1.12.2 autoAbilities(EIn,maintenance,IIn,IOut,FIn,FOut,muffler):
+                    //   (F,F,F,F,F,T,F) -> fluid-out only, min 2  OR
+                    //   (F,F,F,F,T,F,F) -> fluid-in  only, min 2
+                    .where('B', Predicates.autoAbilities(definition.getRecipeTypes(), false, false, false, false, false, true)
+                            .setMinGlobalLimited(2)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, false, false, true, false)
+                                    .setMinGlobalLimited(2)))
+                    //   (F,T,F,F,F,F,F) -> maintenance only          OR
+                    //   (F,F,T,F,F,F,F) -> item-in only, max 1
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .or(Predicates.autoAbilities(true, false, false))
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, true, false, false, false)
+                                    .setMaxGlobalLimited(1)))
+                    .where('D', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .build())
+            // TODO)) Phase 6: swap the blast_furnace overlay placeholder for the real SuSy
+            // front overlay (1.12.2 SusyTextures.HEAT_EXCHANGER_OVERLAY, "machines/multiblocks/heat_exchanger").
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- fluidized_bed_reactor (Continuous: re-derive — OC_PERFECT + a custom RecipeModifier applying SuSyParallelLogic.pureParallel(machine, recipe, 256)) ----
+    public static final MultiblockMachineDefinition FLUIDIZED_BED_REACTOR = REGISTRATE
+            .multiblock("fluidized_bed_reactor", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(CASING_PTFE_INERT)
+            .recipeType(SuSyRecipeTypes.FLUIDIZED_BED_REACTOR_RECIPES)
+            // 1.12.2 ContinuousMultiblockRecipeLogic(this, true): perfect OC layered with a
+            // SuSy pure-parallel batch (limit 256). OC first, then batch.
+            .recipeModifiers(GTRecipeModifiers.OC_PERFECT,
+                    (machine, recipe) -> SuSyParallelLogic.pureParallel(machine, recipe, 256))
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("F F", "XXX", "XXX", "XXX", "XXX")
+                    .aisle("   ", "XPX", "XPX", "XPX", "XPX")
+                    .aisle("F F", "XSX", "XXX", "XXX", "XXX")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('F', Predicates.frames(GTMaterials.Steel))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_POLYTETRAFLUOROETHYLENE_PIPE.get()))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_PTFE_INERT.get()).setMinGlobalLimited(17)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, true, true, true, true,
+                                    true)))
+                    .build())
+            // TODO)) Phase 6: real overlay is SusyTextures.FLUIDIZED_BED_OVERLAY
+            // (block/multiblock/fluidized_bed); blast_furnace is a placeholder.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_inert_ptfe"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- blender (perfect OC + FluidRender — register plain, add // TODO)) for the fluid-render client layer (Phase 6)) ----
+    public static final MultiblockMachineDefinition BLENDER = REGISTRATE
+            .multiblock("blender", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(GTBlocks.CASING_PTFE_INERT)
+            .recipeType(SuSyRecipeTypes.BLENDER_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle(" XXX ", " XPX ", " XXX ", "  X  ")
+                    .aisle("XXXXX", "X D X", "X   X", "  X  ")
+                    .aisle("XXXXX", "PDDDP", "X E X", "XXCXX")
+                    .aisle("XXXXX", "X D X", "X   X", "  X  ")
+                    .aisle(" XXX ", " XSX ", " XXX ", "  X  ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_PTFE_INERT.get()).setMinGlobalLimited(34)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes())))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_POLYTETRAFLUOROETHYLENE_PIPE.get()))
+                    .where('D', Predicates.blocks(GTBlocks.CASING_STAINLESS_CLEAN.get()))
+                    .where('E', Predicates.frames(GTMaterials.StainlessSteel))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STAINLESS_STEEL_GEARBOX.get()))
+                    .where(' ', Predicates.any())
+                    .build())
+            // TODO)) Phase 6: front overlay is the 1.12.2 LARGE_CHEMICAL_REACTOR_OVERLAY
+            // (block/multiblock/large_chemical_reactor); blast_furnace is the placeholder.
+            // Also port the FluidRenderRecipeMapMultiBlock fluid-render client layer
+            // (renders the recipe's output fluid in the 3x3 interior) — dropped here.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_inert_ptfe"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- injection_molder (SuSy pure-parallel x16: custom RecipeModifier -> SuSyParallelLogic.pureParallel(machine, recipe, 16)) ----
+    public static final MultiblockMachineDefinition INJECTION_MOLDER = REGISTRATE
+            .multiblock("injection_molder", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.INJECTION_MOLDER_RECIPES)
+            // 1.12.2 InjectionMolderLogic: default (non-perfect) OC + SuSy pure-parallel
+            // x16 (getParallelLimit()=16). pureParallel returns ModifierFunction (NULL =
+            // no parallel possible -> recipe rejected); layered after OC_NON_PERFECT.
+            .recipeModifiers(GTRecipeModifiers.OC_NON_PERFECT,
+                    (machine, recipe) -> SuSyParallelLogic.pureParallel(machine, recipe, 16))
+            .pattern(definition -> {
+                TraceabilityPredicate casingPredicate = Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                        .setMinGlobalLimited(35);
+                return FactoryBlockPattern.start()
+                        .aisle("CCCCCC", "CCCCCC", "III   ")
+                        .aisle("CCCCCC", "IPPKGO", "I#ICCC")
+                        .aisle("CCCCCC", "CSCCCC", "III   ")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('C', casingPredicate.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                true, true, false, false, false, false)))
+                        .where('K', Predicates.blocks(GTBlocks.COIL_CUPRONICKEL.get()))
+                        .where('G', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
+                        .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                        .where('I', casingPredicate.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                false, false, true, false, false, false)))
+                        .where('O', casingPredicate.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                false, false, false, true, false, false)))
+                        .where(' ', Predicates.any())
+                        .where('#', Predicates.air())
+                        .build();
+            })
+            // TODO)) Phase 6: front overlay is SusyTextures.INJECTION_MOLDER_OVERLAY in
+            // 1.12.2; blast_furnace is the placeholder.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- magnetohydrodynamic_generator (Generator: .generator(true), OUTPUT_ENERGY ability, GT fusion casing. Read GT LargeTurbineMachine pattern.) ----
+    // ==================================================================
+    // Phase 4c — Magnetohydrodynamic Generator (generator, plain: no rotor)
+    // ==================================================================
+    // 1.12.2 MetaTileEntityMagnetohydrodynamicGenerator. EU-out generator on the
+    // MAGNETOHYDRODYNAMIC_FUELS map (IO.OUT, 1 fluid in / 1 fluid out). Plain
+    // WorkableElectricMultiblockMachine — the source overrode nothing behavioural
+    // (no custom RecipeLogic / canVoidRecipeOutputs / getRealRecipe), so no
+    // controller class is needed. Front overlay texture is the 1.12.2
+    // Textures.BLAST_FURNACE_OVERLAY; a GTCEu placeholder is used until Phase 6.
+    public static final MultiblockMachineDefinition MAGNETOHYDRODYNAMIC_GENERATOR = REGISTRATE
+            .multiblock("magnetohydrodynamic_generator", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_TUNGSTENSTEEL_ROBUST.get())
+            .recipeType(SuSyRecipeTypes.MAGNETOHYDRODYNAMIC_FUELS)
+            .generator(true)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle(" A ", " C ", " A ", "   ", "   ")
+                    .aisle("   ", " B ", " B ", " B ", "   ")
+                    .aisle(" B ", "AAA", "AAA", "AAA", " B ")
+                    .aisle(" B ", "AAA", "EAE", "AAA", " B ")
+                    .aisle(" B ", "AAA", "AAA", "AAA", " B ")
+                    .aisle("   ", " B ", " B ", " B ", "   ")
+                    .aisle(" A ", " S ", " A ", "   ", "   ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('A', Predicates.blocks(GTBlocks.CASING_TUNGSTENSTEEL_ROBUST.get())
+                            // 1.12.2 autoAbilities(false,true,false,false,false,false,false):
+                            // (energyIn, maintenance, itemIn, itemOut, fluidIn, fluidOut, muffler)
+                            // -> maintenance hatch only, exactly one.
+                            .or(Predicates.abilities(PartAbility.MAINTENANCE).setExactLimit(1)))
+                    .where('B', Predicates.blocks(GTBlocks.FUSION_CASING.get()))
+                    .where('C', Predicates.abilities(PartAbility.OUTPUT_ENERGY))
+                    // 1.12.2 autoAbilities(..., fluidIn=true) OR autoAbilities(..., fluidOut=true)
+                    // -> a fluid import OR export hatch (fuels in / exhaust out).
+                    .where('E', Predicates.abilities(PartAbility.IMPORT_FLUIDS)
+                            .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS)))
+                    .where(' ', Predicates.any())
+                    .build())
+            // Base casing tex = 1.12.2 Textures.ROBUST_TUNGSTENSTEEL_CASING. Front overlay:
+            // 1.12.2 used Textures.BLAST_FURNACE_OVERLAY -> GTCEu blast_furnace placeholder
+            // (swap for the real MHD overlay in Phase 6).
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_robust_tungstensteel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
 
     public static void init() {}
 
