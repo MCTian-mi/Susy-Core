@@ -58,6 +58,7 @@ legacyForge {
     mods {
         create(modId) {
             sourceSet(sourceSets.main.get())
+            sourceSet(sourceSets.test.get())
         }
     }
 
@@ -73,6 +74,13 @@ legacyForge {
             enableGameTest()
             ideName = "runServer"
             gameDirectory = file("run/server")
+        }
+        create("gameTestServer") {
+            type = "gameTestServer"
+            sourceSet = sourceSets.test.get()
+            enableGameTest()
+            ideName = "Game Tests"
+            gameDirectory = file("run/gametest")
         }
         create("data") {
             data()
