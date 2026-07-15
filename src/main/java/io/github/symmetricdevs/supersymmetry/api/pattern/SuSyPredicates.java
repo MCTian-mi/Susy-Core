@@ -3,6 +3,7 @@ package io.github.symmetricdevs.supersymmetry.api.pattern;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.pattern.MultiblockState;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
+import com.gregtechceu.gtceu.api.pattern.error.PatternStringError;
 import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
 
@@ -114,5 +115,67 @@ public final class SuSyPredicates {
         return state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
                 ? state.setValue(BlockStateProperties.HORIZONTAL_FACING, facing)
                 : state;
+    }
+
+    // ==================================================================
+    // Type-tracking predicates (Bucket D). 1.12.2 enforced all-matched-blocks-same-type
+    // via a match-context key + PatternStringError on mismatch, and recorded positions
+    // under a "VABlock" list. Modern ports write the type to the match context exactly
+    // like Predicates.heatingCoils writes "CoilType".
+    // ==================================================================
+
+    /**
+     * Match-context key under which {@link #sameTypeVariant} records the matched block
+     * (the "type" that all matched blocks must share). Distinct predicate instances in
+     * one pattern use distinct keys via {@code keyPrefix}.
+     */
+    public static final String TYPE_KEY_SUFFIX = "Type";
+
+    /**
+     * A predicate that accepts any of {@code allowedBlocks} but requires every matched
+     * block in the structure to be the <em>same one</em>. Ports the 1.12.2
+     * coolingCoils/sinteringBricks/metalSheets/conveyorBelts "same-type" idiom. The
+     * chosen block is written to the match context under {@code keyPrefix + "Type"} for
+     * the controller to read in {@code onStructureFormed()} (e.g. coil temperature,
+     * brick tier). A mismatch sets a {@link PatternStringError}.
+     *
+     * @param keyPrefix     match-context key prefix (e.g. "CoolingCoil", "SinteringBrick")
+     * @param errorKey      lang key for the mismatch error
+     * @param allowedBlocks the block variants that may be used (one must be chosen)
+     */
+    public static TraceabilityPredicate sameTypeVariant(String keyPrefix, String errorKey, Block... allowedBlocks) {
+        String key = keyPrefix + TYPE_KEY_SUFFIX;
+        return new TraceabilityPredicate(
+                (MultiblockState state) -> {
+                    Block matched = state.getBlockState().getBlock();
+                    boolean isAllowed = false;
+                    for (Block b : allowedBlocks) {
+                        if (matched == b) {
+                            isAllowed = true;
+                            break;
+                        }
+                    }
+                    if (!isAllowed)
+                        return false;
+                    Object current = state.getMatchContext().getOrPut(key, matched);
+                    if (!current.equals(matched)) {
+                        state.setError(new PatternStringError(errorKey));
+                        return false;
+                    }
+                    return true;
+                },
+                () -> java.util.Arrays.stream(allowedBlocks)
+                        .map(b -> BlockInfo.fromBlockState(b.defaultBlockState()))
+                        .toArray(BlockInfo[]::new))
+                .addTooltips(net.minecraft.network.chat.Component.translatable(errorKey));
+    }
+
+    /**
+     * Read the block chosen by a {@link #sameTypeVariant} predicate from a formed
+     * structure's match context, or {@code null} if none was recorded.
+     */
+    public static Block getChosenVariant(IMultiController controller, String keyPrefix) {
+        Object stored = controller.self().getMultiblockState().getMatchContext().get(keyPrefix + TYPE_KEY_SUFFIX);
+        return stored instanceof Block b ? b : null;
     }
 }
