@@ -1,4 +1,4 @@
-rootProject.name = "Supercritical"
+rootProject.name = "Supersymmetry"
 
 dependencyResolutionManagement {
     versionCatalogs {
