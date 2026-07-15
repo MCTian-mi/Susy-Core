@@ -30,7 +30,6 @@ val legacySourceExcludes = listOf(
     "api/metatileentity/",
     "api/mixin/",
     "api/particle/",
-    "api/recipes/",
     "api/recycling/",
     "api/rocketry/",
     "api/sound/",

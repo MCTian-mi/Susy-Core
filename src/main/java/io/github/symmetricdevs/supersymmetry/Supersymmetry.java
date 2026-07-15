@@ -1,6 +1,8 @@
 package io.github.symmetricdevs.supersymmetry;
 
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
+import io.github.symmetricdevs.supersymmetry.common.data.SuSyRecipeTypes;
+import io.github.symmetricdevs.supersymmetry.common.data.SuSyWorldgenRecipeTypes;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyCreativeModeTabs;
 import io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials;
 import io.github.symmetricdevs.supersymmetry.config.SusyConfig;
@@ -10,7 +12,9 @@ import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.PostMaterialEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.registry.MaterialRegistry;
+import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -56,6 +60,12 @@ public class Supersymmetry {
         // (MaterialRegistryEvent / MaterialEvent / PostMaterialEvent below).
         FMLJavaModLoadingContext.get().getModEventBus().register(this);
 
+        // Recipe types register during GTCEu's register event (while its registries
+        // are unfrozen) via a generic listener — not initializeAddon(), which runs
+        // after the recipe_category registry is frozen.
+        FMLJavaModLoadingContext.get().getModEventBus()
+                .addGenericListener(GTRecipeType.class, this::registerRecipeTypes);
+
         // Hook the single GTRegistrate to the mod event bus.
         SusyRegistration.REGISTRATE.registerRegistrate();
     }
@@ -73,5 +83,15 @@ public class Supersymmetry {
     @SubscribeEvent
     public void modifyMaterials(PostMaterialEvent event) {
         SusyMaterials.changeProperties();
+    }
+
+    /**
+     * Fired by GTCEu during its registration window (registries unfrozen). Force
+     * class-load of the recipe-type holders so their static fields self-register
+     * into {@code GTRegistries.RECIPE_TYPES} (mirrors gcyr's registerRecipeTypes).
+     */
+    public void registerRecipeTypes(GTCEuAPI.RegisterEvent<ResourceLocation, GTRecipeType> event) {
+        SuSyRecipeTypes.init();
+        SuSyWorldgenRecipeTypes.init();
     }
 }

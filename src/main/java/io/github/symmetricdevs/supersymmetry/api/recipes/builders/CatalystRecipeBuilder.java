@@ -1,55 +1,57 @@
-package supersymmetry.api.recipes.builders;
+package io.github.symmetricdevs.supersymmetry.api.recipes.builders;
 
 import java.util.Map;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 
-import gregtech.api.recipes.Recipe;
-import gregtech.api.recipes.RecipeBuilder;
-import gregtech.api.recipes.RecipeMap;
-import gregtech.api.recipes.ingredients.GTRecipeItemInput;
-import supersymmetry.api.recipes.catalysts.CatalystGroup;
-import supersymmetry.api.recipes.catalysts.CatalystInfo;
-import supersymmetry.api.recipes.properties.CatalystProperty;
-import supersymmetry.api.recipes.properties.CatalystPropertyValue;
+import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder;
 
-public class CatalystRecipeBuilder extends RecipeBuilder<CatalystRecipeBuilder> {
+import io.github.symmetricdevs.supersymmetry.api.recipes.catalysts.CatalystGroup;
+import io.github.symmetricdevs.supersymmetry.api.recipes.catalysts.CatalystInfo;
+import io.github.symmetricdevs.supersymmetry.api.recipes.properties.SuSyRecipePropertyKeys;
 
-    public CatalystRecipeBuilder() {}
+/**
+ * Catalyst support for recipe building. Ported from the 1.12.2
+ * {@code CatalystRecipeBuilder}.
+ * <p>
+ * The 1.12.2 version was a {@code RecipeBuilder} subclass that stamped a catalyst
+ * property and added not-consumed catalyst inputs. GTCEu-Modern recipe types are
+ * not parameterized by builder class and carry no {@code RecipeProperty}, so this
+ * is a static helper applied to a {@link GTRecipeBuilder} during datagen: it
+ * records the accepted {@link CatalystGroup} and required tier as recipe data
+ * ({@link SuSyRecipePropertyKeys#CATALYST_GROUP} /
+ * {@link SuSyRecipePropertyKeys#CATALYST_TIER}) and adds every catalyst item in the
+ * group at or above the required tier as a <em>not-consumed</em> input, so the
+ * recipe only matches when a valid catalyst is present. The matched catalyst's
+ * modifiers are applied by the machine's recipe logic at runtime (Phase 4).
+ */
+public final class CatalystRecipeBuilder {
 
-    @SuppressWarnings("unused")
-    public CatalystRecipeBuilder(Recipe recipe, RecipeMap<CatalystRecipeBuilder> recipeMap) {
-        super(recipe, recipeMap);
+    private CatalystRecipeBuilder() {}
+
+    public static GTRecipeBuilder catalyst(GTRecipeBuilder builder, CatalystGroup catalystGroup) {
+        return catalyst(builder, catalystGroup, CatalystInfo.NO_TIER, 1);
     }
 
-    public CatalystRecipeBuilder(RecipeBuilder<CatalystRecipeBuilder> recipeBuilder) {
-        super(recipeBuilder);
+    public static GTRecipeBuilder catalyst(GTRecipeBuilder builder, CatalystGroup catalystGroup, int tier) {
+        return catalyst(builder, catalystGroup, tier, 1);
     }
 
-    public CatalystRecipeBuilder copy() {
-        return new CatalystRecipeBuilder(this);
-    }
-
-    public CatalystRecipeBuilder catalyst(CatalystGroup catalystGroup) {
-        return catalyst(catalystGroup, CatalystInfo.NO_TIER, 1);
-    }
-
-    public CatalystRecipeBuilder catalyst(CatalystGroup catalystGroup, int tier) {
-        return catalyst(catalystGroup, tier, 1);
-    }
-
-    public CatalystRecipeBuilder catalyst(CatalystGroup catalystGroup, int tier, int amount) {
-        applyProperty(CatalystProperty.getInstance(), new CatalystPropertyValue(tier, catalystGroup));
+    public static GTRecipeBuilder catalyst(GTRecipeBuilder builder, CatalystGroup catalystGroup, int tier,
+                                           int amount) {
+        builder.addData(SuSyRecipePropertyKeys.CATALYST_GROUP, catalystGroup.getName());
+        builder.addData(SuSyRecipePropertyKeys.CATALYST_TIER, tier);
 
         ItemStack[] inputStacks = catalystGroup.getCatalystInfos().streamEntries()
-                .filter(entry -> entry.getValue().getTier() >= tier)
+                .filter(entry -> entry.getValue().tier() >= tier)
                 .map(Map.Entry::getKey)
-                .map(is -> {
-                    is = is.copy();
-                    is.setCount(amount);
-                    return is;
+                .map(stack -> {
+                    ItemStack copy = stack.copy();
+                    copy.setCount(amount);
+                    return copy;
                 }).toArray(ItemStack[]::new);
 
-        return this.notConsumable(GTRecipeItemInput.getOrCreate(inputStacks));
+        return builder.notConsumable(Ingredient.of(inputStacks));
     }
 }
