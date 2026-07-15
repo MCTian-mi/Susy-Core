@@ -65,6 +65,8 @@ import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SingleCol
 import java.util.Comparator;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_PTFE_INERT;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.MACHINE_CASING_ULV;
+import io.github.symmetricdevs.supersymmetry.api.pattern.SuSyPredicates;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyRotationGeneratorMachine;
 
 /**
  * SuSy machine registry. Ported from the 1.12.2 {@code SuSyMetaTileEntities}
@@ -1293,6 +1295,231 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
             // tex = frostproof (1.12.2 Textures.FROST_PROOF_CASING), confirmed.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
                     GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ==================================================================
+    // Phase 4c — Bucket C: rotation generators (turbines + internal combustion engine)
+    //
+    // Ported from 1.12.2 RotationGeneratorController / MetaTileEntitySUSYLargeTurbine /
+    // MetaTileEntityGasTurbine / MetaTileEntityAdvancedLargeTurbine /
+    // MetaTileEntityInternalCombustionEngine onto SuSyRotationGeneratorMachine (the
+    // spool-ramp + 5-tier-lubricant + energy-void base). All are .generator(true) and
+    // share SuSyRotationGeneratorMachine.recipeModifier (linear speed-scaled EU output).
+    //
+    // The rotor / alternator-coil / crankshaft blocks are HorizontalOrientableBlocks
+    // (SusyBlocks); the patterns use the PURE SuSyPredicates.horizontalOrientation and
+    // the controller orients them on structure form. 1.12.2 autoAbilities(...) arg
+    // orders are mapped by meaning (see susy-kore-multiblock-registration-idiom).
+    //
+    // The 1.12.2 parameters (maxSpeed/accel/decel/tier) are preserved exactly:
+    //   BASIC_STEAM_TURBINE  tier 1 (MV), 3600/1/1,  steel turbine casing + steel rotor
+    //   GAS_TURBINE          tier 4 (EV), 7200/3/4,  titanium casing + combustion rotor (+ engine intake)
+    //   ADVANCED_STEAM_TURBINE tier 4 (EV), 3600/2/2, titanium casing + LP/HP rotors (+ titanium pipe)
+    //   INTERNAL_COMBUSTION_GENERATOR tier 3 (HV), 3600/18/24, steel solid + crankshaft/pistons/serpentine
+    // ==================================================================
+
+    public static final MultiblockMachineDefinition BASIC_STEAM_TURBINE = REGISTRATE
+            .multiblock("basic_steam_turbine",
+                    holder -> new SuSyRotationGeneratorMachine(holder, 1, 3600, 1, 1, SuSyLubricants.TIERS))
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false) // 1.12.2 allowsExtendedFacing() == false
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_TURBINE.get())
+            .recipeType(SuSyRecipeTypes.LARGE_STEAM_TURBINE_FUELS)
+            .generator(true)
+            .recipeModifier(SuSyRotationGeneratorMachine::recipeModifier, true)
+            .pattern(definition -> {
+                var casing = Predicates.blocks(GTBlocks.CASING_STEEL_TURBINE.get());
+                var maintenance = Predicates.abilities(PartAbility.MAINTENANCE).setExactLimit(1);
+                return FactoryBlockPattern.start()
+                        .aisle("GAAAAAAAO", "GAAAAAAAO", "G   A   O")
+                        .aisle("GAAAAAAAO", "GDDDDCCCF", "GAAAAAAAO")
+                        .aisle("GAAAAAAAO", "GSAAAAAAO", "G   A   O")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        // 1.12.2 'A': casing + IMPORT_ITEMS + maintenance (7-arg autoAbilities all-false
+                        // contributed no hatches).
+                        .where('A', casing.setMinGlobalLimited(52)
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setPreviewCount(1))
+                                .or(maintenance))
+                        // 1.12.2 'O': + IMPORT_FLUIDS (7-arg pos6=fluidIn).
+                        .where('O', casing
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setPreviewCount(1))
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS))
+                                .or(maintenance))
+                        // 1.12.2 'G': + EXPORT_FLUIDS (7-arg pos7=fluidOut).
+                        .where('G', casing
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setPreviewCount(1))
+                                .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS))
+                                .or(maintenance))
+                        .where('C', SuSyPredicates.horizontalOrientation(SusyBlocks.COPPER_ALTERNATOR_COIL.get(),
+                                RelativeDirection.RIGHT))
+                        .where('D', SuSyPredicates.horizontalOrientation(SusyBlocks.STEEL_TURBINE_ROTOR.get(),
+                                RelativeDirection.RIGHT))
+                        .where('F', Predicates.abilities(PartAbility.OUTPUT_ENERGY))
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            .tooltipBuilder((stack, tooltip) -> {
+                tooltip.add(Component.translatable("gregtech.universal.tooltip.max_voltage_out", GTValues.V[1 + 2],
+                        GTValues.VNF[1 + 2]));
+                tooltip.add(Component.translatable("susy.multiblock.rotation_generator.tooltip", 3600, 1, 1));
+            })
+            // TODO)) Phase 6: real SuSy LARGE_STEAM_TURBINE_OVERLAY; GTCEu large_steam_turbine is the placeholder.
+            .workableCasingModel(GTCEu.id("block/casings/mechanic/machine_casing_turbine_steel"),
+                    GTCEu.id("block/multiblock/generator/large_steam_turbine"))
+            .register();
+
+    public static final MultiblockMachineDefinition GAS_TURBINE = REGISTRATE
+            .multiblock("gas_turbine",
+                    holder -> new SuSyRotationGeneratorMachine(holder, 4, 7200, 3, 4, SuSyLubricants.TIERS))
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_TITANIUM_TURBINE.get())
+            .recipeType(com.gregtechceu.gtceu.common.data.GTRecipeTypes.GAS_TURBINE_FUELS)
+            .generator(true)
+            .recipeModifier(SuSyRotationGeneratorMachine::recipeModifier, true)
+            .pattern(definition -> {
+                var casing = Predicates.blocks(GTBlocks.CASING_TITANIUM_TURBINE.get());
+                var maintenance = Predicates.abilities(PartAbility.MAINTENANCE).setMaxGlobalLimited(1);
+                return FactoryBlockPattern.start()
+                        .aisle("GAAAAAAAO", "GAAAAAAAO", "G   A   O")
+                        .aisle("GAAAAAAAO", "IDDDDCCCF", "GAAAAAAAO")
+                        .aisle("GAAAAAAAO", "GSAAAAAAO", "G   A   O")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('A', casing.setMinGlobalLimited(51)
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setPreviewCount(1))
+                                .or(maintenance))
+                        .where('O', casing
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setPreviewCount(1))
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS))
+                                .or(maintenance))
+                        .where('G', casing
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setPreviewCount(1))
+                                .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS))
+                                .or(maintenance))
+                        .where('C', SuSyPredicates.horizontalOrientation(SusyBlocks.COPPER_ALTERNATOR_COIL.get(),
+                                RelativeDirection.RIGHT))
+                        .where('D', SuSyPredicates.horizontalOrientation(SusyBlocks.COMBUSTION_TURBINE_ROTOR.get(),
+                                RelativeDirection.RIGHT))
+                        .where('F', Predicates.abilities(PartAbility.OUTPUT_ENERGY))
+                        .where('I', Predicates.blocks(GTBlocks.CASING_ENGINE_INTAKE.get()))
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            .tooltipBuilder((stack, tooltip) -> {
+                tooltip.add(Component.translatable("gregtech.universal.tooltip.max_voltage_out", GTValues.V[4 + 2],
+                        GTValues.VNF[4 + 2]));
+                tooltip.add(Component.translatable("susy.multiblock.rotation_generator.tooltip", 7200, 3, 4));
+            })
+            // TODO)) the 1.12.2 GasTurbineRecipeLogic outputs the flue gas fluid
+            // progressively per second during the run (not all at completion). Port as a
+            // per-tick fluid tickOutput on the recipe; for now the whole flue outputs at
+            // recipe end via the standard EU/fluid tick-output handling.
+            // TODO)) Phase 6: real SuSy LARGE_GAS_TURBINE_OVERLAY.
+            .workableCasingModel(GTCEu.id("block/casings/mechanic/machine_casing_turbine_titanium"),
+                    GTCEu.id("block/multiblock/generator/large_gas_turbine"))
+            .register();
+
+    public static final MultiblockMachineDefinition ADVANCED_STEAM_TURBINE = REGISTRATE
+            .multiblock("advanced_steam_turbine",
+                    holder -> new SuSyRotationGeneratorMachine(holder, 4, 3600, 2, 2, SuSyLubricants.TIERS))
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_TITANIUM_TURBINE.get())
+            .recipeType(SuSyRecipeTypes.ADVANCED_STEAM_TURBINE_FUELS)
+            .generator(true)
+            .recipeModifier(SuSyRotationGeneratorMachine::recipeModifier, true)
+            .pattern(definition -> {
+                var casing = Predicates.blocks(GTBlocks.CASING_TITANIUM_TURBINE.get());
+                var maintenance = Predicates.abilities(PartAbility.MAINTENANCE).setMaxGlobalLimited(1);
+                return FactoryBlockPattern.start()
+                        .aisle("GAAAAAAAAAAAO", "GAAAAAAAAAAAO", "G   A   A   O")
+                        .aisle("GAAAAAAAAAAAO", "GHHHPLLLLCCCF", "GAAAAAAAAAAAO")
+                        .aisle("GAAAAAAAAAAAO", "GSAAAAAAAAAAO", "G   A   A   O")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('A', casing.setMinGlobalLimited(52)
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setPreviewCount(1))
+                                .or(maintenance))
+                        .where('O', casing
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setPreviewCount(1))
+                                .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS))
+                                .or(maintenance))
+                        .where('G', casing
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setPreviewCount(1))
+                                .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS))
+                                .or(maintenance))
+                        .where('C', SuSyPredicates.horizontalOrientation(SusyBlocks.COPPER_ALTERNATOR_COIL.get(),
+                                RelativeDirection.RIGHT))
+                        // 1.12.2: 'L' = low-pressure rotor (rotorOrientation), 'H' = high-pressure
+                        // rotor (rotorOrientation2); both face controller-relative RIGHT.
+                        .where('L', SuSyPredicates.horizontalOrientation(SusyBlocks.LOW_PRESSURE_TURBINE_ROTOR.get(),
+                                RelativeDirection.RIGHT))
+                        .where('H', SuSyPredicates.horizontalOrientation(SusyBlocks.HIGH_PRESSURE_TURBINE_ROTOR.get(),
+                                RelativeDirection.RIGHT))
+                        .where('F', Predicates.abilities(PartAbility.OUTPUT_ENERGY))
+                        .where('P', Predicates.blocks(GTBlocks.CASING_TITANIUM_PIPE.get()))
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            .tooltipBuilder((stack, tooltip) -> {
+                tooltip.add(Component.translatable("gregtech.universal.tooltip.max_voltage_out", GTValues.V[4 + 2],
+                        GTValues.VNF[4 + 2]));
+                tooltip.add(Component.translatable("susy.multiblock.rotation_generator.tooltip", 3600, 2, 2));
+            })
+            // TODO)) Phase 6: real SuSy ADVANCED_STEAM_TURBINE_OVERLAY.
+            .workableCasingModel(GTCEu.id("block/casings/mechanic/machine_casing_turbine_titanium"),
+                    GTCEu.id("block/multiblock/generator/large_steam_turbine"))
+            .register();
+
+    public static final MultiblockMachineDefinition INTERNAL_COMBUSTION_GENERATOR = REGISTRATE
+            .multiblock("internal_combustion_generator",
+                    holder -> new SuSyRotationGeneratorMachine(holder, 3, 3600, 18, 24, SuSyLubricants.TIERS))
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(com.gregtechceu.gtceu.common.data.GTRecipeTypes.COMBUSTION_GENERATOR_FUELS)
+            .generator(true)
+            .recipeModifier(SuSyRotationGeneratorMachine::recipeModifier, true)
+            .pattern(definition -> {
+                var casing = Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get());
+                return FactoryBlockPattern.start()
+                        .aisle("C CCCCCCC  F   F ", "C   FEF    F   F ", "C   FCF    F   F ", "C                ",
+                                "C                ", "                 ")
+                        .aisle("CFFFFFFFFFFFFFFF ", "R CCCCCCC CCCCCCC", "R CCCCCCC CCCCCCC", "R CCCCCCC CCCCCCC",
+                                "C  F F F         ", "   HHHHH         ")
+                        .aisle("CPPPPPPPC  F   F ", "R CCCCCCC CCCCCCC", "R CXXXXXXGAAAAAAD", "R CBBBBBC CCCCCCC",
+                                "C  IPPPI         ", "   HHHHH         ")
+                        .aisle("CFFFFFFFFFFFFFFF ", "R CCCCCCC CCCCCCC", "R CCCCCCC CCCCCCC", "R CCCCCCC CCCCCCC",
+                                "C  F F F         ", "   HHHHH         ")
+                        .aisle("C CCCCCCC  F   F ", "C   FSF    F   F ", "C   FMF    F   F ", "C                ",
+                                "C                ", "                 ")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('C', casing)
+                        .where('M', Predicates.abilities(PartAbility.MAINTENANCE))
+                        .where('E', Predicates.abilities(PartAbility.MUFFLER))
+                        .where('F', Predicates.frames(GTMaterials.Steel))
+                        // 1.12.2 'H': casing + IMPORT_FLUIDS (7-arg autoAbilities pos6=fluidIn).
+                        .where('H', casing.or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)))
+                        .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                        .where('R', Predicates.blocks(SusyBlocks.BASIC_SERPENTINE.get()))
+                        .where('X', SuSyPredicates.horizontalOrientation(SusyBlocks.CRANKSHAFT_ENGINE_CASING.get(),
+                                RelativeDirection.UP))
+                        .where('G', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
+                        .where('A', SuSyPredicates.horizontalOrientation(SusyBlocks.COPPER_ALTERNATOR_COIL.get(),
+                                RelativeDirection.RIGHT))
+                        .where('D', Predicates.abilities(PartAbility.OUTPUT_ENERGY))
+                        .where('B', Predicates.blocks(SusyBlocks.PISTON_BLOCK.get()))
+                        .where('I', Predicates.blocks(SusyBlocks.BASIC_INTAKE_CASING.get()))
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            .tooltipBuilder((stack, tooltip) -> {
+                tooltip.add(Component.translatable("gregtech.universal.tooltip.max_voltage_out", GTValues.V[3 + 2],
+                        GTValues.VNF[3 + 2]));
+                tooltip.add(Component.translatable("susy.multiblock.rotation_generator.tooltip", 3600, 18, 24));
+            })
+            // TODO)) Phase 6: 1.12.2 front overlay was FLUID_COMPRESSOR_OVERLAY (solid steel casing base).
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/generator/large_combustion_engine"))
             .register();
 
     public static void init() {}

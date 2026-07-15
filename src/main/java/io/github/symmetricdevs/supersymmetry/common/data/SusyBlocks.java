@@ -8,12 +8,14 @@ import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.tterrag.registrate.util.entry.BlockEntry;
 
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
+import io.github.symmetricdevs.supersymmetry.common.block.HorizontalOrientableBlock;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
 import java.util.function.Supplier;
 
@@ -91,6 +93,42 @@ public final class SusyBlocks {
                             .modelForState().modelFile(inactiveModel).addModel()
                             .partialState().with(GTBlockStateProperties.ACTIVE, true)
                             .modelForState().modelFile(activeModel).addModel();
+                })
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
+    /**
+     * Horizontal-orientable casing: a {@link HorizontalDirectionalBlock} carrying a
+     * {@code FACING} property. Registers a single cube-all model whose front face is
+     * rotated by the FACING state, so the block forms multiblock structures now and the
+     * controller can auto-orient it in {@code onStructureFormed} (Bucket C/D
+     * {@code horizontalOrientation} predicates). The 1.12.2 art orients a distinct
+     * front texture per-facing; that directional texture model is a {@code // TODO))}
+     * Phase 6 concern — for now the same texture shows on all faces.
+     */
+    private static BlockEntry<HorizontalOrientableBlock> createHorizontalOrientableCasingBlock(String name, ResourceLocation texture) {
+        return REGISTRATE.block(name, HorizontalOrientableBlock::new)
+                .initialProperties(() -> Blocks.IRON_BLOCK)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::solid)
+                .blockstate((ctx, prov) -> {
+                    var model = prov.models().cubeAll(ctx.getName(), texture);
+                    prov.getVariantBuilder(ctx.getEntry())
+                            .forAllStates(state -> {
+                                int yRot = switch (state.getValue(HorizontalDirectionalBlock.FACING)) {
+                                    case EAST -> 90;
+                                    case SOUTH -> 180;
+                                    case WEST -> 270;
+                                    default -> 0; // NORTH
+                                };
+                                return net.minecraftforge.client.model.generators.ConfiguredModel.builder()
+                                        .modelFile(model)
+                                        .rotationY(yRot)
+                                        .build();
+                            });
                 })
                 .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
                 .item(BlockItem::new)
@@ -185,21 +223,23 @@ public final class SusyBlocks {
     public static final BlockEntry<Block> LV_CONVEYOR_BELT = createCasingBlock("lv_conveyor_belt", TEX_STEEL); // TODO)) horizontal-rotatable + flat rotation behaviour (BlockConveyor); tex .../conveyor_belt/lv
 
     // ==================================================================
-    // Rotors / coils for generators (Bucket C). 1.12.2 horizontal-rotatable -> plain
-    // here (rotation is Phase 6). tex gregtech:blocks/casings/<dir>/<name>
+    // Rotors / coils for generators (Bucket C). 1.12.2 horizontal-rotatable
+    // (VariantHorizontalRotatableBlock) -> HorizontalDirectionalBlock here so the
+    // multiblock controller can auto-orient them on structure form. The per-facing
+    // directional front texture is Phase 6. tex gregtech:blocks/casings/<dir>/<name>
     // ==================================================================
-    public static final BlockEntry<Block> STEEL_SEPARATOR_ROTOR = createCasingBlock("steel_separator_rotor", TEX_STEEL); // TODO)) rotatable (BlockSeparatorRotor); tex .../separator_rotor/steel
-    public static final BlockEntry<Block> COPPER_ALTERNATOR_COIL = createCasingBlock("copper_alternator_coil", TEX_STEEL); // TODO)) rotatable (BlockAlternatorCoil); tex .../alternator_coil/copper
-    public static final BlockEntry<Block> STEEL_TURBINE_ROTOR = createCasingBlock("steel_turbine_rotor", TEX_STEEL); // TODO)) rotatable (BlockTurbineRotor); tex .../turbine_rotor/steel
-    public static final BlockEntry<Block> LOW_PRESSURE_TURBINE_ROTOR = createCasingBlock("low_pressure_turbine_rotor", TEX_STEEL); // TODO)) rotatable; tex .../turbine_rotor/low_pressure
-    public static final BlockEntry<Block> HIGH_PRESSURE_TURBINE_ROTOR = createCasingBlock("high_pressure_turbine_rotor", TEX_STEEL); // TODO)) rotatable; tex .../turbine_rotor/high_pressure
-    public static final BlockEntry<Block> COMBUSTION_TURBINE_ROTOR = createCasingBlock("combustion_turbine_rotor", TEX_STEEL); // TODO)) rotatable; tex .../turbine_rotor/combustion
+    public static final BlockEntry<HorizontalOrientableBlock> STEEL_SEPARATOR_ROTOR = createHorizontalOrientableCasingBlock("steel_separator_rotor", TEX_STEEL); // TODO)) rotatable front tex (BlockSeparatorRotor); tex .../separator_rotor/steel
+    public static final BlockEntry<HorizontalOrientableBlock> COPPER_ALTERNATOR_COIL = createHorizontalOrientableCasingBlock("copper_alternator_coil", TEX_STEEL); // TODO)) rotatable front tex (BlockAlternatorCoil); tex .../alternator_coil/copper
+    public static final BlockEntry<HorizontalOrientableBlock> STEEL_TURBINE_ROTOR = createHorizontalOrientableCasingBlock("steel_turbine_rotor", TEX_STEEL); // TODO)) rotatable front tex (BlockTurbineRotor); tex .../turbine_rotor/steel
+    public static final BlockEntry<HorizontalOrientableBlock> LOW_PRESSURE_TURBINE_ROTOR = createHorizontalOrientableCasingBlock("low_pressure_turbine_rotor", TEX_STEEL); // TODO)) rotatable front tex; tex .../turbine_rotor/low_pressure
+    public static final BlockEntry<HorizontalOrientableBlock> HIGH_PRESSURE_TURBINE_ROTOR = createHorizontalOrientableCasingBlock("high_pressure_turbine_rotor", TEX_STEEL); // TODO)) rotatable front tex; tex .../turbine_rotor/high_pressure
+    public static final BlockEntry<HorizontalOrientableBlock> COMBUSTION_TURBINE_ROTOR = createHorizontalOrientableCasingBlock("combustion_turbine_rotor", TEX_STEEL); // TODO)) rotatable front tex; tex .../turbine_rotor/combustion
 
     // ==================================================================
     // Engine casings (InternalCombustionEngine). tex gregtech:blocks/casings/engine_casing/...
     // ==================================================================
     public static final BlockEntry<Block> PISTON_BLOCK = createCasingBlock("piston_block", TEX_STEEL); // TODO)) tex .../engine_casing/piston_block
-    public static final BlockEntry<Block> CRANKSHAFT_ENGINE_CASING = createCasingBlock("crankshaft_engine_casing", TEX_STEEL); // TODO)) rotatable (BlockEngineCasing2, horizontal); tex .../engine_casing_2/crankshaft
+    public static final BlockEntry<HorizontalOrientableBlock> CRANKSHAFT_ENGINE_CASING = createHorizontalOrientableCasingBlock("crankshaft_engine_casing", TEX_STEEL); // TODO)) rotatable front tex (BlockEngineCasing2, horizontal); tex .../engine_casing_2/crankshaft
     public static final BlockEntry<ActiveBlock> BASIC_INTAKE_CASING = createActiveCasingBlock("basic_intake_casing", TEX_ASSEMBLY, TEX_ASSEMBLY); // TODO)) tex .../engine_casing/basic_intake_casing/basic_intake_casing (+_active)
 
     // ==================================================================
