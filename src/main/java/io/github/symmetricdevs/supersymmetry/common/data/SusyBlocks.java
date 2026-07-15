@@ -8,6 +8,7 @@ import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.tterrag.registrate.util.entry.BlockEntry;
 
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
+import io.github.symmetricdevs.supersymmetry.common.block.DirectionalOrientableBlock;
 import io.github.symmetricdevs.supersymmetry.common.block.HorizontalOrientableBlock;
 
 import net.minecraft.client.renderer.RenderType;
@@ -15,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
 import java.util.function.Supplier;
@@ -136,6 +138,35 @@ public final class SusyBlocks {
                 .register();
     }
 
+    /** Six-way directional casing used by vertical structure parts. */
+    private static BlockEntry<DirectionalOrientableBlock> createDirectionalOrientableCasingBlock(String name,
+                                                                                                    ResourceLocation texture) {
+        return REGISTRATE.block(name, DirectionalOrientableBlock::new)
+                .initialProperties(() -> Blocks.IRON_BLOCK)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::solid)
+                .blockstate((ctx, prov) -> {
+                    var model = prov.models().cubeAll(ctx.getName(), texture);
+                    prov.getVariantBuilder(ctx.getEntry())
+                            .forAllStates(state -> {
+                                var direction = state.getValue(DirectionalBlock.FACING);
+                                int xRot = direction == net.minecraft.core.Direction.DOWN ? 90 :
+                                        direction == net.minecraft.core.Direction.UP ? 270 : 0;
+                                int yRot = direction.getAxis().isVertical() ? 0 :
+                                        ((int) direction.toYRot() + 180) % 360;
+                                return net.minecraftforge.client.model.generators.ConfiguredModel.builder()
+                                        .modelFile(model)
+                                        .rotationX(xRot)
+                                        .rotationY(yRot)
+                                        .build();
+                            });
+                })
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
     // Placeholder textures (guaranteed to exist in GTCEu). The real SuSy texture for
     // each block is recorded in a trailing TODO)) comment with its 1.12.2 path.
     private static final ResourceLocation TEX_STEEL = com.gregtechceu.gtceu.GTCEu
@@ -149,7 +180,7 @@ public final class SusyBlocks {
     private static final ResourceLocation TEX_GRATE = com.gregtechceu.gtceu.GTCEu
             .id("block/casings/pipe/machine_casing_grate");
     private static final ResourceLocation TEX_ASSEMBLY = com.gregtechceu.gtceu.GTCEu
-            .id("block/casings/assembly_line/assembly_line_casing");
+            .id("block/casings/mechanic/machine_casing_assembly_control");
 
     // ==================================================================
     // BlockSuSyMultiblockCasing (1.12.2 "susy_multiblock_casing", 14 variants)
@@ -184,7 +215,7 @@ public final class SusyBlocks {
     // Metallurgy family (strand line). 1.12.2 rotatable -> plain here; rotation is a
     // Phase 6 TODO. tex gregtech:blocks/casings/metallurgy*/<name>
     // ==================================================================
-    public static final BlockEntry<Block> HYDRAULIC_CYLINDER = createCasingBlock("hydraulic_cylinder", TEX_STEEL); // TODO)) rotatable (BlockMetallurgy, directional); tex .../metallurgy/hydraulic_cylinder
+    public static final BlockEntry<DirectionalOrientableBlock> HYDRAULIC_CYLINDER = createDirectionalOrientableCasingBlock("hydraulic_cylinder", TEX_STEEL); // TODO)) directional front tex (BlockMetallurgy); tex .../metallurgy/hydraulic_cylinder
     public static final BlockEntry<Block> FLYING_SHEAR_SAW = createCasingBlock("flying_shear_saw", TEX_STEEL); // TODO)) rotatable (BlockMetallurgy2, horizontal); tex .../metallurgy_2/flying_shear_saw
     public static final BlockEntry<Block> POLYSTYRENE_WALL = createCasingBlock("polystyrene_wall", TEX_STEEL); // TODO)) tex .../metallurgy_2/polystyrene_wall
     public static final BlockEntry<Block> METALLURGY_ROLL = createCasingBlock("metallurgy_roll", TEX_STEEL); // TODO)) rotatable (BlockMetallurgyRoll, axial); tex .../metallurgy_roll/roll
@@ -220,7 +251,7 @@ public final class SusyBlocks {
     // Conveyor belt (CurtainCoater). 1.12.2 horizontal-rotatable + custom flat
     // rotation behaviour. tex gregtech:blocks/casings/conveyor_belt/lv
     // ==================================================================
-    public static final BlockEntry<Block> LV_CONVEYOR_BELT = createCasingBlock("lv_conveyor_belt", TEX_STEEL); // TODO)) horizontal-rotatable + flat rotation behaviour (BlockConveyor); tex .../conveyor_belt/lv
+    public static final BlockEntry<HorizontalOrientableBlock> LV_CONVEYOR_BELT = createHorizontalOrientableCasingBlock("lv_conveyor_belt", TEX_STEEL); // TODO)) Phase 5: quarter-height collision/outline shape and flat wrench rotation; Phase 6: directional belt texture at gregtech:blocks/casings/conveyor_belt/lv
 
     // ==================================================================
     // Rotors / coils for generators (Bucket C). 1.12.2 horizontal-rotatable
@@ -255,8 +286,8 @@ public final class SusyBlocks {
 
     // Sintering bricks (SinteringOven). 1.12.2 active + magnetoplated flag. Register the
     // two structural variants; bloom-deco variants are decorative (Phase 5).
-    public static final BlockEntry<ActiveBlock> SINTERING_BRICK = createActiveCasingBlock("sintering_brick", TEX_STEEL, TEX_STEEL); // TODO)) tex .../sintering_brick/sintering_block_brick (+bloom); magnetoplated variant
-    public static final BlockEntry<ActiveBlock> MAGNETOPLATED_SINTERING_BRICK = createActiveCasingBlock("magnetoplated_sintering_brick", TEX_STEEL, TEX_STEEL); // TODO)) tex .../sintering_brick/sintering_block_magnetoplated
+    public static final BlockEntry<ActiveBlock> SINTERING_BRICK = createActiveCasingBlock("sintering_brick", TEX_STEEL, TEX_STEEL); // TODO)) Phase 6: migrate gregtech:blocks/casings/sintering_bricks/sintering_bricks(_bloom)
+    public static final BlockEntry<ActiveBlock> MAGNETOPLATED_SINTERING_BRICK = createActiveCasingBlock("magnetoplated_sintering_brick", TEX_STEEL, TEX_STEEL); // TODO)) Phase 6: migrate gregtech:blocks/casings/sintering_bricks/sintering_bricks_magnetic(_bloom)
 
     public static void init() {}
 

@@ -8,6 +8,7 @@ import io.github.symmetricdevs.supersymmetry.common.data.SusyCreativeModeTabs;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyMachines;
 import io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials;
 import io.github.symmetricdevs.supersymmetry.config.SusyConfig;
+import io.github.symmetricdevs.supersymmetry.data.SusyDatagen;
 
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent;
@@ -40,6 +41,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
  * and {@link PostMaterialEvent} mutates existing GTCEu materials — so this class
  * registers itself for those events.
  */
+@SuppressWarnings("removal")
 @Mod(Supersymmetry.MOD_ID)
 public class Supersymmetry {
 
@@ -61,6 +63,7 @@ public class Supersymmetry {
         // here (before registerRegistrate) — the 4c casing foundation the multiblocks
         // reference.
         SusyBlocks.init();
+        SusyDatagen.init();
 
         // Register for the material lifecycle events fired on the mod bus
         // (MaterialRegistryEvent / MaterialEvent / PostMaterialEvent below).

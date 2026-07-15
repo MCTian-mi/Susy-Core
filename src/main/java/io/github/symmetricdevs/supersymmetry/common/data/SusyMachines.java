@@ -61,9 +61,11 @@ import com.gregtechceu.gtceu.common.data.GCYMBlocks;
 import com.gregtechceu.gtceu.client.util.TooltipHelper;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.DistillationTowerMachine;
 import io.github.symmetricdevs.supersymmetry.api.recipes.logic.SuSyParallelLogic;
-import io.github.symmetricdevs.supersymmetry.common.data.SuSyRecipeTypes;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.LowPressureCryogenicDistillationPlant;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.MagneticRefrigeratorMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SingleColumnCryogenicDistillationPlantMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyOrientationFixupMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSySinteringOvenMachine;
 import java.util.Comparator;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_PTFE_INERT;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.MACHINE_CASING_ULV;
@@ -1667,6 +1669,196 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
             //  tempered glass); overlay SusyTextures.MILLING_OVERLAY (gregtech:blocks/multiblock/milling).
             //  GTCEu has no milling overlay; multiblock_workable is the placeholder.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ==================================================================
+    // Phase 4c Bucket D3a: orientation / same-type-variant multiblocks.
+    // ==================================================================
+
+    public static final MultiblockMachineDefinition ATTRITION_SCRUBBER = REGISTRATE
+            .multiblock("attrition_scrubber", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.ALL)
+            .appearanceBlock(() -> SusyBlocks.ABRASION_RESISTANT_CASING.get())
+            .recipeType(SuSyRecipeTypes.ATTRITION_SCRUBBER_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> {
+                TraceabilityPredicate casing = Predicates.blocks(SusyBlocks.ABRASION_RESISTANT_CASING.get());
+                return FactoryBlockPattern.start()
+                        .aisle(" CCC CCC ", " CCCCCCC ", " CCCCCCC ", " CCCCCCC ", " CCC CCC ", " FGF FGF ")
+                        .aisle("CCCCCCCCC", "W#B###B#S", "C###C###C", "I#B#C#B#O", "C###C###C", " FGF FGF ")
+                        .aisle("CCCCCCCCC", "WBBB#BBBS", "C#A#C#A#C", "IBABCBABO", "C#A#C#A#C", " FGF FGF ")
+                        .aisle("CCCCCCCCC", "W#B###B#S", "C###C###C", "I#B#C#B#O", "C###C###C", " F F F F ")
+                        .aisle(" CCC CCC ", " CXCCCCC ", " CCCCCCC ", " CCCCCCC ", " CCC CCC ", " F F F F ")
+                        .where('X', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('C', casing
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        true, false, false, false, false, false))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('I', casing.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                false, false, true, false, false, false)))
+                        .where('O', casing.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                false, false, false, true, false, false)))
+                        .where('W', casing.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                false, false, false, false, true, false)))
+                        .where('S', casing.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                false, false, false, false, false, true)))
+                        .where('G', Predicates.blocks(SusyBlocks.ALUMINIUM_GEARBOX.get()))
+                        .where('B', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get()))
+                        .where('A', Predicates.frames(GTMaterials.Aluminium))
+                        .where('F', Predicates.frames(GTMaterials.Steel))
+                        .where('#', Predicates.air())
+                        .where(' ', Predicates.any())
+                        // 1.12.2 also declared hiddenGearTooth for 'M', but no aisle
+                        // contains 'M'; omitting that dead predicate preserves behaviour.
+                        .build();
+            })
+            // The 1.12.2 controller displayed a 32x-parallel claim but its recipe
+            // logic never implemented parallel processing, so the misleading tooltip
+            // is intentionally not carried forward.
+            // TODO)) Decide whether attrition recipes should gain explicit pure parallel.
+            // TODO)) Phase 6: real abrasion-resistant CTM + ATTRITION_SCRUBBER_OVERLAY.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
+            .register();
+
+    public static final MultiblockMachineDefinition CURTAIN_COATER = REGISTRATE
+            .multiblock("curtain_coater", SuSyOrientationFixupMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
+            .recipeType(SuSyRecipeTypes.CURTAIN_COATER_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("CCKCC", "CWGWC", "  G  ")
+                    .aisle("CCCCC", "I>>>O", "CCGCC")
+                    .aisle("CCSCC", "CWHWC", "  G  ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('I', Predicates.abilities(PartAbility.IMPORT_ITEMS))
+                    .where('O', Predicates.abilities(PartAbility.EXPORT_ITEMS))
+                    .where('H', Predicates.abilities(PartAbility.IMPORT_FLUIDS))
+                    .where('K', Predicates.abilities(PartAbility.EXPORT_FLUIDS))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STAINLESS_CLEAN.get())
+                            .setMinGlobalLimited(17)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                    true, false, false, false, false, false))
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('G', Predicates.blocks(GTBlocks.CASING_STAINLESS_STEEL_GEARBOX.get()))
+                    .where('W', Predicates.blocks(GTBlocks.CASING_TEMPERED_GLASS.get()))
+                    .where('>', SuSyPredicates.conveyorBelt(SusyBlocks.LV_CONVEYOR_BELT.get(),
+                            RelativeDirection.LEFT))
+                    .where(' ', Predicates.any())
+                    .build())
+            // TODO)) Phase 6: real conveyor directional model; old overlay was BLAST_FURNACE_OVERLAY.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    public static final MultiblockMachineDefinition HOT_ISOSTATIC_PRESS = REGISTRATE
+            .multiblock("hot_isostatic_press", SuSyOrientationFixupMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> SusyBlocks.SILICON_CARBIDE_CASING.get())
+            .recipeType(SuSyRecipeTypes.HOT_ISOSTATIC_PRESS_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("  SSS  ", "  SFS  ", "  SFS  ", "  SFS  ", "  SFS  ", "  SFS  ", "  SSS  ")
+                    .aisle(" SSSSS ", " SIIIS ", " SIIIS ", " SIIIS ", " SIIIS ", " SIIIS ", " SSSSS ")
+                    .aisle("SSSSSSS", "SIIIIIS", "SICCCIS", "SICCCIS", "SICCCIS", "SIIIIIS", "SSSSSSS")
+                    .aisle("SSSPSSS", "SIIHIIS", "SICXCIS", "SICXCIS", "SICXCIS", "SIIhIIS", "SSSPSSS")
+                    .aisle("SSSPSSS", "SIIIIIS", "SICXCIS", "SICXCIS", "SICXCIS", "SIIPIIS", "SSSPSSS")
+                    .aisle(" SSPSS ", " SIIIS ", " SIIIS ", " SIIIS ", " SIIIS ", " SIPIS ", " SSPSS ")
+                    .aisle("  SPS  ", "  SOS  ", "  SPS  ", "  SPS  ", "  SPS  ", "  SPS  ", "  SPS  ")
+                    .where(' ', Predicates.any())
+                    .where('O', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('S', Predicates.blocks(SusyBlocks.SILICON_CARBIDE_CASING.get())
+                            .setMinGlobalLimited(27)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes()))
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('I', Predicates.blocks(SusyBlocks.SILICON_CARBIDE_CASING.get()))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .where('C', Predicates.blocks(GTBlocks.COIL_NICHROME.get()))
+                    .where('X', Predicates.air())
+                    .where('H', SuSyPredicates.orientation(SusyBlocks.HYDRAULIC_CYLINDER.get(),
+                            RelativeDirection.UP))
+                    .where('h', SuSyPredicates.orientation(SusyBlocks.HYDRAULIC_CYLINDER.get(),
+                            RelativeDirection.DOWN))
+                    // TODO)) swap Invar to SuSy Incoloy 908 once that material is registered.
+                    .where('F', Predicates.frames(GTMaterials.Invar))
+                    .build())
+            // TODO)) Phase 6: real silicon-carbide casing + FORMING_PRESS_OVERLAY.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    public static final MultiblockMachineDefinition MAGNETIC_REFRIGERATOR = REGISTRATE
+            .multiblock("magnetic_refrigerator", MagneticRefrigeratorMachine::new)
+            .rotationState(RotationState.ALL)
+            .appearanceBlock(() -> GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+            .recipeType(SuSyRecipeTypes.COOLING_RECIPES)
+            .recipeModifiers(MagneticRefrigeratorMachine::temperatureGate,
+                    GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("XXX", "CCC", "CCC", "XXX")
+                    .aisle("XXX", "C#C", "C#C", "XXX")
+                    .aisle("XSX", "CCC", "CCC", "XXX")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                            .setMinGlobalLimited(10)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes()))
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('C', SuSyPredicates.sameTypeVariant("CoolingCoil",
+                            "gtceu.multiblock.pattern.error.coils",
+                            SusyBlocks.MANGANESE_IRON_ARSENIC_PHOSPHIDE_COOLING_COIL.get(),
+                            SusyBlocks.PRASEODYMIUM_NICKEL_COOLING_COIL.get(),
+                            SusyBlocks.GADOLINIUM_SILICON_GERMANIUM_COOLING_COIL.get()))
+                    .where('#', Predicates.air())
+                    .build())
+            // TODO)) Phase 6: real cooling-coil textures + magnetic-refrigerator overlay.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    public static final MultiblockMachineDefinition SINTERING_OVEN = REGISTRATE
+            .multiblock("sintering_oven", SuSySinteringOvenMachine::new)
+            .rotationState(RotationState.ALL)
+            .appearanceBlock(() -> SusyBlocks.ULV_STRUCTURAL_CASING.get())
+            .recipeType(SuSyRecipeTypes.SINTERING_RECIPES)
+            .recipeModifiers(SuSySinteringOvenMachine::plasmaGate,
+                    GTRecipeModifiers.OC_NON_PERFECT)
+            .pattern(definition -> {
+                TraceabilityPredicate casing = Predicates.blocks(SusyBlocks.ULV_STRUCTURAL_CASING.get())
+                        .setMinGlobalLimited(33);
+                return FactoryBlockPattern.start()
+                        .aisle("CCCCC", "CCCCC", "CCCCC", "CCCCC", "CCCCC")
+                        .aisle("     ", " BBB ", " B#B ", " BBB ", "     ")
+                        .aisle("FFFFF", "FBBBF", "FB#BF", " BBB ", "     ")
+                        .aisle("     ", " BBB ", " B#B ", " BBB ", "     ")
+                        .aisle("FFFFF", "FBBBF", "FB#BF", " BBB ", "     ")
+                        .aisle("     ", " BBB ", " B#B ", " BBB ", "     ")
+                        .aisle("FFFFF", "FBBBF", "FB#BF", " BBB ", "     ")
+                        .aisle("     ", " BBB ", " B#B ", " BBB ", "     ")
+                        .aisle("FFFFF", "FBBBF", "FB#BF", " BBB ", "     ")
+                        .aisle("     ", " BBB ", " B#B ", " BBB ", "     ")
+                        .aisle("DDDDD", "DDSDD", "DDDDD", "DDDDD", "DDDDD")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('D', casing
+                                .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                        true, false, false, true, true, false))
+                                .or(Predicates.autoAbilities(true, false, false)))
+                        .where('C', casing.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                false, false, true, false, false, true)))
+                        .where('F', Predicates.frames(GTMaterials.Steel))
+                        .where('B', SuSyPredicates.sameTypeVariant("SinteringBrick",
+                                "susy.multiblock.pattern.error.sintering_bricks",
+                                SusyBlocks.SINTERING_BRICK.get(),
+                                SusyBlocks.MAGNETOPLATED_SINTERING_BRICK.get()))
+                        .where('#', Predicates.air())
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            // TODO)) Phase 6: real ULV structural CTM + SINTERING_OVERLAY.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/multiblock_workable"))
             .register();
 

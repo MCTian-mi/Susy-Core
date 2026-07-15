@@ -68,6 +68,28 @@ public final class SuSyPredicates {
      *                      crankshaft)
      */
     public static TraceabilityPredicate horizontalOrientation(Block expectedBlock, RelativeDirection direction) {
+        return recordOrientation(expectedBlock, direction);
+    }
+
+    /**
+     * Pure replacement for the 1.12.2 six-way {@code orientation} predicate. Unlike
+     * {@link #horizontalOrientation}, the controller must resolve and apply the exact
+     * direction to a block carrying {@link BlockStateProperties#FACING}.
+     */
+    public static TraceabilityPredicate orientation(Block expectedBlock, RelativeDirection direction) {
+        return recordOrientation(expectedBlock, direction);
+    }
+
+    /**
+     * Curtain-coater conveyor predicate. Only one belt tier exists in the port, so the
+     * legacy same-type check is implicit; the important behaviour is recording the
+     * controller-relative travel direction for the post-form facing fixup.
+     */
+    public static TraceabilityPredicate conveyorBelt(Block expectedBlock, RelativeDirection direction) {
+        return recordOrientation(expectedBlock, direction);
+    }
+
+    private static TraceabilityPredicate recordOrientation(Block expectedBlock, RelativeDirection direction) {
         return new TraceabilityPredicate(
                 (MultiblockState state) -> {
                     if (state.getBlockState().getBlock() != expectedBlock)
@@ -115,6 +137,19 @@ public final class SuSyPredicates {
         return state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
                 ? state.setValue(BlockStateProperties.HORIZONTAL_FACING, facing)
                 : state;
+    }
+
+    /** Convenience: apply an exact six-way facing fixup to a directional blockstate. */
+    public static BlockState withFacing(BlockState state, Direction facing) {
+        return state.hasProperty(BlockStateProperties.FACING)
+                ? state.setValue(BlockStateProperties.FACING, facing)
+                : state;
+    }
+
+    /** Resolve a relative direction without the turbine axial collapse. */
+    public static Direction resolveFacing(IMultiController controller, RelativeDirection direction) {
+        var self = controller.self();
+        return direction.getRelative(self.getFrontFacing(), self.getUpwardsFacing(), self.isFlipped());
     }
 
     // ==================================================================
