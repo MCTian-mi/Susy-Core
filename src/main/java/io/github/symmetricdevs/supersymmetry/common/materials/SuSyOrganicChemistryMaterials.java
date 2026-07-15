@@ -1,4 +1,4 @@
-package supersymmetry.common.materials;
+package io.github.symmetricdevs.supersymmetry.common.materials;
 
 public class SuSyOrganicChemistryMaterials {
 

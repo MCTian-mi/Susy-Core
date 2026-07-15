@@ -1,20 +1,31 @@
-package supersymmetry.common.materials;
+package io.github.symmetricdevs.supersymmetry.common.materials;
 
-import java.lang.reflect.Field;
-import java.util.HashSet;
-import java.util.Map;
+import com.gregtechceu.gtceu.api.data.chemical.material.Material;
+import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.DustProperty;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.FluidPipeProperties;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.FluidProperty;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.IngotProperty;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.OreProperty;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
+import com.gregtechceu.gtceu.api.fluids.FluidBuilder;
+import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKeys;
+import com.gregtechceu.gtceu.common.data.GTMaterials;
 
-import gregtech.api.GregTechAPI;
-import gregtech.api.fluids.FluidBuilder;
-import gregtech.api.fluids.store.FluidStorageKeys;
-import gregtech.api.unification.material.Material;
-import gregtech.api.unification.material.Materials;
-import gregtech.api.unification.material.info.MaterialFlag;
-import gregtech.api.unification.material.info.MaterialFlags;
-import gregtech.api.unification.material.properties.*;
-import supersymmetry.api.SusyLog;
-import supersymmetry.api.unification.material.info.SuSyMaterialFlags;
+import io.github.symmetricdevs.supersymmetry.api.unification.material.info.SuSyMaterialFlags;
 
+/**
+ * Static handles for every SuSy material, plus the {@code PostMaterialEvent}
+ * mutations of existing GTCEu materials. Ported from the 1.12.2
+ * {@code SusyMaterials}.
+ * <p>
+ * The 1.12.2 version used reflection to reach the private property/flag maps;
+ * GTCEu-Modern exposes {@code setProperty}/{@code removeProperty}/{@code addFlags}
+ * publicly (valid only during the material-modification window, i.e. inside
+ * {@code PostMaterialEvent} — which is exactly where {@link #changeProperties()}
+ * runs). The one exception is flag <em>removal</em>, which has no public API; see
+ * {@link #changeProperties()}.
+ */
 public class SusyMaterials {
 
     public static Material ManganeseIronArsenicPhosphide;
@@ -70,6 +81,10 @@ public class SusyMaterials {
     // Fuels
     public static Material LOX;
 
+    /**
+     * Register all SuSy materials. Called on {@code MaterialEvent}. Ordering
+     * matters: later classes reference materials built by earlier ones.
+     */
     public static void init() {
         SuSyElementMaterials.init();
         SuSyFirstDegreeMaterials.init();
@@ -77,161 +92,92 @@ public class SusyMaterials {
         SuSyOrganicChemistryMaterials.init();
         SuSyHighDegreeMaterials.init();
         SuSyUnknownCompositionMaterials.init();
-        changeProperties();
     }
 
-    public static void removeFlags() {
-        for (Material material : GregTechAPI.materialManager.getRegisteredMaterials()) {
-            if (material.hasFlag(MaterialFlags.DECOMPOSITION_BY_ELECTROLYZING))
-                removeFlag(MaterialFlags.DECOMPOSITION_BY_ELECTROLYZING, material);
-        }
-    }
+    /**
+     * Mutate existing GTCEu materials. Called on {@code PostMaterialEvent}.
+     * <p>
+     * The 1.12.2 {@code removeFlags()} (stripping {@code DECOMPOSITION_BY_ELECTROLYZING}
+     * from every material) is not ported: GTCEu-Modern has no public flag-removal
+     * API and it must not be done via reflection. If that behavior is needed it
+     * should be re-expressed as a datagen/recipe-level exclusion.
+     */
+    public static void changeProperties() {
+        GTMaterials.Soapstone.removeProperty(PropertyKey.ORE);
+        GTMaterials.Quartzite.removeProperty(PropertyKey.ORE);
+        GTMaterials.Mica.removeProperty(PropertyKey.ORE);
 
-    private static void changeProperties() {
-        // removeProperty(PropertyKey.ORE, Materials.Graphite);
-
-        removeProperty(PropertyKey.ORE, Materials.Soapstone);
-        removeProperty(PropertyKey.ORE, Materials.Quartzite);
-        removeProperty(PropertyKey.ORE, Materials.Mica);
-        removeProperty(PropertyKey.FLUID_PIPE, Materials.Lead);
-        Materials.Lead.setProperty(PropertyKey.FLUID_PIPE, new FluidPipeProperties(1200, 8, true, true, false, false));
+        GTMaterials.Lead.removeProperty(PropertyKey.FLUID_PIPE);
+        GTMaterials.Lead.setProperty(PropertyKey.FLUID_PIPE,
+                new FluidPipeProperties(1200, 8, true, true, false, false, 1));
 
         // Add dusts and fluids for elements that do not have them
-        Materials.Iodine.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Iodine.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Scandium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Germanium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Selenium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Bromine.setProperty(PropertyKey.FLUID,
+                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
+        GTMaterials.Rubidium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Strontium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Zirconium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Technetium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Tellurium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Praseodymium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Promethium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Gadolinium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Terbium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Dysprosium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Holmium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Erbium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Thulium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Ytterbium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Hafnium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Rhenium.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Thallium.setProperty(PropertyKey.DUST, new DustProperty());
 
-        Materials.Scandium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Germanium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Selenium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Bromine.setProperty(PropertyKey.FLUID,
+        GTMaterials.CalciumChloride.setProperty(PropertyKey.FLUID,
+                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
+        GTMaterials.MagnesiumChloride.setProperty(PropertyKey.FLUID,
+                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
+        GTMaterials.RockSalt.setProperty(PropertyKey.FLUID,
+                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
+        GTMaterials.Salt.setProperty(PropertyKey.FLUID,
+                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
+        GTMaterials.SodiumHydroxide.setProperty(PropertyKey.FLUID,
+                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
+        GTMaterials.Sodium.setProperty(PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
 
-        Materials.Rubidium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Strontium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Zirconium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Technetium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Tellurium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Praseodymium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Promethium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Gadolinium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Terbium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Dysprosium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Holmium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Erbium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Thulium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Ytterbium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Hafnium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Rhenium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Thallium.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.CalciumChloride.setProperty(PropertyKey.FLUID,
-                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-
-        Materials.MagnesiumChloride.setProperty(PropertyKey.FLUID,
-                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-
-        Materials.RockSalt.setProperty(PropertyKey.FLUID,
-                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-
-        Materials.Salt.setProperty(PropertyKey.FLUID, new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-
-        Materials.SodiumHydroxide.setProperty(PropertyKey.FLUID,
-                new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-
-        Materials.Sodium.setProperty(PropertyKey.FLUID, new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
-
-        Materials.Phosphorus.setProperty(PropertyKey.INGOT, new IngotProperty());
-        Materials.Phosphorus.setProperty(PropertyKey.FLUID,
+        GTMaterials.Phosphorus.setProperty(PropertyKey.INGOT, new IngotProperty());
+        GTMaterials.Phosphorus.setProperty(PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder().temperature(317)));
-        Materials.Phosphorus.setMaterialRGB(0xfffed6);
+        GTMaterials.Phosphorus.setMaterialARGB(0xfffed6);
 
-        Materials.HydrochloricAcid.setFormula("(H2O)(HCl)", true);
+        GTMaterials.HydrochloricAcid.setFormula("(H2O)(HCl)", true);
+        GTMaterials.HydrofluoricAcid.setFormula("(H2O)(HF)", true);
 
-        Materials.HydrofluoricAcid.setFormula("(H2O)(HF)", true);
-
-        removeProperty(PropertyKey.FLUID, Materials.Dimethyldichlorosilane);
-        Materials.Dimethyldichlorosilane.setProperty(PropertyKey.FLUID,
+        GTMaterials.Dimethyldichlorosilane.removeProperty(PropertyKey.FLUID);
+        GTMaterials.Dimethyldichlorosilane.setProperty(PropertyKey.FLUID,
                 new FluidProperty(FluidStorageKeys.LIQUID, new FluidBuilder()));
 
-        Materials.Iron3Chloride.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Iron3Chloride.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Nitrochlorobenzene.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Dichlorobenzene.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Dichlorobenzidine.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.PhthalicAcid.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.DiphenylIsophtalate.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Diaminobenzidine.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.PolyvinylAcetate.setProperty(PropertyKey.DUST, new DustProperty());
 
-        Materials.Nitrochlorobenzene.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Platinum.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
+        GTMaterials.Cobalt.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
+        GTMaterials.Palladium.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
+        GTMaterials.Rhodium.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
+        GTMaterials.Copper.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
 
-        Materials.Dichlorobenzene.setProperty(PropertyKey.DUST, new DustProperty());
+        GTMaterials.Electrum.setProperty(PropertyKey.ORE, new OreProperty());
 
-        Materials.Dichlorobenzidine.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.PhthalicAcid.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.DiphenylIsophtalate.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Diaminobenzidine.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.PolyvinylAcetate.setProperty(PropertyKey.DUST, new DustProperty());
-
-        Materials.Platinum.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
-
-        Materials.Cobalt.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
-
-        Materials.Palladium.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
-
-        Materials.Rhodium.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
-
-        Materials.Copper.addFlags(SuSyMaterialFlags.GENERATE_CATALYST_BED);
-
-        Materials.Electrum.setProperty(PropertyKey.ORE, new OreProperty());
-
-        Materials.Hydrogen.addFlags(MaterialFlags.FLAMMABLE);
-    }
-
-    private static void removeProperty(PropertyKey<?> key, Material material) {
-        Map<PropertyKey<?>, IMaterialProperty> map = null;
-        try {
-            Field field = MaterialProperties.class.getDeclaredField("propertyMap");
-            field.setAccessible(true);
-            // noinspection unchecked
-            map = (Map<PropertyKey<?>, IMaterialProperty>) field.get(material.getProperties());
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            SusyLog.logger.error("Failed to reflect material property map", e);
-        }
-        if (map != null) {
-            map.remove(key);
-        }
-    }
-
-    private static void removeFlag(MaterialFlag flag, Material material) {
-        HashSet<MaterialFlag> set = null;
-        try {
-            Field field = MaterialFlags.class.getDeclaredField("flags");
-            field.setAccessible(true);
-
-            Field field2 = Material.class.getDeclaredField("flags");
-            field2.setAccessible(true);
-            // noinspection unchecked
-            set = (HashSet<MaterialFlag>) field.get(field2.get(material));
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            SusyLog.logger.error("Failed to reflect material flag hashset", e);
-        }
-        if (set != null) {
-            set.remove(flag);
-        }
+        GTMaterials.Hydrogen.addFlags(MaterialFlags.FLAMMABLE);
     }
 }

@@ -17,8 +17,9 @@ plugins {
 // rather than exclude-root-then-include.
 //
 // Already ported (kept): the package root (Supersymmetry/SupersymmetryGTAddon/
-// SuSyValues), api/registry, common/data, config. When a subtree is ported, delete
-// its line here (and git-rm the superseded legacy files).
+// SuSyValues), api/registry, api/unification, common/data, common/materials,
+// config. When a subtree is ported, delete its line here (and git-rm the
+// superseded legacy files).
 val legacySourceExcludes = listOf(
     "api/blocks/",
     "api/capability/",
@@ -35,7 +36,6 @@ val legacySourceExcludes = listOf(
     "api/sound/",
     "api/space/",
     "api/stockinteraction/",
-    "api/unification/",
     "api/util/",
     "asm/",
     "client/",
@@ -46,7 +46,6 @@ val legacySourceExcludes = listOf(
     "common/event/",
     "common/faction/",
     "common/item/",
-    "common/materials/",
     "common/metatileentities/",
     "common/mui/",
     "common/network/",

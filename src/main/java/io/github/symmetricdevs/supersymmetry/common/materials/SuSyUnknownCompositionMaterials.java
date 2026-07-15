@@ -1,65 +1,75 @@
-package supersymmetry.common.materials;
+package io.github.symmetricdevs.supersymmetry.common.materials;
 
-import static gregtech.api.unification.material.info.MaterialFlags.FLAMMABLE;
-import static supersymmetry.common.materials.SusyMaterials.*;
+import static com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags.FLAMMABLE;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.AdvancedCoolant;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.Coolant;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.Latex;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.LubricatingOil;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.MidgradeLubricant;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.Mud;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.PremiumLubricant;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.RefractoryGunningMixture;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.Seawater;
+import static io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials.SupremeLubricant;
 
-import gregtech.api.fluids.FluidBuilder;
-import gregtech.api.fluids.store.FluidStorageKeys;
-import gregtech.api.unification.material.Material;
-import supersymmetry.api.util.SuSyUtility;
+import com.gregtechceu.gtceu.api.data.chemical.material.Material;
+import com.gregtechceu.gtceu.api.fluids.FluidBuilder;
+import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKeys;
+
+import io.github.symmetricdevs.supersymmetry.SuSyValues;
 
 public class SuSyUnknownCompositionMaterials {
 
     public static void init() {
-        Latex = new Material.Builder(27050, SuSyUtility.susyId("latex"))
+        Latex = new Material.Builder(SuSyValues.susyId("latex"))
                 .dust().fluid(FluidStorageKeys.LIQUID, new FluidBuilder().temperature(293))
                 .color(0xFFFADA)
-                .build();
+                .buildAndRegister();
 
-        Mud = new Material.Builder(27051, SuSyUtility.susyId("mud"))
+        Mud = new Material.Builder(SuSyValues.susyId("mud"))
                 .liquid()
                 .color(0x211b14)
-                .build();
+                .buildAndRegister();
 
-        Seawater = new Material.Builder(27052, SuSyUtility.susyId("sea_water"))
+        Seawater = new Material.Builder(SuSyValues.susyId("sea_water"))
                 .liquid()
                 .color(0x3c5bc2)
-                .build();
+                .buildAndRegister();
 
-        RefractoryGunningMixture = new Material.Builder(27053, SuSyUtility.susyId("refractory_gunning_mixture"))
+        RefractoryGunningMixture = new Material.Builder(SuSyValues.susyId("refractory_gunning_mixture"))
                 .liquid()
                 .color(0x9c775c)
-                .build();
+                .buildAndRegister();
 
-        MidgradeLubricant = new Material.Builder(27054, SuSyUtility.susyId("midgrade_lubricant"))
+        MidgradeLubricant = new Material.Builder(SuSyValues.susyId("midgrade_lubricant"))
                 .liquid()
                 .color(0xc7aa2a)
-                .build();
+                .buildAndRegister();
 
-        PremiumLubricant = new Material.Builder(27055, SuSyUtility.susyId("premium_lubricant"))
+        PremiumLubricant = new Material.Builder(SuSyValues.susyId("premium_lubricant"))
                 .liquid()
                 .color(0xba831c)
-                .build();
+                .buildAndRegister();
 
-        SupremeLubricant = new Material.Builder(27056, SuSyUtility.susyId("supreme_lubricant"))
+        SupremeLubricant = new Material.Builder(SuSyValues.susyId("supreme_lubricant"))
                 .liquid()
                 .color(0xad5f10)
-                .build();
+                .buildAndRegister();
 
-        Coolant = new Material.Builder(27057, SuSyUtility.susyId("coolant"))
+        Coolant = new Material.Builder(SuSyValues.susyId("coolant"))
                 .liquid()
                 .color(0x46dde8)
-                .build();
+                .buildAndRegister();
 
-        AdvancedCoolant = new Material.Builder(27058, SuSyUtility.susyId("advanced_coolant"))
+        AdvancedCoolant = new Material.Builder(SuSyValues.susyId("advanced_coolant"))
                 .liquid()
                 .color(0x33f5ee)
-                .build();
+                .buildAndRegister();
 
-        LubricatingOil = new Material.Builder(27059, SuSyUtility.susyId("lubricating_oil"))
+        LubricatingOil = new Material.Builder(SuSyValues.susyId("lubricating_oil"))
                 .liquid()
                 .color(0x858146)
                 .flags(FLAMMABLE)
-                .build();
+                .buildAndRegister();
     }
 }

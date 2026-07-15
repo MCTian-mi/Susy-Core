@@ -1,8 +1,13 @@
-package supersymmetry.api.unification.material.info;
+package io.github.symmetricdevs.supersymmetry.api.unification.material.info;
 
-import gregtech.api.unification.material.info.MaterialIconType;
+import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialIconType;
 
-public class SuSyMaterialIconType {
+/**
+ * Custom {@link MaterialIconType}s for SuSy item forms. These must be initialized
+ * before any {@code TagPrefix} that references them (see
+ * {@code SusyTagPrefixes}) — a plain holder class, forced by class-load order.
+ */
+public class SuSyMaterialIconTypes {
 
     public static final MaterialIconType catalystBed = new MaterialIconType("catalystBed");
     public static final MaterialIconType catalystPellet = new MaterialIconType("catalystPellet");
@@ -20,4 +25,6 @@ public class SuSyMaterialIconType {
     public static final MaterialIconType millBall = new MaterialIconType("millBall");
     public static final MaterialIconType pin = new MaterialIconType("pin");
     public static final MaterialIconType target = new MaterialIconType("target");
+
+    private SuSyMaterialIconTypes() {}
 }

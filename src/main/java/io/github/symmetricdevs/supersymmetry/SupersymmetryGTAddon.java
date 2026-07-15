@@ -1,6 +1,7 @@
 package io.github.symmetricdevs.supersymmetry;
 
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
+import io.github.symmetricdevs.supersymmetry.api.unification.ore.SusyTagPrefixes;
 
 import com.gregtechceu.gtceu.api.addon.GTAddon;
 import com.gregtechceu.gtceu.api.addon.IGTAddon;
@@ -27,6 +28,17 @@ public class SupersymmetryGTAddon implements IGTAddon {
 
     @Override
     public void initializeAddon() {}
+
+    /**
+     * Called by GTCEu during {@code TagPrefix.init()}, after icon types and
+     * materials exist. Class-loading {@link SusyTagPrefixes} constructs (and thus
+     * self-registers) every custom {@code TagPrefix}.
+     */
+    @Override
+    public void registerTagPrefixes() {
+        // Touch the holder so its static TagPrefix fields initialize + self-register.
+        SusyTagPrefixes.class.getName();
+    }
 
     @Override
     public String addonModId() {

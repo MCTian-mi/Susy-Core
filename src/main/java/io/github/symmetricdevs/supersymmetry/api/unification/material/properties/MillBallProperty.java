@@ -1,8 +1,8 @@
-package supersymmetry.api.unification.material.properties;
+package io.github.symmetricdevs.supersymmetry.api.unification.material.properties;
 
-import gregtech.api.unification.material.properties.IMaterialProperty;
-import gregtech.api.unification.material.properties.MaterialProperties;
-import gregtech.api.unification.material.properties.PropertyKey;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.IMaterialProperty;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.MaterialProperties;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
 
 public record MillBallProperty(int durability) implements IMaterialProperty {
 

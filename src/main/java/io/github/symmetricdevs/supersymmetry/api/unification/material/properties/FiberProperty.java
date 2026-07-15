@@ -1,21 +1,27 @@
-package supersymmetry.api.unification.material.properties;
+package io.github.symmetricdevs.supersymmetry.api.unification.material.properties;
 
-import gregtech.api.unification.material.info.MaterialFlags;
-import gregtech.api.unification.material.properties.IMaterialProperty;
-import gregtech.api.unification.material.properties.MaterialProperties;
-import gregtech.api.unification.material.properties.PropertyKey;
-import supersymmetry.api.unification.material.info.SuSyMaterialFlags;
+import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.IMaterialProperty;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.MaterialProperties;
+import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
 
+import io.github.symmetricdevs.supersymmetry.api.unification.material.info.SuSyMaterialFlags;
+
+/**
+ * Marks a material as spinnable into fibers/threads, optionally via solution
+ * (wet) or melt spinning, and optionally weavable into plates. Ported from the
+ * 1.12.2 {@code FiberProperty}.
+ */
 public class FiberProperty implements IMaterialProperty {
 
     // For generating wet fibers
     public boolean solutionSpun;
 
     // To allow for fluid generation
-    private boolean meltSpun;
+    private final boolean meltSpun;
 
     // For plate making
-    private boolean weaving;
+    private final boolean weaving;
 
     public FiberProperty(boolean solutionSpun, boolean meltSpun, boolean weaving) {
         this.solutionSpun = solutionSpun;
