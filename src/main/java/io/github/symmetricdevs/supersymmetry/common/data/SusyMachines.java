@@ -36,6 +36,7 @@ import io.github.symmetricdevs.supersymmetry.common.machine.electric.ContinuousS
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fluids.FluidType;
 
 import java.util.Locale;
@@ -195,7 +196,7 @@ public final class SusyMachines {
                             Component.translatable("gtceu.universal.tooltip.amperage_out", 4),
                             Component.translatable("gtceu.universal.tooltip.energy_storage_capacity",
                                     FormattingUtil.formatNumbers(EnergyHatchPartMachine.getHatchEnergyCapacity(tier, 4))))
-                    .overlayTieredHullModel("energy_output_hatch_4a")
+                    .overlayTieredHullModel(GTCEu.id("block/machine/part/energy_output_hatch_4a"))
                     .register(),
             GTValues.tiersBetween(GTValues.LV, GTValues.HV));
 
@@ -211,7 +212,7 @@ public final class SusyMachines {
                             Component.translatable("gtceu.universal.tooltip.amperage_out", 16),
                             Component.translatable("gtceu.universal.tooltip.energy_storage_capacity",
                                     FormattingUtil.formatNumbers(EnergyHatchPartMachine.getHatchEnergyCapacity(tier, 16))))
-                    .overlayTieredHullModel("energy_output_hatch_16a")
+                    .overlayTieredHullModel(GTCEu.id("block/machine/part/energy_output_hatch_16a"))
                     .register(),
             GTValues.tiersBetween(GTValues.LV, GTValues.EV));
 
@@ -228,7 +229,7 @@ public final class SusyMachines {
                             Component.translatable("gtceu.universal.tooltip.amperage_in", 64),
                             Component.translatable("gtceu.universal.tooltip.energy_storage_capacity",
                                     FormattingUtil.formatNumbers(EnergyHatchPartMachine.getHatchEnergyCapacity(tier, 64))))
-                    .overlayTieredHullModel("energy_input_hatch_64a")
+                    .overlayTieredHullModel(GTCEu.id("block/machine/part/energy_input_hatch_64a"))
                     .register(),
             GTValues.tiersBetween(GTValues.LV, GTValues.EV));
 
@@ -245,7 +246,7 @@ public final class SusyMachines {
                             Component.translatable("gtceu.universal.tooltip.amperage_out", 64),
                             Component.translatable("gtceu.universal.tooltip.energy_storage_capacity",
                                     FormattingUtil.formatNumbers(EnergyHatchPartMachine.getHatchEnergyCapacity(tier, 64))))
-                    .overlayTieredHullModel("energy_output_hatch_64a")
+                    .overlayTieredHullModel(GTCEu.id("block/machine/part/energy_output_hatch_64a"))
                     .register(),
             GTValues.tiersBetween(GTValues.LV, GTValues.EV));
 
@@ -272,7 +273,9 @@ public final class SusyMachines {
             .rotationState(RotationState.ALL)
             .abilities(PartAbility.IMPORT_ITEMS)
             .modelProperty(IS_FORMED, false)
-            .overlayTieredHullModel("item_import_bus")
+            .colorOverlayTieredHullModel(GTCEu.id("block/overlay/machine/overlay_item_hatch_input"),
+                    GTCEu.id("block/overlay/machine/overlay_pipe"),
+                    GTCEu.id("block/overlay/machine/overlay_pipe_in_emissive"))
             .tooltips(Component.translatable("gtceu.machine.item_bus.import.tooltip"))
             .allowCoverOnFront(true)
             .register();
@@ -282,7 +285,9 @@ public final class SusyMachines {
             .rotationState(RotationState.ALL)
             .abilities(PartAbility.EXPORT_ITEMS)
             .modelProperty(IS_FORMED, false)
-            .overlayTieredHullModel("item_export_bus")
+            .colorOverlayTieredHullModel(GTCEu.id("block/overlay/machine/overlay_item_hatch_output"),
+                    GTCEu.id("block/overlay/machine/overlay_pipe"),
+                    GTCEu.id("block/overlay/machine/overlay_pipe_out_emissive"))
             .tooltips(Component.translatable("gtceu.machine.item_bus.export.tooltip"))
             .allowCoverOnFront(true)
             .register();
@@ -1830,9 +1835,15 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
     /** Multi-slot fluid import/export hatch across the given tiers (LV..HV). */
     private static MachineDefinition[] registerMultiFluidHatch(String name, String displayName, IO io, int slots,
                                                                PartAbility ability) {
-        String pipeOverlay = slots >= 9 ? "overlay_pipe_9x" : "overlay_pipe_4x";
-        String ioOverlay = io == IO.OUT ? "overlay_fluid_hatch_output" : "overlay_fluid_hatch_input";
-        String emissiveOverlay = io == IO.OUT ? "overlay_pipe_out_emissive" : "overlay_pipe_in_emissive";
+        ResourceLocation pipeOverlay = GTCEu.id(slots >= 9 ?
+                "block/overlay/machine/overlay_pipe_9x" :
+                "block/overlay/machine/overlay_pipe_4x");
+        ResourceLocation ioOverlay = GTCEu.id(io == IO.OUT ?
+                "block/overlay/machine/overlay_fluid_hatch_output" :
+                "block/overlay/machine/overlay_fluid_hatch_input");
+        ResourceLocation emissiveOverlay = GTCEu.id(io == IO.OUT ?
+                "block/overlay/machine/overlay_pipe_out_emissive" :
+                "block/overlay/machine/overlay_pipe_in_emissive");
         return registerTieredMachines(name,
                 (holder, tier) -> new FluidHatchPartMachine(holder, tier, io,
                         4 * (tier + 1) * (tier + 1) * 1000, slots),
