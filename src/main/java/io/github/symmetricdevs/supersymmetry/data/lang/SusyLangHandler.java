@@ -41,6 +41,20 @@ public final class SusyLangHandler {
                 "This cooling recipe does not define a required temperature");
         provider.add("susy.recipe_modifier.coil_temperature_too_high",
                 "The installed cooling coils cannot reach the recipe's required temperature");
+        provider.add("susy.multiblock.large_boiler.water_amount", "%s");
+        provider.add("susy.machine.component_redstone_controller.title", "Component Redstone Controller");
+        provider.add("susy.machine.component_redstone_controller.no_controller", "Not attached to a controller");
+        provider.add("susy.machine.component_redstone_controller.signal", "Signal: %s (%s)");
+        provider.add("susy.signal.set25", "Set Throttle 25%%");
+        provider.add("susy.signal.set100", "Set Throttle 100%%");
+        provider.add("susy.signal.incr1", "Throttle +1%%");
+        provider.add("susy.signal.dec1", "Throttle -1%%");
+        provider.add("susy.signal.incr5", "Throttle +5%%");
+        provider.add("susy.signal.dec5", "Throttle -5%%");
+        provider.add("susy.signal.incr10", "Throttle +10%%");
+        provider.add("susy.signal.dec10", "Throttle -10%%");
+        provider.add("susy.signal.incr25", "Throttle +25%%");
+        provider.add("susy.signal.dec25", "Throttle -25%%");
     }
 
     private SusyLangHandler() {}

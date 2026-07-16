@@ -36,6 +36,7 @@ import io.github.symmetricdevs.supersymmetry.common.machine.electric.ContinuousS
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
@@ -91,6 +92,9 @@ import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.DumperMac
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.FlareStackMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.HotIsostaticPressMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SmokeStackMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.steam.SuSyBoilerType;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.steam.SuSyLargeBoilerMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.part.ComponentRedstoneControllerMachine;
 
 /**
  * SuSy machine registry. Ported from the 1.12.2 {@code SuSyMetaTileEntities}
@@ -2512,6 +2516,29 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
                     GTCEu.id("block/multiblock/multiblock_workable"))
             .register();
 
+    // ==================================================================
+    // Phase 4c — Bucket D4: SuSy large boilers (bronze/steel)
+    // Custom WorkableMultiblockMachine with a heat-ramp RecipeLogic that
+    // burns solid fuel from BOILER_RECIPES and fluid fuel from
+    // LARGE_BOILER_RECIPES. Throttle is controllable from the UI or from
+    // a Component Redstone Controller multiblock part.
+    // ==================================================================
+
+    public static final MultiblockMachineDefinition LARGE_BRONZE_BOILER = registerSuSyLargeBoiler(
+            "large_bronze_boiler", SuSyBoilerType.BRONZE);
+    public static final MultiblockMachineDefinition LARGE_STEEL_BOILER = registerSuSyLargeBoiler(
+            "large_steel_boiler", SuSyBoilerType.STEEL);
+
+    // ---- component_redstone_controller (multiblock part) ----
+    public static final MachineDefinition COMPONENT_REDSTONE_CONTROLLER = REGISTRATE
+            .machine("component_redstone_controller", ComponentRedstoneControllerMachine::new)
+            .langValue("Component Redstone Controller")
+            .rotationState(RotationState.ALL)
+            .abilities(ComponentRedstoneControllerMachine.ABILITY)
+            .modelProperty(IS_FORMED, false)
+            .overlayTieredHullModel(GTCEu.id("block/overlay/machine/overlay_data_hatch"))
+            .register();
+
     public static void init() {}
 
     private SusyMachines() {}
@@ -2519,6 +2546,54 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
     // ==================================================================
     // Registration helpers (shared with Phases 4b/4c)
     // ==================================================================
+
+    /**
+     * Registers a SuSy large-boiler multiblock for the given {@link SuSyBoilerType}.
+     * The controller uses a custom {@link SuSyLargeBoilerMachine} and
+     * {@link SuSyBoilerRecipeLogic} with heat ramping, throttle, and water-bar display.
+     */
+    private static MultiblockMachineDefinition registerSuSyLargeBoiler(String name, SuSyBoilerType type) {
+        return REGISTRATE
+                .multiblock(name, holder -> new SuSyLargeBoilerMachine(holder, type))
+                .langValue("Large %s Boiler".formatted(FormattingUtil.toEnglishName(name.startsWith("large_")
+                        ? name.substring(6) : name)))
+                .rotationState(RotationState.NON_Y_AXIS)
+                .allowExtendedFacing(false)
+                .appearanceBlock(type.casingState)
+                .recipeTypes(SuSyRecipeTypes.BOILER_RECIPES, GTRecipeTypes.LARGE_BOILER_RECIPES)
+                .recipeModifier(SuSyLargeBoilerMachine::recipeModifier, true)
+                .partAppearance((controller, part, side) -> controller.self().getPos().below().getY() == part.self().getPos().getY()
+                        ? type.fireboxState.get().defaultBlockState()
+                        : type.casingState.get().defaultBlockState())
+                .pattern(definition -> {
+                    TraceabilityPredicate fireboxPred = Predicates.blocks(type.fireboxState.get())
+                            .setMinGlobalLimited(4)
+                            .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS).setMinGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMaxGlobalLimited(1))
+                            .or(Predicates.autoAbilities(true, true, false));
+                    return FactoryBlockPattern.start()
+                            .aisle("XXX", "CCC", "CCC", "CCC")
+                            .aisle("XXX", "CPC", "CPC", "CCC")
+                            .aisle("XXX", "CSC", "CCC", "CCC")
+                            .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                            .where('P', Predicates.blocks(type.pipeState.get()))
+                            .where('X', fireboxPred)
+                            .where('C', Predicates.blocks(type.casingState.get()).setMinGlobalLimited(20)
+                                    .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS).setMinGlobalLimited(1))
+                                    .or(ComponentRedstoneControllerMachine.controllerPredicate()
+                                            .setMaxGlobalLimited(4)
+                                            .setPreviewCount(0)))
+                            .build();
+                })
+                .workableCasingModel(type.casingTexture, type.frontOverlay)
+                .tooltips(
+                        Component.translatable("gtceu.multiblock.large_boiler.heat_time_tooltip",
+                                type.getTicksToBoiling() / 20),
+                        Component.translatable("gtceu.universal.tooltip.base_production_fluid", type.steamPerTick()),
+                        Component.translatable("gtceu.multiblock.large_boiler.explosion_tooltip")
+                                .withStyle(ChatFormatting.DARK_RED))
+                .register();
+    }
 
     /**
      * Registers one machine per tier, named {@code <tier_vn>_<name>} (e.g.

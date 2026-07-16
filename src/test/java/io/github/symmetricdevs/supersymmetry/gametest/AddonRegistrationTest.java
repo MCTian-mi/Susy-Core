@@ -46,6 +46,9 @@ public final class AddonRegistrationTest {
     private static final ResourceLocation DUMPER_ID = SuSyValues.susyId("dumper");
     private static final ResourceLocation FLARE_STACK_ID = SuSyValues.susyId("flare_stack");
     private static final ResourceLocation SMOKE_STACK_ID = SuSyValues.susyId("smoke_stack");
+    private static final ResourceLocation LARGE_BRONZE_BOILER_ID = SuSyValues.susyId("large_bronze_boiler");
+    private static final ResourceLocation LARGE_STEEL_BOILER_ID = SuSyValues.susyId("large_steel_boiler");
+    private static final ResourceLocation COMPONENT_REDSTONE_CONTROLLER_ID = SuSyValues.susyId("component_redstone_controller");
     private static final ResourceLocation STEEL_MILL_BALL_ID = GTCEu.id("steel_mill_ball");
     private static final ResourceLocation STEEL_MILL_BALL_RECIPE_ID =
             SuSyValues.susyId("fluid_solidifier/ore_processing/solidify_mill_ball_gtceu_steel");
@@ -91,6 +94,13 @@ public final class AddonRegistrationTest {
                 "Flare Stack machine definition was not registered");
         helper.assertTrue(GTRegistries.MACHINES.get(SMOKE_STACK_ID) == SusyMachines.SMOKE_STACK,
                 "Smoke Stack machine definition was not registered");
+
+        helper.assertTrue(GTRegistries.MACHINES.get(LARGE_BRONZE_BOILER_ID) == SusyMachines.LARGE_BRONZE_BOILER,
+                "Large Bronze Boiler machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(LARGE_STEEL_BOILER_ID) == SusyMachines.LARGE_STEEL_BOILER,
+                "Large Steel Boiler machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(COMPONENT_REDSTONE_CONTROLLER_ID) == SusyMachines.COMPONENT_REDSTONE_CONTROLLER,
+                "Component Redstone Controller machine definition was not registered");
 
         Item millBallItem = BuiltInRegistries.ITEM.get(STEEL_MILL_BALL_ID);
         helper.assertTrue(BuiltInRegistries.ITEM.containsKey(STEEL_MILL_BALL_ID),
