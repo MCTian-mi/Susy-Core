@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "supersymmetry:block/sintering_brick"
+    },
+    "active=true": {
+      "model": "supersymmetry:block/sintering_brick_active"
+    }
+  }
+}

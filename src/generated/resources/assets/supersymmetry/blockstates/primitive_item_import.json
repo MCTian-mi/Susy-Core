@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "supersymmetry:block/machine/primitive_item_import",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "supersymmetry:block/machine/primitive_item_import",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/machine/primitive_item_import"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/machine/primitive_item_import",
+      "y": 180
+    },
+    "facing=up": {
+      "gtceu:z": 180,
+      "model": "supersymmetry:block/machine/primitive_item_import",
+      "x": 270
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/machine/primitive_item_import",
+      "y": 270
+    }
+  }
+}

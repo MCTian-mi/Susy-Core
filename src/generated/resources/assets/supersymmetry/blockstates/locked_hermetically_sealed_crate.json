@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "supersymmetry:block/machine/locked_hermetically_sealed_crate"
+    }
+  }
+}

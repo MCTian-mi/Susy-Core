@@ -231,9 +231,9 @@ public final class SusyBlocks {
     // Phase 6 TODO. tex gregtech:blocks/casings/metallurgy*/<name>
     // ==================================================================
     public static final BlockEntry<DirectionalOrientableBlock> HYDRAULIC_CYLINDER = createDirectionalOrientableCasingBlock("hydraulic_cylinder", TEX_STEEL); // TODO)) directional front tex (BlockMetallurgy); tex .../metallurgy/hydraulic_cylinder
-    public static final BlockEntry<Block> FLYING_SHEAR_SAW = createCasingBlock("flying_shear_saw", TEX_STEEL); // TODO)) rotatable (BlockMetallurgy2, horizontal); tex .../metallurgy_2/flying_shear_saw
+    public static final BlockEntry<HorizontalOrientableBlock> FLYING_SHEAR_SAW = createHorizontalOrientableCasingBlock("flying_shear_saw", TEX_STEEL); // TODO)) rotatable (BlockMetallurgy2, horizontal); tex .../metallurgy_2/flying_shear_saw
     public static final BlockEntry<Block> POLYSTYRENE_WALL = createCasingBlock("polystyrene_wall", TEX_STEEL); // TODO)) tex .../metallurgy_2/polystyrene_wall
-    public static final BlockEntry<Block> METALLURGY_ROLL = createCasingBlock("metallurgy_roll", TEX_STEEL); // TODO)) rotatable (BlockMetallurgyRoll, axial); tex .../metallurgy_roll/roll
+    public static final BlockEntry<RotatedPillarBlock> METALLURGY_ROLL = createAxialOrientableCasingBlock("metallurgy_roll", TEX_STEEL); // TODO)) rotatable (BlockMetallurgyRoll, axial); tex .../metallurgy_roll/roll
 
     // ==================================================================
     // BlockMultiblockTank (active; "multiblock_tank", clarifier + flotation walls)

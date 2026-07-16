@@ -66,7 +66,7 @@ import supersymmetry.common.metatileentities.storage.MetaTileEntityPlasticCan;
 
 public class SuSyMetaTileEntities {
 
-    public static MetaTileEntityMagneticRefrigerator MAGNETIC_REFRIGERATOR;
+    public static supersymmetry.common.metatileentities.multi.electric.MetaTileEntityMagneticRefrigerator MAGNETIC_REFRIGERATOR;
 
     public static MetaTileEntityCoagulationTank COAGULATION_TANK;
 

@@ -1,7 +1,10 @@
-package supersymmetry.api.particle;
+package io.github.symmetricdevs.supersymmetry.api.particle;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 
+/**
+ * Modern port of the 1.12.2 {@code ParticleBeam}.
+ */
 public class ParticleBeam {
 
     private Particle particle;
@@ -40,22 +43,22 @@ public class ParticleBeam {
                 beamSize);
     }
 
-    public NBTTagCompound writeToNBT(NBTTagCompound data) {
+    public CompoundTag writeToNBT(CompoundTag data) {
         if (particle != null) {
-            data.setString("particle", particle.getName());
+            data.putString("particle", particle.getName());
         }
-        data.setDouble("energy", energy);
-        data.setDouble("bunchSpacing", bunchSpacing);
-        data.setDouble("bunchLength", bunchLength);
-        data.setInteger("nBunches", nBunches);
-        data.setInteger("nParticlesPerBunch", nParticlesPerBunch);
-        data.setDouble("emittance", emittance);
-        data.setDouble("beamSize", beamSize);
+        data.putDouble("energy", energy);
+        data.putDouble("bunchSpacing", bunchSpacing);
+        data.putDouble("bunchLength", bunchLength);
+        data.putInt("nBunches", nBunches);
+        data.putInt("nParticlesPerBunch", nParticlesPerBunch);
+        data.putDouble("emittance", emittance);
+        data.putDouble("beamSize", beamSize);
         return data;
     }
 
-    public void readFromNBT(NBTTagCompound data) {
-        if (data.hasKey("particle")) {
+    public void readFromNBT(CompoundTag data) {
+        if (data.contains("particle")) {
             this.particle = Particles.getByName(data.getString("particle"));
         } else {
             this.particle = null;
@@ -63,8 +66,8 @@ public class ParticleBeam {
         this.energy = data.getDouble("energy");
         this.bunchSpacing = data.getDouble("bunchSpacing");
         this.bunchLength = data.getDouble("bunchLength");
-        this.nBunches = data.getInteger("nBunches");
-        this.nParticlesPerBunch = data.getInteger("nParticlesPerBunch");
+        this.nBunches = data.getInt("nBunches");
+        this.nParticlesPerBunch = data.getInt("nParticlesPerBunch");
         this.emittance = data.getDouble("emittance");
         this.beamSize = data.getDouble("beamSize");
     }

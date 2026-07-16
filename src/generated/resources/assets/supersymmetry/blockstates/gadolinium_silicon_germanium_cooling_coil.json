@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "supersymmetry:block/gadolinium_silicon_germanium_cooling_coil"
+    },
+    "active=true": {
+      "model": "supersymmetry:block/gadolinium_silicon_germanium_cooling_coil_active"
+    }
+  }
+}

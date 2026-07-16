@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "supersymmetry:block/machine/lp_steam_vulcanizing_press",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "supersymmetry:block/machine/lp_steam_vulcanizing_press",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/machine/lp_steam_vulcanizing_press"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/machine/lp_steam_vulcanizing_press",
+      "y": 180
+    },
+    "facing=up": {
+      "gtceu:z": 180,
+      "model": "supersymmetry:block/machine/lp_steam_vulcanizing_press",
+      "x": 270
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/machine/lp_steam_vulcanizing_press",
+      "y": 270
+    }
+  }
+}

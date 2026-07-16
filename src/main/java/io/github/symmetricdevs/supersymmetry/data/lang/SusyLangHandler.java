@@ -55,6 +55,17 @@ public final class SusyLangHandler {
         provider.add("susy.signal.dec10", "Throttle -10%%");
         provider.add("susy.signal.incr25", "Throttle +25%%");
         provider.add("susy.signal.dec25", "Throttle -25%%");
+        provider.add("susy.multiblock.strand_casting.no_strand", "No strand");
+        provider.add("susy.multiblock.strand_casting.thickness", "Thickness: %s");
+        provider.add("susy.multiblock.strand_casting.width", "Width: %s");
+        provider.add("susy.multiblock.strand_casting.no_conversion", "No conversion");
+        provider.add("susy.multiblock.strand_casting.ore_prefix", "Output: %s");
+        provider.add("susy.prefix.foil", "Foil");
+        provider.add("susy.prefix.plate", "Plate");
+        provider.add("susy.prefix.plateDense", "Dense Plate");
+        provider.add("susy.prefix.plateDouble", "Double Plate");
+        provider.add("susy.prefix.ingot", "Ingot");
+        provider.add("susy.prefix.rod", "Rod");
     }
 
     private SusyLangHandler() {}

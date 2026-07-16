@@ -1,0 +1,11 @@
+{
+  "susy.machine.parallel_pure": "Can parallel to output up to §b%s§r§7 items at once",
+  "susy.multiblock.magnetic_refrigerator.min_temperature": "§bTemperature Limit: %s",
+  "susy.multiblock.sintering_oven.can_use_plasma": "Plasma enabled: %s",
+  "susy.multiblocks.sintering_oven.use_plasma.affirmative": "Yes",
+  "susy.multiblocks.sintering_oven.use_plasma.negative": "No",
+  "susy.multiblock.pattern.error.sintering_bricks": "All sintering bricks must be the same type",
+  "susy.recipe_modifier.plasma_resistant_bricks_required": "Plasma recipes require magneto-plated sintering bricks",
+  "susy.recipe_modifier.cooling_temperature_required": "This cooling recipe does not define a required temperature",
+  "susy.recipe_modifier.coil_temperature_too_high": "The installed cooling coils cannot reach the recipe's required temperature"
+}

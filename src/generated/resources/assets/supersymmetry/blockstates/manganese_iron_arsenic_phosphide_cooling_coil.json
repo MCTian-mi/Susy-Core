@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "supersymmetry:block/manganese_iron_arsenic_phosphide_cooling_coil"
+    },
+    "active=true": {
+      "model": "supersymmetry:block/manganese_iron_arsenic_phosphide_cooling_coil_active"
+    }
+  }
+}

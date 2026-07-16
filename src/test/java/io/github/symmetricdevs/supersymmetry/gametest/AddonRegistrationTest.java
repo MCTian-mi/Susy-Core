@@ -49,6 +49,15 @@ public final class AddonRegistrationTest {
     private static final ResourceLocation LARGE_BRONZE_BOILER_ID = SuSyValues.susyId("large_bronze_boiler");
     private static final ResourceLocation LARGE_STEEL_BOILER_ID = SuSyValues.susyId("large_steel_boiler");
     private static final ResourceLocation COMPONENT_REDSTONE_CONTROLLER_ID = SuSyValues.susyId("component_redstone_controller");
+    private static final ResourceLocation STRAND_BUS_IMPORT_ID = SuSyValues.susyId("strand_bus_import");
+    private static final ResourceLocation STRAND_BUS_EXPORT_ID = SuSyValues.susyId("strand_bus_export");
+    private static final ResourceLocation BILLET_MOLD_ID = SuSyValues.susyId("billet_mold");
+    private static final ResourceLocation SLAB_MOLD_ID = SuSyValues.susyId("slab_mold");
+    private static final ResourceLocation FLYING_SHEAR_ID = SuSyValues.susyId("flying_shear");
+    private static final ResourceLocation ROLLING_MILL_ID = SuSyValues.susyId("rolling_mill");
+    private static final ResourceLocation CLUSTER_MILL_ID = SuSyValues.susyId("cluster_mill");
+    private static final ResourceLocation TURNING_ZONE_ID = SuSyValues.susyId("turning_zone");
+    private static final ResourceLocation STRAND_COOLER_ID = SuSyValues.susyId("strand_cooler");
     private static final ResourceLocation STEEL_MILL_BALL_ID = GTCEu.id("steel_mill_ball");
     private static final ResourceLocation STEEL_MILL_BALL_RECIPE_ID =
             SuSyValues.susyId("fluid_solidifier/ore_processing/solidify_mill_ball_gtceu_steel");
@@ -101,6 +110,25 @@ public final class AddonRegistrationTest {
                 "Large Steel Boiler machine definition was not registered");
         helper.assertTrue(GTRegistries.MACHINES.get(COMPONENT_REDSTONE_CONTROLLER_ID) == SusyMachines.COMPONENT_REDSTONE_CONTROLLER,
                 "Component Redstone Controller machine definition was not registered");
+
+        helper.assertTrue(GTRegistries.MACHINES.get(STRAND_BUS_IMPORT_ID) == SusyMachines.STRAND_BUS_IMPORT,
+                "Strand Import Bus machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(STRAND_BUS_EXPORT_ID) == SusyMachines.STRAND_BUS_EXPORT,
+                "Strand Export Bus machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(BILLET_MOLD_ID) == SusyMachines.BILLET_MOLD,
+                "Billet Mold machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(SLAB_MOLD_ID) == SusyMachines.SLAB_MOLD,
+                "Slab Mold machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(FLYING_SHEAR_ID) == SusyMachines.FLYING_SHEAR,
+                "Flying Shear machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(ROLLING_MILL_ID) == SusyMachines.ROLLING_MILL,
+                "Rolling Mill machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(CLUSTER_MILL_ID) == SusyMachines.CLUSTER_MILL,
+                "Cluster Mill machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(TURNING_ZONE_ID) == SusyMachines.TURNING_ZONE,
+                "Turning Zone machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(STRAND_COOLER_ID) == SusyMachines.STRAND_COOLER,
+                "Strand Cooler machine definition was not registered");
 
         Item millBallItem = BuiltInRegistries.ITEM.get(STEEL_MILL_BALL_ID);
         helper.assertTrue(BuiltInRegistries.ITEM.containsKey(STEEL_MILL_BALL_ID),

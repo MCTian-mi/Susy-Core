@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "supersymmetry:block/hydraulic_cylinder",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "supersymmetry:block/hydraulic_cylinder",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/hydraulic_cylinder"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/hydraulic_cylinder",
+      "y": 180
+    },
+    "facing=up": {
+      "model": "supersymmetry:block/hydraulic_cylinder",
+      "x": 270
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/hydraulic_cylinder",
+      "y": 270
+    }
+  }
+}

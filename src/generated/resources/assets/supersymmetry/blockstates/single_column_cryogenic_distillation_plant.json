@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "supersymmetry:block/machine/single_column_cryogenic_distillation_plant",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/machine/single_column_cryogenic_distillation_plant"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/machine/single_column_cryogenic_distillation_plant",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/machine/single_column_cryogenic_distillation_plant",
+      "y": 270
+    }
+  }
+}

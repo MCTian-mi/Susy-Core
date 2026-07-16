@@ -22,14 +22,12 @@ plugins {
 // superseded legacy files).
 val legacySourceExcludes = listOf(
     "api/blocks/",
-    "api/capability/",
     "api/event/",
     "api/fluids/",
     "api/gui/",
     "api/items/",
     "api/metatileentity/",
     "api/mixin/",
-    "api/particle/",
     "api/recycling/",
     "api/rocketry/",
     "api/sound/",

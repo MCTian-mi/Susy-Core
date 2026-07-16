@@ -27,7 +27,7 @@ public class SusyConfig {
     public static void init() {
         synchronized (LOCK) {
             if (INSTANCE == null) {
-                INSTANCE = Configuration.registerConfig(SusyConfig.class, ConfigFormats.yaml()).getConfigInstance();
+                INSTANCE = Configuration.registerConfig(SusyConfig.class, ConfigFormats.YAML).getConfigInstance();
             }
         }
     }

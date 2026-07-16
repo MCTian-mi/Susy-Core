@@ -1,10 +1,14 @@
-package supersymmetry.api.capability;
+package io.github.symmetricdevs.supersymmetry.api.capability;
 
-import net.minecraft.nbt.NBTTagCompound;
+import com.gregtechceu.gtceu.api.data.chemical.material.Material;
+import com.gregtechceu.gtceu.common.data.GTMaterials;
+import com.gregtechceu.gtceu.api.GTCEuAPI;
 
-import gregtech.api.GregTechAPI;
-import gregtech.api.unification.material.Material;
+import net.minecraft.nbt.CompoundTag;
 
+/**
+ * Modern port of the 1.12.2 {@code Strand} data object.
+ */
 public class Strand {
 
     public double thickness;
@@ -29,23 +33,31 @@ public class Strand {
         this.temperature = strand.temperature;
     }
 
-    public static NBTTagCompound serialize(NBTTagCompound nbt, Strand strand) {
+    public static CompoundTag serialize(CompoundTag nbt, Strand strand) {
         if (strand == null) {
             return nbt;
         }
-        nbt.setDouble("Thickness", strand.thickness);
-        nbt.setDouble("Width", strand.width);
-        nbt.setBoolean("IsCut", strand.isCut);
-        nbt.setString("Material", strand.material.toString());
-        nbt.setInteger("Temperature", strand.temperature);
+        nbt.putDouble("Thickness", strand.thickness);
+        nbt.putDouble("Width", strand.width);
+        nbt.putBoolean("IsCut", strand.isCut);
+        nbt.putString("Material", strand.material.getName());
+        nbt.putInt("Temperature", strand.temperature);
         return nbt;
     }
 
-    public static Strand deserialize(NBTTagCompound nbt) {
+    public static Strand deserialize(CompoundTag nbt) {
         if (nbt == null || nbt.isEmpty()) {
             return null;
         }
-        return new Strand(nbt.getDouble("Thickness"), nbt.getDouble("Width"), nbt.getBoolean("IsCut"),
-                GregTechAPI.materialManager.getMaterial(nbt.getString("Material")), nbt.getInteger("Temperature"));
+        Material material = GTCEuAPI.materialManager.getMaterial(nbt.getString("Material"));
+        if (material == null) {
+            material = GTMaterials.NULL;
+        }
+        return new Strand(
+                nbt.getDouble("Thickness"),
+                nbt.getDouble("Width"),
+                nbt.getBoolean("IsCut"),
+                material,
+                nbt.getInt("Temperature"));
     }
 }

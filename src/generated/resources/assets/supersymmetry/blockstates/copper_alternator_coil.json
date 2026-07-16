@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "supersymmetry:block/copper_alternator_coil",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/copper_alternator_coil"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/copper_alternator_coil",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/copper_alternator_coil",
+      "y": 270
+    }
+  }
+}
