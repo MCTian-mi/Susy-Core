@@ -36,8 +36,10 @@ import io.github.symmetricdevs.supersymmetry.common.machine.electric.ContinuousS
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.fluids.FluidType;
 
 import java.util.Locale;
@@ -54,14 +56,17 @@ import static com.gregtechceu.gtceu.api.machine.property.GTMachineModelPropertie
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition;
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine;
 import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
+import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
 import com.gregtechceu.gtceu.api.pattern.Predicates;
 import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
 import com.gregtechceu.gtceu.common.data.GTBlocks;
 import com.gregtechceu.gtceu.common.data.GCYMBlocks;
+import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.client.util.TooltipHelper;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.DistillationTowerMachine;
 import io.github.symmetricdevs.supersymmetry.api.recipes.logic.SuSyParallelLogic;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.EvaporationPoolMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.LowPressureCryogenicDistillationPlant;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.MagneticRefrigeratorMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SingleColumnCryogenicDistillationPlantMachine;
@@ -69,6 +74,7 @@ import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyOrien
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSySinteringOvenMachine;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_PTFE_INERT;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.MACHINE_CASING_ULV;
 import io.github.symmetricdevs.supersymmetry.api.pattern.SuSyPredicates;
@@ -2013,6 +2019,81 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
             // TODO)) Phase 6: real ULV structural CTM + SINTERING_OVERLAY.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    public static final MultiblockMachineDefinition EVAPORATION_POOL = REGISTRATE
+            .multiblock("evaporation_pool", EvaporationPoolMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.LIGHT_CONCRETE.get())
+            .recipeType(SuSyRecipeTypes.EVAPORATION_POOL_RECIPES)
+            // Gate only: reject malformed/missing energy metadata and tick IO. The pool is
+            // solar/coil heated and deliberately has no EU/t overclock modifier.
+            .recipeModifier(EvaporationPoolMachine::evaporationEnergyGate)
+            .tooltips(Component.translatable("susy.multiblock.evaporation_pool.tooltip.size",
+                    EvaporationPoolMachine.MIN_DIAMETER, EvaporationPoolMachine.MAX_DIAMETER))
+            .pattern(definition -> {
+                TraceabilityPredicate optionalParts = Predicates.abilities(PartAbility.INPUT_ENERGY)
+                        .setMinGlobalLimited(0).setMaxGlobalLimited(2).setPreviewCount(1)
+                        .or(Predicates.abilities(PartAbility.IMPORT_ITEMS)
+                                .setMinGlobalLimited(0).setMaxGlobalLimited(2).setPreviewCount(1))
+                        .or(Predicates.abilities(PartAbility.EXPORT_ITEMS)
+                                .setMinGlobalLimited(0).setMaxGlobalLimited(2).setPreviewCount(1))
+                        .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS)
+                                .setMinGlobalLimited(0).setMaxGlobalLimited(2).setPreviewCount(1))
+                        .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS)
+                                .setMinGlobalLimited(0).setMaxGlobalLimited(2).setPreviewCount(1));
+                // Canonical 7x7 fallback; the machine's getPattern() override builds the real
+                // variable-size pattern at runtime, so this definition pattern is used only as
+                // the memoized definition fallback (the builder requires one).
+                return FactoryBlockPattern.start(RelativeDirection.RIGHT, RelativeDirection.UP,
+                        RelativeDirection.BACK)
+                        .aisle("CCCCC", "     ")
+                        .aisle("CCCCC", " CCC ")
+                        .aisle("CBHBC", " C#C ")
+                        .aisle("CCCCC", " CCC ")
+                        .aisle("CCSCC", "     ")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('C', Predicates.blocks(GTBlocks.LIGHT_CONCRETE.get()).or(optionalParts))
+                        .where('B', SuSyPredicates.evaporationBed())
+                        .where('H', SuSyPredicates.evaporationCoilsOrBeds())
+                        .where('#', Predicates.air())
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            .shapeInfos(definition -> {
+                List<MultiblockShapeInfo> shapes = new ArrayList<>();
+                MultiblockShapeInfo.ShapeInfoBuilder builder = MultiblockShapeInfo.builder()
+                        .aisle("EIOTCCCCC", "         ")
+                        .aisle("CCCCCCCCC", " CCCCCCC ")
+                        .aisle("CCCBHBCCC", " CC###CC ")
+                        .aisle("CCCBHBCCC", " CC###CC ")
+                        .aisle("CCCBHBCCC", " CC###CC ")
+                        .aisle("CCCBHBCCC", " CC###CC ")
+                        .aisle("CCCBHBCCC", " CC###CC ")
+                        .aisle("CCCCCCCCC", " CCCCCCC ")
+                        .aisle("CCCCSCCCC", "         ")
+                        .where('S', definition, Direction.SOUTH)
+                        .where('C', GTBlocks.LIGHT_CONCRETE.get())
+                        .where('B', SusyBlocks.DIRT_EVAPORATION_BED.get())
+                        .where('#', Blocks.AIR.defaultBlockState())
+                        .where(' ', Blocks.AIR.defaultBlockState())
+                        .where('E', GTMachines.ENERGY_INPUT_HATCH[GTValues.LV], Direction.NORTH)
+                        .where('I', GTMachines.FLUID_IMPORT_HATCH[GTValues.LV], Direction.NORTH)
+                        .where('O', GTMachines.FLUID_EXPORT_HATCH[GTValues.LV], Direction.NORTH)
+                        .where('T', GTMachines.ITEM_EXPORT_BUS[GTValues.LV], Direction.NORTH);
+                // One bed-only shape, then one shape per heating-coil tier sorted by tier.
+                shapes.add(builder.shallowCopy().where('H', SusyBlocks.DIRT_EVAPORATION_BED.get()).build());
+                GTCEuAPI.HEATING_COILS.entrySet().stream()
+                        .sorted(Comparator.comparingInt(entry -> entry.getKey().getTier()))
+                        .forEach(entry -> shapes.add(
+                                builder.shallowCopy().where('H', entry.getValue()).build()));
+                return shapes;
+            })
+            // TODO)) Legacy used SOLID_STEEL_CASING base + BLAST_FURNACE_OVERLAY with a "change
+            // to concrete / custom overlay?" TODO; the structural casing is light concrete.
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/electric_blast_furnace"))
             .register();
 
     public static void init() {}

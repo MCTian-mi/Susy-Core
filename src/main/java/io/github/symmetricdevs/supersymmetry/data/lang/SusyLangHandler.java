@@ -12,6 +12,22 @@ public final class SusyLangHandler {
         provider.add("susy.multiblocks.sintering_oven.use_plasma.negative", "No");
         provider.add("susy.multiblock.pattern.error.sintering_bricks", "All sintering bricks must be the same type");
         provider.add("susy.multiblock.pattern.error.metal_sheets", "All metal sheets must be the same type");
+        provider.add("susy.multiblock.pattern.error.coils_or_bed",
+                "All heating coils or evaporation beds must be the same type");
+        provider.add("susy.recipe.evaporation", "Required Energy: %s J/t");
+        provider.add("susy.recipe_modifier.evaporation_energy_required",
+                "This evaporation recipe does not define positive evaporation energy");
+        provider.add("susy.recipe_modifier.evaporation_tick_io_unsupported",
+                "Evaporation recipes cannot use per-tick inputs or outputs");
+        provider.add("susy.multiblock.evaporation_pool.dimensions", "Pool Size: %s × %s");
+        provider.add("susy.multiblock.evaporation_pool.tooltip.size",
+                "Variable size (%s to %s); heat with sunlight and/or heating coils");
+        provider.add("susy.multiblock.evaporation_pool.exposed_beds", "Sunlit Evaporation Beds: %s");
+        provider.add("susy.multiblock.evaporation_pool.solar_heat", "Solar Heat: %s J/t");
+        provider.add("susy.multiblock.evaporation_pool.coils", "Heating Coils: %s (%s K)");
+        provider.add("susy.multiblock.evaporation_pool.coil_capacity", "Coil Heat Capacity: %s J/t");
+        provider.add("susy.multiblock.evaporation_pool.thermal_remainder", "Buffered Heat: %s J");
+        provider.add("susy.multiblock.evaporation_pool.halted", "Insufficient usable heat");
         provider.add("susy.multiblock.ball_mill.tooltip.mill_balls",
                 "Requires %s mill balls to function.");
         provider.add("susy.multiblock.ball_mill.error.missing_mill_balls",

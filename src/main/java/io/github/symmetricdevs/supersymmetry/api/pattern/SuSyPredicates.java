@@ -1,11 +1,17 @@
 package io.github.symmetricdevs.supersymmetry.api.pattern;
 
+import com.gregtechceu.gtceu.api.GTCEuAPI;
+import com.gregtechceu.gtceu.api.block.ICoilType;
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController;
 import com.gregtechceu.gtceu.api.pattern.MultiblockState;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
 import com.gregtechceu.gtceu.api.pattern.error.PatternStringError;
 import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
+
+import io.github.symmetricdevs.supersymmetry.common.data.SusyBlocks;
+
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -174,6 +180,88 @@ public final class SuSyPredicates {
      * one pattern use distinct keys via {@code keyPrefix}.
      */
     public static final String TYPE_KEY_SUFFIX = "Type";
+
+    public static final String EVAPORATION_HEAT_TYPE_KEY = "EvaporationPoolHeatType";
+    /** Every patterned H slot; these are the legacy pool's sunlight-collection positions. */
+    public static final String EVAPORATION_COLLECTION_POSITIONS_KEY = "EvaporationPoolCollectionPositions";
+    public static final String EVAPORATION_COIL_POSITIONS_KEY = "EvaporationPoolCoilPositions";
+    public static final Object EVAPORATION_BED_HEAT_TYPE = new Object();
+
+    /** Matches a mandatory evaporation bed. */
+    public static TraceabilityPredicate evaporationBed() {
+        return new TraceabilityPredicate(
+                state -> state.getBlockState().is(SusyBlocks.DIRT_EVAPORATION_BED.get()),
+                () -> new BlockInfo[] {
+                        BlockInfo.fromBlockState(SusyBlocks.DIRT_EVAPORATION_BED.get().defaultBlockState())
+                });
+    }
+
+    /**
+     * Accepts either evaporation beds or one uniform heating-coil type for every
+     * optional heat slot. Beds and coils cannot be mixed. Actual bed/coil positions
+     * are retained in the match context and consumed only after formation.
+     */
+    public static TraceabilityPredicate evaporationCoilsOrBeds() {
+        String errorKey = "susy.multiblock.pattern.error.coils_or_bed";
+        return new TraceabilityPredicate(
+                state -> {
+                    Object matchedType = null;
+                    if (state.getBlockState().is(SusyBlocks.DIRT_EVAPORATION_BED.get())) {
+                        matchedType = EVAPORATION_BED_HEAT_TYPE;
+                    } else {
+                        for (var entry : GTCEuAPI.HEATING_COILS.entrySet()) {
+                            if (state.getBlockState().is(entry.getValue().get())) {
+                                matchedType = entry.getKey();
+                                break;
+                            }
+                        }
+                    }
+                    if (matchedType == null) {
+                        return false;
+                    }
+
+                    Object chosen = state.getMatchContext().getOrPut(
+                            EVAPORATION_HEAT_TYPE_KEY, matchedType);
+                    if (!chosen.equals(matchedType)) {
+                        state.setError(new PatternStringError(errorKey));
+                        return false;
+                    }
+
+                    state.getMatchContext()
+                            .getOrCreate(EVAPORATION_COLLECTION_POSITIONS_KEY, LongOpenHashSet::new)
+                            .add(state.getPos().asLong());
+                    if (matchedType instanceof ICoilType) {
+                        state.getMatchContext()
+                                .getOrCreate(EVAPORATION_COIL_POSITIONS_KEY, LongOpenHashSet::new)
+                                .add(state.getPos().asLong());
+                    }
+                    return true;
+                },
+                () -> {
+                    var candidates = new LinkedList<BlockInfo>();
+                    candidates.add(BlockInfo.fromBlockState(
+                            SusyBlocks.DIRT_EVAPORATION_BED.get().defaultBlockState()));
+                    GTCEuAPI.HEATING_COILS.entrySet().stream()
+                            .sorted(java.util.Comparator.comparingInt(entry -> entry.getKey().getTier()))
+                            .map(entry -> BlockInfo.fromBlockState(entry.getValue().get().defaultBlockState()))
+                            .forEach(candidates::add);
+                    return candidates.toArray(BlockInfo[]::new);
+                })
+                .addTooltips(net.minecraft.network.chat.Component.translatable(errorKey));
+    }
+
+    /** Read the heating-coil type selected by {@link #evaporationCoilsOrBeds()}. */
+    public static ICoilType getEvaporationCoilType(IMultiController controller) {
+        Object stored = controller.self().getMultiblockState().getMatchContext()
+                .get(EVAPORATION_HEAT_TYPE_KEY);
+        return stored instanceof ICoilType coil ? coil : null;
+    }
+
+    /** Snapshot a set of block positions recorded by an evaporation predicate. */
+    public static LongOpenHashSet getEvaporationPositions(IMultiController controller, String key) {
+        Object stored = controller.self().getMultiblockState().getMatchContext().get(key);
+        return stored instanceof LongOpenHashSet positions ? new LongOpenHashSet(positions) : new LongOpenHashSet();
+    }
 
     /**
      * A predicate that accepts any of {@code allowedBlocks} but requires every matched

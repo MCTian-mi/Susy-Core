@@ -6,11 +6,16 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipeSerializer;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.registry.GTRegistries;
 import com.gregtechceu.gtceu.common.data.GTSoundEntries;
+import com.gregtechceu.gtceu.utils.FormattingUtil;
 
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.crafting.RecipeType;
+import com.lowdragmc.lowdraglib.utils.LocalizationUtils;
 
 import io.github.symmetricdevs.supersymmetry.SuSyValues;
+import io.github.symmetricdevs.supersymmetry.api.recipes.properties.SuSyRecipePropertyKeys;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.item.crafting.RecipeType;
 
 import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.ELECTRIC;
 import static com.gregtechceu.gtceu.common.data.GTRecipeTypes.GENERATOR;
@@ -231,6 +236,14 @@ public final class SuSyRecipeTypes {
 
     public static final GTRecipeType EVAPORATION_POOL_RECIPES = register("evaporation_pool", MULTIBLOCK)
             .setMaxIOSize(2, 4, 1, 1)
+            .addDataInfo(data -> {
+                if (!data.contains(SuSyRecipePropertyKeys.EVAPORATION_ENERGY, Tag.TAG_INT)) {
+                    return "";
+                }
+                int energy = data.getInt(SuSyRecipePropertyKeys.EVAPORATION_ENERGY);
+                return energy > 0 ? LocalizationUtils.format("susy.recipe.evaporation",
+                        FormattingUtil.formatNumbers(energy)) : "";
+            })
             .setProgressBar(GuiTextures.PROGRESS_BAR_SIFT, DOWN_TO_UP)
             .setSound(GTSoundEntries.CHEMICAL);
 

@@ -29,6 +29,7 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 public final class AddonRegistrationTest {
 
     private static final ResourceLocation BALL_MILL_ID = SuSyValues.susyId("ball_mill");
+    private static final ResourceLocation EVAPORATION_POOL_ID = SuSyValues.susyId("evaporation_pool");
     private static final ResourceLocation STEEL_MILL_BALL_ID = GTCEu.id("steel_mill_ball");
     private static final ResourceLocation STEEL_MILL_BALL_RECIPE_ID =
             SuSyValues.susyId("fluid_solidifier/ore_processing/solidify_mill_ball_gtceu_steel");
@@ -39,6 +40,8 @@ public final class AddonRegistrationTest {
     public static void addonRegistrationSmoke(GameTestHelper helper) {
         helper.assertTrue(GTRegistries.MACHINES.get(BALL_MILL_ID) == SusyMachines.BALL_MILL,
                 "Ball Mill machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(EVAPORATION_POOL_ID) == SusyMachines.EVAPORATION_POOL,
+                "Evaporation Pool machine definition was not registered");
 
         Item millBallItem = BuiltInRegistries.ITEM.get(STEEL_MILL_BALL_ID);
         helper.assertTrue(BuiltInRegistries.ITEM.containsKey(STEEL_MILL_BALL_ID),
