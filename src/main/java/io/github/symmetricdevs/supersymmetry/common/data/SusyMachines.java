@@ -80,6 +80,9 @@ import static com.gregtechceu.gtceu.common.data.GTBlocks.MACHINE_CASING_ULV;
 import io.github.symmetricdevs.supersymmetry.api.pattern.SuSyPredicates;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.BallMillMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyRotationGeneratorMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.AttritionScrubberMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.CurtainCoaterMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.HotIsostaticPressMachine;
 
 /**
  * SuSy machine registry. Ported from the 1.12.2 {@code SuSyMetaTileEntities}
@@ -1732,7 +1735,7 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
     // ==================================================================
 
     public static final MultiblockMachineDefinition ATTRITION_SCRUBBER = REGISTRATE
-            .multiblock("attrition_scrubber", WorkableElectricMultiblockMachine::new)
+            .multiblock("attrition_scrubber", AttritionScrubberMachine::new)
             .rotationState(RotationState.ALL)
             .appearanceBlock(() -> SusyBlocks.ABRASION_RESISTANT_CASING.get())
             .recipeType(SuSyRecipeTypes.ATTRITION_SCRUBBER_RECIPES)
@@ -1882,7 +1885,7 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
             .register();
 
     public static final MultiblockMachineDefinition CURTAIN_COATER = REGISTRATE
-            .multiblock("curtain_coater", SuSyOrientationFixupMachine::new)
+            .multiblock("curtain_coater", CurtainCoaterMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
             .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
@@ -1914,7 +1917,7 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
             .register();
 
     public static final MultiblockMachineDefinition HOT_ISOSTATIC_PRESS = REGISTRATE
-            .multiblock("hot_isostatic_press", SuSyOrientationFixupMachine::new)
+            .multiblock("hot_isostatic_press", HotIsostaticPressMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
             .appearanceBlock(() -> SusyBlocks.SILICON_CARBIDE_CASING.get())

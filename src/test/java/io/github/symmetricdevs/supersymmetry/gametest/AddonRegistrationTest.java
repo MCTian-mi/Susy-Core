@@ -30,6 +30,9 @@ public final class AddonRegistrationTest {
 
     private static final ResourceLocation BALL_MILL_ID = SuSyValues.susyId("ball_mill");
     private static final ResourceLocation EVAPORATION_POOL_ID = SuSyValues.susyId("evaporation_pool");
+    private static final ResourceLocation ATTRITION_SCRUBBER_ID = SuSyValues.susyId("attrition_scrubber");
+    private static final ResourceLocation CURTAIN_COATER_ID = SuSyValues.susyId("curtain_coater");
+    private static final ResourceLocation HOT_ISOSTATIC_PRESS_ID = SuSyValues.susyId("hot_isostatic_press");
     private static final ResourceLocation STEEL_MILL_BALL_ID = GTCEu.id("steel_mill_ball");
     private static final ResourceLocation STEEL_MILL_BALL_RECIPE_ID =
             SuSyValues.susyId("fluid_solidifier/ore_processing/solidify_mill_ball_gtceu_steel");
@@ -42,6 +45,12 @@ public final class AddonRegistrationTest {
                 "Ball Mill machine definition was not registered");
         helper.assertTrue(GTRegistries.MACHINES.get(EVAPORATION_POOL_ID) == SusyMachines.EVAPORATION_POOL,
                 "Evaporation Pool machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(ATTRITION_SCRUBBER_ID) == SusyMachines.ATTRITION_SCRUBBER,
+                "Attrition Scrubber machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(CURTAIN_COATER_ID) == SusyMachines.CURTAIN_COATER,
+                "Curtain Coater machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(HOT_ISOSTATIC_PRESS_ID) == SusyMachines.HOT_ISOSTATIC_PRESS,
+                "Hot Isostatic Press machine definition was not registered");
 
         Item millBallItem = BuiltInRegistries.ITEM.get(STEEL_MILL_BALL_ID);
         helper.assertTrue(BuiltInRegistries.ITEM.containsKey(STEEL_MILL_BALL_ID),
