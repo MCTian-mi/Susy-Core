@@ -1,7 +1,19 @@
 {
   "variants": {
-    "": {
+    "facing=east": {
+      "model": "supersymmetry:block/flying_shear_saw",
+      "y": 90
+    },
+    "facing=north": {
       "model": "supersymmetry:block/flying_shear_saw"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/flying_shear_saw",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/flying_shear_saw",
+      "y": 270
     }
   }
 }

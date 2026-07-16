@@ -2814,7 +2814,7 @@ public final class SusyMachines {
             .rotationState(RotationState.ALL)
             .abilities(ComponentRedstoneControllerMachine.ABILITY)
             .modelProperty(IS_FORMED, false)
-            .overlayTieredHullModel(GTCEu.id("block/overlay/machine/overlay_data_hatch"))
+            .overlayTieredHullModel(GTCEu.id("block/machine/part/data_access_hatch"))
             .register();
 
     public static void init() {
