@@ -9,6 +9,7 @@ import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.data.RotationState;
 import com.gregtechceu.gtceu.api.data.chemical.material.Material;
 import com.gregtechceu.gtceu.api.data.chemical.material.properties.PropertyKey;
+import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.item.DrumMachineItem;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
@@ -19,8 +20,7 @@ import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import com.gregtechceu.gtceu.api.registry.registrate.MachineBuilder;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
-import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
+import com.gregtechceu.gtceu.common.data.*;
 import com.gregtechceu.gtceu.common.data.machines.GTMachineUtils;
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels;
 import com.gregtechceu.gtceu.common.machine.multiblock.part.EnergyHatchPartMachine;
@@ -60,15 +60,20 @@ import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo;
 import com.gregtechceu.gtceu.api.pattern.Predicates;
 import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
-import com.gregtechceu.gtceu.common.data.GTBlocks;
-import com.gregtechceu.gtceu.common.data.GCYMBlocks;
-import com.gregtechceu.gtceu.common.data.GTMachines;
 import com.gregtechceu.gtceu.client.util.TooltipHelper;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.DistillationTowerMachine;
 import io.github.symmetricdevs.supersymmetry.api.recipes.logic.SuSyParallelLogic;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.EvaporationPoolMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.GreenhouseMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.HeatRadiatorMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.LowPressureCryogenicDistillationPlant;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.MagneticRefrigeratorMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.MetallurgicalConverterLogic;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.MiningDrillMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.MixerSettlerMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.MixerSettlerV1Machine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.RailroadEngineeringStationMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.ReverberatoryFurnaceMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SingleColumnCryogenicDistillationPlantMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyOrientationFixupMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSySinteringOvenMachine;
@@ -2097,6 +2102,362 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
             // to concrete / custom overlay?" TODO; the structural casing is light concrete.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/electric_blast_furnace"))
+            .register();
+
+    // ==================================================================
+    // Phase 4c Bucket D2: custom-logic multiblocks bundle.
+    // Ported from 1.12.2 specialized controllers. HeatRadiator/Greenhouse/
+    // MiningDrill are dynamic-size; the others are plain WorkableElectric
+    // subclasses with recipe modifiers.
+    // ==================================================================
+
+    // ---- induction_furnace (perfect OC) ----
+    public static final MultiblockMachineDefinition INDUCTION_FURNACE = REGISTRATE
+            .multiblock("induction_furnace", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.ALL)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.INDUCTION_FURNACE_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle(" AAA ", " AAA ", " AAA ")
+                    .aisle("AAAAA", "ACCCA", "AAAAA")
+                    .aisle("AAAAA", "AC#CA", "AA#AA")
+                    .aisle("AAAAA", "ACCCA", "AAAAA")
+                    .aisle(" AAA ", " ASA ", " AAA ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('A', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .or(Predicates.abilities(PartAbility.INPUT_ENERGY).setMinGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.MAINTENANCE).setExactLimit(1))
+                            .or(Predicates.abilities(PartAbility.IMPORT_FLUIDS).setMinGlobalLimited(3))
+                            .or(Predicates.abilities(PartAbility.EXPORT_FLUIDS).setMinGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMinGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.EXPORT_ITEMS).setMinGlobalLimited(1)))
+                    .where('C', Predicates.blocks(SusyBlocks.COPPER_INDUCTION_COIL_ASSEMBLY.get()))
+                    .where(' ', Predicates.any())
+                    .where('#', Predicates.air())
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/pyrolyse_oven"))
+            .register();
+
+    // ---- metallurgical_converter (SuSy pure-parallel x64 + non-perfect OC; muffler) ----
+    public static final MultiblockMachineDefinition METALLURGICAL_CONVERTER = REGISTRATE
+            .multiblock("metallurgical_converter", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.METALLURGICAL_CONVERTER_RECIPES)
+            .recipeModifiers(true, GTRecipeModifiers.OC_NON_PERFECT,
+                    MetallurgicalConverterLogic::pureParallel)
+            .tooltipBuilder((stack, tooltip) -> tooltip
+                    .add(Component.translatable("susy.machine.parallel_pure", 64)))
+            .pattern(definition -> FactoryBlockPattern
+                    .start(RelativeDirection.BACK, RelativeDirection.UP, RelativeDirection.RIGHT)
+                    .aisle(" F   F ", " F   F ", " F   F ", " F   F ", " FF FF ", "  FAF  ",
+                            "  AGA  ", "   A   ", "       ", "       ")
+                    .aisle("HHHHHH ", "HFFFFF ", "H ###  ", "  ###  ", "  BBB  ", "  VVV  ",
+                            "  BBB  ", "  VVV  ", "  BBB  ", "       ")
+                    .aisle(" HHHHHH", " H###FH", " ##### ", " #BBB# ", " BRRRB ", " VRRRV ",
+                            " BRRRB ", " VRRRV ", " BRRRB ", "  BBB  ")
+                    .aisle("  HHHHH", "  #P#FS", " ##P## ", " #BBB# ", " BRRRB ", " VR#RV ",
+                            " BR#RB ", " VR#RV ", " BR#RB ", "  BMB  ")
+                    .aisle(" HHHHHH", " H###FH", " ##### ", " #BBB# ", " BRRRB ", " VRRRV ",
+                            " BRRRB ", " VRRRV ", " BRRRB ", "  BBB  ")
+                    .aisle("HHHHHH ", "HFFFFF ", "H ###  ", "  ###  ", "  BBB  ", "  VVV  ",
+                            "  BBB  ", "  VVV  ", "  BBB  ", "       ")
+                    .aisle(" F   F ", " F   F ", " F   F ", " F   F ", " FF FF ", "  FAF  ",
+                            "  AGA  ", "   A   ", "       ", "       ")
+                    .where('#', Predicates.air())
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('R', Predicates.blocks(SusyBlocks.TABULAR_ALUMINA_REFRACTORY.get()))
+                    .where('H', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .setMinGlobalLimited(31)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                    true, false, true, true, true, true))
+                            .or(Predicates.autoAbilities(true, false, false)))
+                    .where('A', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()))
+                    .where('B', Predicates.blocks(GCYMBlocks.CASING_STRESS_PROOF.get()))
+                    .where('F', Predicates.frames(GTMaterials.Steel))
+                    .where('V', Predicates.blocks(GCYMBlocks.HEAT_VENT.get()))
+                    .where('G', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .where('M', Predicates.abilities(PartAbility.MUFFLER))
+                    .where(' ', Predicates.any())
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ---- reverberatory_furnace (NoEnergy: recipes EUt(0); no INPUT_ENERGY ability) ----
+    public static final MultiblockMachineDefinition REVERBERATORY_FURNACE = REGISTRATE
+            .multiblock("reverberatory_furnace", ReverberatoryFurnaceMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .appearanceBlock(() -> GTBlocks.CASING_PRIMITIVE_BRICKS.get())
+            .recipeType(SuSyRecipeTypes.REVERBERATORY_FURNACE_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .allowExtendedFacing(false)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle("XXX", "XXX", "XXX", "YYY")
+                    .aisle("XXX", "X#X", "X#X", "Y#Y")
+                    .aisle("XXX", "X#X", "X#X", "YYY")
+                    .aisle("XXX", "X#X", "X#X", "YYY")
+                    .aisle("XXX", "X#X", "X#X", "YYY")
+                    .aisle("XXX", "X#X", "X#X", "YYY")
+                    .aisle("XXX", "XSX", "XXX", "YYY")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('Y', Predicates.blocks(GTBlocks.CASING_PRIMITIVE_BRICKS.get()))
+                    .where('X', Predicates.blocks(GTBlocks.CASING_PRIMITIVE_BRICKS.get())
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                    false, false, true, true, true, true)))
+                    .where('#', Predicates.air())
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_primitive_bricks"),
+                    GTCEu.id("block/multiblock/primitive_blast_furnace"))
+            .register();
+
+    // ---- railroad_engineering_station (deferred-scope IR placeholder + mining-fatigue aura) ----
+    public static final MultiblockMachineDefinition RAILROAD_ENGINEERING_STATION = REGISTRATE
+            .multiblock("railroad_engineering_station", RailroadEngineeringStationMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.RAILROAD_ENGINEERING_STATION_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .tooltips(Component.translatable("susy.machine.railroad_engineering_station.tooltip"),
+                    Component.translatable("susy.machine.railroad_engineering_station.tooltip.1"))
+            .pattern(definition -> {
+                TraceabilityPredicate solidSteel = Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get());
+                TraceabilityPredicate concrete = Predicates.blocks(GTBlocks.LIGHT_CONCRETE.get());
+                return FactoryBlockPattern.start()
+                        .aisle("                 ", "                 ", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "                 ",
+                                "       F F       ", "                 ")
+                        .aisle("                 ", "                 ", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "                 ",
+                                "       F F       ", "                 ")
+                        .aisle("                 ", "                 ", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "                 ",
+                                "       F F       ", "                 ")
+                        .aisle("  CCC  BBB  CCC  ", "  CCC  BBB  CCC  ", "   C    B    C   ", "                 ",
+                                "                 ", "                 ", "                 ", "       F F       ",
+                                "       F F       ", "       F F       ")
+                        .aisle("CCCCCCCCCCCCCCCCC", "CCCFCCCCFCCCCFCCC", "CCCFCCCCFCCCCFCCC", "   F    F    F   ",
+                                "   F    F    F   ", "   F    F    F   ", "   F    F    F   ", " FFFFFFFFFFFFFFF ",
+                                "  FF   FGF   FF  ", "       F F       ")
+                        .aisle("CCCCCCCCCCCCCCCCC", "CCCCCCCCCCCCCCCCC", "   C    C    C   ", "                 ",
+                                "                 ", "                 ", "                 ", "       F F       ",
+                                "       F F       ", "       F F       ")
+                        .aisle("CCCCCCCCCCCCCCCCC", "                 ", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "                 ",
+                                "       F F       ", "                 ")
+                        .aisle("CCCCCCCCCCCCCCCCC", "RRRRRRRRRRRRRRRRR", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "       MMM       ",
+                                "       FGF       ", "       MMM       ")
+                        .aisle("                 ", "RRRRRRRRRRRRRRRRR", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "                 ",
+                                "       FMF       ", "                 ")
+                        .aisle("CCCCCCCCCCCCCCCCC", "RRRRRRRRRRRRRRRRR", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "       MMM       ",
+                                "       FGF       ", "       MAM       ")
+                        .aisle("CCCCCCCCCCCCCCCCC", "                 ", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "                 ",
+                                "       F F       ", "                 ")
+                        .aisle("CCCCCCCCCCCCCCCCC", "CCCCCCCCCCCCCCCCC", "   C    C    C   ", "                 ",
+                                "                 ", "                 ", "                 ", "       F F       ",
+                                "       F F       ", "       F F       ")
+                        .aisle("CCCCCCCCCCCCCCCCC", "CCCFCCCCFCCCCFCCC", "CCCFCCCCFCCCCFCCC", "   F    F    F   ",
+                                "   F    F    F   ", "   F    F    F   ", "   F    F    F   ", " FFFFFFFFFFFFFFF ",
+                                "  FF   FGF   FF  ", "       F F       ")
+                        .aisle("  CCC  CCC  CCC  ", "  CCC  CSC  CCC  ", "   C    C    C   ", "                 ",
+                                "                 ", "                 ", "                 ", "       F F       ",
+                                "       F F       ", "       F F       ")
+                        .aisle("                 ", "                 ", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "                 ",
+                                "       F F       ", "                 ")
+                        .aisle("                 ", "                 ", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "                 ",
+                                "       F F       ", "                 ")
+                        .aisle("                 ", "                 ", "                 ", "                 ",
+                                "                 ", "                 ", "                 ", "                 ",
+                                "       F F       ", "                 ")
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                        .where('F', Predicates.frames(GTMaterials.Steel))
+                        .where('M', solidSteel)
+                        .where('G', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
+                        .where('C', concrete)
+                        .where('A', solidSteel.or(Predicates.autoAbilities(true, false, false)))
+                        .where('B', concrete.or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                true, false, true, false, true, false)))
+                        .where('R', RailroadEngineeringStationMachine.rails())
+                        .where(' ', Predicates.any())
+                        .build();
+            })
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ---- heat_radiator (dynamic-size no-energy radiator) ----
+    public static final MultiblockMachineDefinition HEAT_RADIATOR = REGISTRATE
+            .multiblock("heat_radiator", HeatRadiatorMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.HEAT_RADIATOR_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
+            .tooltips(Component.translatable("susy.machine.heat_radiator.tooltip.1"),
+                    Component.translatable("susy.machine.heat_radiator.tooltip.2"))
+            .pattern(definition -> HeatRadiatorMachine.buildPattern(definition,
+                    HeatRadiatorMachine.MIN_HEIGHT, HeatRadiatorMachine.MIN_RADIUS))
+            .shapeInfos(HeatRadiatorMachine::buildShapeInfos)
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ---- large_fluid_pump (perfect OC + pure-parallel x256) ----
+    public static final MultiblockMachineDefinition LARGE_FLUID_PUMP = REGISTRATE
+            .multiblock("large_fluid_pump", WorkableElectricMultiblockMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyWorldgenRecipeTypes.PUMPING_RECIPES)
+            .recipeModifiers(GTRecipeModifiers.OC_PERFECT,
+                    (machine, recipe) -> SuSyParallelLogic.pureParallel(machine, recipe, 256))
+            .tooltips(Component.translatable("susy.machine.large_fluid_pump.tooltip.1"),
+                    Component.translatable("susy.machine.large_fluid_pump.tooltip.2"))
+            .pattern(definition -> FactoryBlockPattern
+                    .start(RelativeDirection.RIGHT, RelativeDirection.FRONT, RelativeDirection.UP)
+                    .aisle("       ", "      P", "       ")
+                    .aisle("       ", "      P", "       ")
+                    .aisle("FCCCC  ", "CCCCC P", "FCECC  ")
+                    .aisle("CCSGC  ", "OPPPPPP", "CCEGC  ")
+                    .aisle("FCCC   ", "CCCCC  ", "FCEC   ")
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
+                    .where('G', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
+                    .where('F', Predicates.frames(GTMaterials.Steel))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setExactLimit(1))
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(),
+                                    false, false, true, true, true, true)))
+                    .where('E', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get())
+                            .or(Predicates.abilities(PartAbility.INPUT_ENERGY)
+                                    .setMinGlobalLimited(1).setMaxGlobalLimited(2)))
+                    .where('O', Predicates.abilities(PartAbility.EXPORT_FLUIDS))
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/fluid_drilling_rig"))
+            .register();
+
+    // ---- mixer_settler_v2 (dynamic-width cells 2..20; cell gate + pure-parallel x16) ----
+    public static final MultiblockMachineDefinition MIXER_SETTLER_V2 = REGISTRATE
+            .multiblock("mixer_settler_v2", MixerSettlerMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .langValue("Mixer Settler")
+            .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
+            .recipeType(SuSyRecipeTypes.MIXER_SETTLER_RECIPES)
+            .recipeModifiers(GTRecipeModifiers.OC_NON_PERFECT,
+                    MixerSettlerMachine::cellModifier,
+                    (machine, recipe) -> SuSyParallelLogic.pureParallel(machine, recipe, 16))
+            .tooltips(Component.translatable("susy.machine.mixer_settler.tooltip.1"),
+                    Component.translatable("susy.machine.mixer_settler.tooltip.2"))
+            .pattern(definition -> MixerSettlerMachine.buildPattern(MixerSettlerMachine.MIN_CELLS, definition))
+            .shapeInfos(definition -> {
+                List<MultiblockShapeInfo> shapes = new ArrayList<>();
+                for (int cells = MixerSettlerMachine.MIN_CELLS; cells <= MixerSettlerMachine.MAX_CELLS; cells += 2) {
+                    shapes.add(new MultiblockShapeInfo(MixerSettlerMachine
+                            .buildPattern(cells, definition)
+                            .getPreview(new int[] { 1, 1, 1, 1, 1, 1 })));
+                }
+                return shapes;
+            })
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ---- mixer_settler (V1 "Mixer Settler (Old)": dynamic 5x5-aisle structure) ----
+    public static final MultiblockMachineDefinition MIXER_SETTLER = REGISTRATE
+            .multiblock("mixer_settler", MixerSettlerV1Machine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .langValue("Mixer Settler (Old)")
+            .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
+            .recipeType(SuSyRecipeTypes.MIXER_SETTLER_RECIPES)
+            .recipeModifiers(GTRecipeModifiers.OC_NON_PERFECT,
+                    MixerSettlerV1Machine::cellModifier,
+                    (machine, recipe) -> SuSyParallelLogic.pureParallel(machine, recipe,
+                            MixerSettlerV1Machine.PARALLEL_LIMIT))
+            .tooltips(Component.translatable("susy.machine.mixer_settler.tooltip.1"),
+                    Component.translatable("susy.machine.mixer_settler.tooltip.2"))
+            .pattern(definition -> MixerSettlerV1Machine.createPattern(MixerSettlerV1Machine.MIN_RADIUS,
+                    definition))
+            .shapeInfos(definition -> {
+                List<MultiblockShapeInfo> shapes = new ArrayList<>();
+                for (int radius = MixerSettlerV1Machine.MIN_RADIUS; radius <= MixerSettlerV1Machine.MAX_RADIUS;
+                        radius += 2) {
+                    String[] rows = MixerSettlerV1Machine.buildVoxelStrings(radius);
+                    char[] controllerRow = rows[22].toCharArray();
+                    controllerRow[radius - 1] = 'Y';
+                    controllerRow[radius + 1] = 'B';
+                    rows[22] = new String(controllerRow);
+                    shapes.add(MultiblockShapeInfo.builder()
+                            .aisle(rows[0], rows[1], rows[2], rows[3], rows[4])
+                            .aisle(rows[5], rows[6], rows[7], rows[8], rows[9])
+                            .aisle(rows[10], rows[11], rows[12], rows[13], rows[14])
+                            .aisle(rows[15], rows[16], rows[17], rows[18], rows[19])
+                            .aisle(rows[20], rows[21], rows[22], rows[23], rows[24])
+                            .where('S', definition, Direction.SOUTH)
+                            .where('Y', GTMachines.ENERGY_INPUT_HATCH[GTValues.LV], Direction.NORTH)
+                            .where('B', GTMachines.ITEM_IMPORT_BUS[GTValues.LV], Direction.NORTH)
+                            .where('I', GTMachines.FLUID_IMPORT_HATCH[GTValues.LV], Direction.NORTH)
+                            .where('O', GTMachines.FLUID_EXPORT_HATCH[GTValues.LV], Direction.NORTH)
+                            .where('T', SusyBlocks.COALESCENCE_PLATE.get())
+                            .where('P', GTBlocks.CASING_POLYTETRAFLUOROETHYLENE_PIPE.get())
+                            .where('D', GTBlocks.CASING_STAINLESS_CLEAN.get())
+                            .where('C', GTBlocks.CASING_STAINLESS_CLEAN.get())
+                            .where('G', GTBlocks.CASING_STAINLESS_CLEAN.get())
+                            .where('M', GTBlocks.CASING_STAINLESS_STEEL_GEARBOX.get())
+                            .where('F', GTMaterialBlocks.MATERIAL_BLOCKS
+                                    .get(TagPrefix.frameGt, GTMaterials.StainlessSteel).get())
+                            .where('E', GTBlocks.CASING_STEEL_SOLID.get())
+                            .where(' ', Blocks.AIR.defaultBlockState())
+                            .where('#', Blocks.AIR.defaultBlockState())
+                            .build());
+                }
+                return shapes;
+            })
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ---- mining_drill (perfect-OC deposit consumer) ----
+    public static final MultiblockMachineDefinition MINING_DRILL = REGISTRATE
+            .multiblock("mining_drill", MiningDrillMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.MINING_DRILL_RECIPES)
+            .recipeModifier(GTRecipeModifiers.OC_PERFECT)
+            .tooltips(Component.translatable("susy.machine.mining_drill.tooltip.1"),
+                    Component.translatable("susy.machine.mining_drill.tooltip.2"))
+            .pattern(MiningDrillMachine::buildPattern)
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ---- greenhouse (variable-length cells; cell-count parallel) ----
+    public static final MultiblockMachineDefinition GREENHOUSE = REGISTRATE
+            .multiblock("greenhouse", GreenhouseMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.GREENHOUSE_PLANT_RECIPES)
+            .recipeModifiers(GTRecipeModifiers.OC_NON_PERFECT, GreenhouseMachine::cellParallelModifier)
+            .tooltips(Component.translatable("susy.machine.greenhouse.tooltip.1"),
+                    Component.translatable("susy.machine.greenhouse.tooltip.2"))
+            .pattern(definition -> GreenhouseMachine.buildPattern(1, definition))
+            .shapeInfos(GreenhouseMachine::buildShapeInfos)
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
             .register();
 
     public static void init() {}
