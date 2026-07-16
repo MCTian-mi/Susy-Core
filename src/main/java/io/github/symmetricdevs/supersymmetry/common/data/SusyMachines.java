@@ -87,7 +87,10 @@ import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.BallMillM
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyRotationGeneratorMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.AttritionScrubberMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.CurtainCoaterMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.DumperMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.FlareStackMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.HotIsostaticPressMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SmokeStackMachine;
 
 /**
  * SuSy machine registry. Ported from the 1.12.2 {@code SuSyMetaTileEntities}
@@ -2456,6 +2459,55 @@ public static final MultiblockMachineDefinition LOW_PRESSURE_CRYOGENIC_DISTILLAT
                     Component.translatable("susy.machine.greenhouse.tooltip.2"))
             .pattern(definition -> GreenhouseMachine.buildPattern(1, definition))
             .shapeInfos(GreenhouseMachine::buildShapeInfos)
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ---- dumper (liquid voiding) ----
+    public static final MultiblockMachineDefinition DUMPER = REGISTRATE
+            .multiblock("dumper", DumperMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .tooltips(Component.translatable("susy.machine.dumper.tooltip.1", 16000),
+                    Component.translatable("susy.machine.dumper.tooltip.2"))
+            .pattern(DumperMachine::buildPattern)
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ---- flare_stack (gas/liquid incinerator) ----
+    public static final MultiblockMachineDefinition FLARE_STACK = REGISTRATE
+            .multiblock("flare_stack", FlareStackMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .tooltips(Component.translatable("susy.machine.flare_stack.tooltip.1", 1000),
+                    Component.translatable("susy.machine.flare_stack.tooltip.2"))
+            .pattern(FlareStackMachine::buildPattern)
+            .shapeInfo(definition -> {
+                var pattern = FlareStackMachine.buildPattern(definition);
+                int[] repetitions = new int[] { 1, 3, 1 };
+                return new MultiblockShapeInfo(pattern.getPreview(repetitions));
+            })
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/multiblock_workable"))
+            .register();
+
+    // ---- smoke_stack (gas vent) ----
+    public static final MultiblockMachineDefinition SMOKE_STACK = REGISTRATE
+            .multiblock("smoke_stack", SmokeStackMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .tooltips(Component.translatable("susy.machine.smoke_stack.tooltip.1", 1000),
+                    Component.translatable("susy.machine.smoke_stack.tooltip.2"))
+            .pattern(SmokeStackMachine::buildPattern)
+            .shapeInfo(definition -> {
+                var pattern = SmokeStackMachine.buildPattern(definition);
+                int[] repetitions = new int[] { 1, 3, 1 };
+                return new MultiblockShapeInfo(pattern.getPreview(repetitions));
+            })
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/multiblock_workable"))
             .register();

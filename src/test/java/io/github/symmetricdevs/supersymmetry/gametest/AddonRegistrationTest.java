@@ -43,6 +43,9 @@ public final class AddonRegistrationTest {
     private static final ResourceLocation MIXER_SETTLER_ID = SuSyValues.susyId("mixer_settler");
     private static final ResourceLocation MINING_DRILL_ID = SuSyValues.susyId("mining_drill");
     private static final ResourceLocation GREENHOUSE_ID = SuSyValues.susyId("greenhouse");
+    private static final ResourceLocation DUMPER_ID = SuSyValues.susyId("dumper");
+    private static final ResourceLocation FLARE_STACK_ID = SuSyValues.susyId("flare_stack");
+    private static final ResourceLocation SMOKE_STACK_ID = SuSyValues.susyId("smoke_stack");
     private static final ResourceLocation STEEL_MILL_BALL_ID = GTCEu.id("steel_mill_ball");
     private static final ResourceLocation STEEL_MILL_BALL_RECIPE_ID =
             SuSyValues.susyId("fluid_solidifier/ore_processing/solidify_mill_ball_gtceu_steel");
@@ -82,6 +85,12 @@ public final class AddonRegistrationTest {
                 "Mining Drill machine definition was not registered");
         helper.assertTrue(GTRegistries.MACHINES.get(GREENHOUSE_ID) == SusyMachines.GREENHOUSE,
                 "Greenhouse machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(DUMPER_ID) == SusyMachines.DUMPER,
+                "Dumper machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(FLARE_STACK_ID) == SusyMachines.FLARE_STACK,
+                "Flare Stack machine definition was not registered");
+        helper.assertTrue(GTRegistries.MACHINES.get(SMOKE_STACK_ID) == SusyMachines.SMOKE_STACK,
+                "Smoke Stack machine definition was not registered");
 
         Item millBallItem = BuiltInRegistries.ITEM.get(STEEL_MILL_BALL_ID);
         helper.assertTrue(BuiltInRegistries.ITEM.containsKey(STEEL_MILL_BALL_ID),
