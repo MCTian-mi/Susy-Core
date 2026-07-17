@@ -132,7 +132,9 @@ public class EntityTaggerHandler implements IInteractionItem, IItemLifeCycle {
                 String faction = susy.getString(TAG_FACTION);
                 entity.setGlowingTag(selectedFaction.equals(faction));
             } else {
-                if (entity.isGlowing()) {
+                // 1.20.1: Entity#isGlowing() is gone; the tag state set via
+                // setGlowingTag is read back with hasGlowingTag().
+                if (entity.hasGlowingTag()) {
                     entity.setGlowingTag(false);
                 }
             }

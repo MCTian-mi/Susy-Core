@@ -48,6 +48,8 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 public class Supersymmetry {
 
     public static final String MOD_ID = BuildConfig.MOD_ID;
+    /** Legacy alias kept while 1.12.2-era files reference {@code Supersymmetry.MODID}. */
+    public static final String MODID = MOD_ID;
     public static final String MOD_NAME = BuildConfig.MOD_NAME;
 
     public static MaterialRegistry MATERIAL_REGISTRY;

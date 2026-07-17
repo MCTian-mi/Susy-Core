@@ -90,7 +90,7 @@ public class EventHandlers {
 
                 passenger.teleportTo(newWorld,
                         mount.getX(), mount.getY(), mount.getZ(),
-                        mount.getYRot(), mount.getXRot());
+                        Set.of(), mount.getYRot(), mount.getXRot());
 
                 Entity realMount = newWorld.getEntity(mount.getUUID());
                 if (realMount != null) {
@@ -107,7 +107,8 @@ public class EventHandlers {
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.player.level().getGameTime() % 20 == 0 && event.phase == TickEvent.Phase.START) {
-            DimensionBreathabilityHandler.tickPlayer(event.player);
+            // TODO: Port DimensionBreathabilityHandler (retired to legacy/) and call it here
+            // DimensionBreathabilityHandler.tickPlayer(event.player);
         }
     }
 

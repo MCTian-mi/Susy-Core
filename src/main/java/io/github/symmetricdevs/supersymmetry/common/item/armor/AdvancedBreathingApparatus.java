@@ -108,7 +108,11 @@ public class AdvancedBreathingApparatus extends BreathingApparatus {
         }
     }
 
-    @Override
+    /**
+     * Fill level for the durability bar (oxygen for tanks, remaining lifetime
+     * otherwise). Not an {@code @Override}: 1.20.1 {@code IArmorLogic} has no
+     * {@code getDurabilityForDisplay} (1.12.2 Forge hook, removed).
+     */
     public double getDurabilityForDisplay(ItemStack stack) {
         if (getArmorType() == ArmorItem.Type.CHESTPLATE && getMaxOxygen(stack) != -1) {
             return getOxygen(stack) / getMaxOxygen(stack);

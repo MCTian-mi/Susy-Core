@@ -8,6 +8,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface ITextureRegistrar {
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     List<ResourceLocation> getTextureLocations();
 }

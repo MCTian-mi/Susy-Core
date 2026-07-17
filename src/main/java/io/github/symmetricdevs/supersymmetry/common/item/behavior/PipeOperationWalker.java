@@ -112,7 +112,7 @@ public class PipeOperationWalker<T extends IPipeNode<?, ?>> {
             walkers = new ArrayList<>();
             for (int i = 0; i < nextPipeFacings.size(); i++) {
                 var into = nextPipeFacings.get(i);
-                var walker = createSubWalker(world, into, currentPos.offset(into), walkedBlocks + 1);
+                var walker = createSubWalker(world, into, currentPos.relative(into), walkedBlocks + 1);
                 var nextPipe = nextPipes.get(i);
 
                 root.option.operate(into, currentPipe, nextPipe, walker.reverse);

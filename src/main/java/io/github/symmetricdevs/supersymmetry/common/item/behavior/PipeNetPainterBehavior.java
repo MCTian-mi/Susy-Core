@@ -17,6 +17,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -47,7 +48,10 @@ public class PipeNetPainterBehavior implements IInteractionItem, IAddInformation
             if (te instanceof IPipeNode<?, ?> pipe) {
                 ItemStack toolStack = context.getItemInHand();
 
-                Direction gridSide = ICoverable.traceCoverSide(context.getHitResult());
+                // UseOnContext#getHitResult is protected in 1.20.1 — rebuild it from
+                // the public accessors (same shape as GTCEu's PipeBlockItem).
+                Direction gridSide = ICoverable.traceCoverSide(new BlockHitResult(context.getClickLocation(),
+                        context.getClickedFace(), pos, false));
                 if (gridSide == null) return InteractionResult.FAIL;
 
                 int maxWalks = toolStack.getMaxDamage() - toolStack.getDamageValue();

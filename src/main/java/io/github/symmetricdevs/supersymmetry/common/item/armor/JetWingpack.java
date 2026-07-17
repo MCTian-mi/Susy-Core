@@ -14,6 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fluids.FluidStack;
 
 import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
 import com.gregtechceu.gtceu.api.item.armor.ArmorComponentItem;
 import com.gregtechceu.gtceu.api.item.armor.ArmorLogicSuite;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
@@ -75,7 +76,7 @@ public class JetWingpack extends ArmorLogicSuite {
         }
 
         // handle engine-assisted flight while gliding
-        if (engineActive && player.isFallFlying() && drainFuel(itemStack, 1, true)) {
+        if (engineActive && player.isFallFlying() && drainFuel(world, itemStack, 1, true)) {
             Vec3 lookVec = player.getLookAngle();
             if (player.isShiftKeyDown()) {
                 // braking
@@ -99,7 +100,7 @@ public class JetWingpack extends ArmorLogicSuite {
                 world.addParticle(ParticleTypes.CLOUD,
                         player.getX(), player.getY(), player.getZ(), 0.0, 0.0, 0.0);
             }
-            drainFuel(itemStack, 1, false);
+            drainFuel(world, itemStack, 1, false);
         }
 
         // jump to toggle elytra flight
@@ -136,7 +137,7 @@ public class JetWingpack extends ArmorLogicSuite {
     // Fuel drain
     // ----------------------------------------------------------------
 
-    protected boolean drainFuel(@NotNull ItemStack stack, int amount, boolean simulate) {
+    protected boolean drainFuel(Level level, @NotNull ItemStack stack, int amount, boolean simulate) {
         var tag = stack.getOrCreateTag();
         short burnTimer = tag.getShort("burnTimer");
 
@@ -152,7 +153,7 @@ public class JetWingpack extends ArmorLogicSuite {
         FluidStack storedFuel = FluidStack.loadFluidStackFromNBT(fuelTag);
         if (storedFuel == null || storedFuel.isEmpty()) return false;
 
-        int burnTime = getFuelBurnTime(storedFuel);
+        int burnTime = getFuelBurnTime(level, storedFuel);
         if (burnTime <= 0) return false;
 
         if (!simulate) {
@@ -167,12 +168,13 @@ public class JetWingpack extends ArmorLogicSuite {
         return true;
     }
 
-    private static int getFuelBurnTime(FluidStack fluidStack) {
+    private static int getFuelBurnTime(Level level, FluidStack fluidStack) {
         var recipeType = SuSyRecipeMaps.JET_WINGPACK_FUELS;
         if (recipeType == null) return 0;
-        for (GTRecipe recipe : recipeType.getRecipeList()) {
-            if (recipe.inputFluids != null && !recipe.inputFluids.isEmpty()) {
-                if (recipe.inputFluids.get(0).test(fluidStack.getFluid())) {
+        for (GTRecipe recipe : level.getRecipeManager().getAllRecipesFor(recipeType)) {
+            for (var content : recipe.getInputContents(FluidRecipeCapability.CAP)) {
+                var ingredient = FluidRecipeCapability.CAP.of(content.content);
+                if (!ingredient.isEmpty() && ingredient.test(fluidStack)) {
                     return recipe.duration;
                 }
             }
