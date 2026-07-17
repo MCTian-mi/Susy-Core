@@ -1,51 +1,33 @@
-package supersymmetry.common;
+package io.github.symmetricdevs.supersymmetry.common.event;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockTorch;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTException;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.server.management.PlayerList;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.GameRules;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.TickEvent.Phase;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
-import net.minecraftforge.event.world.BlockEvent;
-import net.minecraftforge.event.world.WorldEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.level.LevelEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.items.ItemStackHandler;
 
 import org.jetbrains.annotations.NotNull;
 
-import gregtech.api.GregTechAPI;
-import gregtech.api.util.GTTeleporter;
-import gregtech.api.util.TeleportHandler;
-import gregtech.common.items.MetaItems;
-import gregtechfoodoption.item.GTFOMetaItem;
-import supersymmetry.Supersymmetry;
-import supersymmetry.api.SusyLog;
-import supersymmetry.api.items.CargoItemStackHandler;
-import supersymmetry.common.entities.EntityDropPod;
-import supersymmetry.common.entities.EntityLander;
-import supersymmetry.common.event.DimensionBreathabilityHandler;
-import supersymmetry.common.event.DimensionRidingSwapData;
-import supersymmetry.common.event.MobHordeWorldData;
-import supersymmetry.common.item.SuSyArmorItem;
-import supersymmetry.common.network.SPacketFirstJoin;
-import supersymmetry.common.rocketry.LanderSpawnEntry;
-import supersymmetry.common.rocketry.LanderSpawnQueue;
-import supersymmetry.common.world.WorldProviderPlanet;
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
+import io.github.symmetricdevs.supersymmetry.common.item.SuSyArmorItem;
 
 @Mod.EventBusSubscriber(modid = Supersymmetry.MODID)
 public class EventHandlers {
@@ -55,114 +37,67 @@ public class EventHandlers {
 
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        NBTTagCompound playerData = event.player.getEntityData();
-        NBTTagCompound data = playerData.hasKey(EntityPlayer.PERSISTED_NBT_TAG) ?
-                playerData.getCompoundTag(EntityPlayer.PERSISTED_NBT_TAG) : new NBTTagCompound();
+        CompoundTag playerData = event.getEntity().getPersistentData();
+        CompoundTag data = playerData.contains(Player.PERSISTED_NBT_TAG) ?
+                playerData.getCompound(Player.PERSISTED_NBT_TAG) : new CompoundTag();
 
-        if (!event.player.getEntityWorld().isRemote && !data.getBoolean(FIRST_SPAWN)) {
-
-            data.setBoolean(FIRST_SPAWN, true);
-            playerData.setTag(EntityPlayer.PERSISTED_NBT_TAG, data);
-            if (event.player.isCreative()) return;
-
-            GregTechAPI.networkHandler.sendTo(new SPacketFirstJoin(), (EntityPlayerMP) event.player);
-
-            EntityDropPod dropPod = new EntityDropPod(event.player.getEntityWorld(), event.player.posX,
-                    event.player.posY + 256, event.player.posZ);
-
-            GTTeleporter teleporter = new GTTeleporter((WorldServer) event.player.world, event.player.posX,
-                    event.player.posY + 256, event.player.posZ);
-            TeleportHandler.teleport(event.player, event.player.dimension, teleporter, event.player.posX,
-                    event.player.posY + 256, event.player.posZ);
-
-            event.player.getEntityWorld().spawnEntity(dropPod);
-            event.player.startRiding(dropPod);
-
-            event.player.addItemStackToInventory(GTFOMetaItem.EMERGENCY_RATIONS.getStackForm(32));
-            event.player.addItemStackToInventory(MetaItems.PROSPECTOR_LV.getChargedStack(100000));
+        if (!event.getEntity().level().isClientSide && !data.getBoolean(FIRST_SPAWN)) {
+            // TODO: Port first-spawn logic (drop pod, lander, etc.)
+            data.putBoolean(FIRST_SPAWN, true);
+            playerData.put(Player.PERSISTED_NBT_TAG, data);
         }
     }
 
     @SubscribeEvent
-    public static void onWorldLoad(WorldEvent.Load event) {
-        GameRules gameRules = event.getWorld().getGameRules();
+    public static void onWorldLoad(LevelEvent.Load event) {
+        Level level = (Level) event.getLevel();
+        GameRules gameRules = level.getGameRules();
 
-        if (!gameRules.hasRule("doInvasions")) {
-            gameRules.addGameRule("doInvasions", "true", GameRules.ValueType.BOOLEAN_VALUE);
-        }
-
-        if (!gameRules.hasRule("factionViolence")) {
-            gameRules.addGameRule("factionViolence", "true", GameRules.ValueType.BOOLEAN_VALUE);
-        }
+        // TODO: Set up custom game rules when SystemProp is available
+        // GameRules.addGameRule("doInvasions", "true", GameRules.ValueType.BOOLEAN_VALUE);
+        // GameRules.addGameRule("factionViolence", "true", GameRules.ValueType.BOOLEAN_VALUE);
     }
 
     @SubscribeEvent
-    public static void onTrySpawnPortal(BlockEvent.PortalSpawnEvent event) {
-        event.setCanceled(true);
-    }
+    public static void onWorldTick(TickEvent.LevelTickEvent event) {
+        if (event.level.isClientSide) return;
 
-    @SubscribeEvent
-    public static void onWorldTick(TickEvent.WorldTickEvent event) {
-        World world = event.world;
-        if (world.isRemote || !(world instanceof WorldServer server)) {
-            return;
-        }
-        // this can be done earlier, saves some tps
-        if (!world.getGameRules().getBoolean("doInvasions")) {
-            return;
-        }
         if (!travellingPassengers.isEmpty()) {
-            handleEntityTransfer();
+            handleEntityTransfer(event.level);
         }
-        if (event.phase != TickEvent.Phase.END) {
+
+        if (event.phase != Phase.END) {
             return;
         }
 
-        // Process lander spawn queue for all dimensions
-        processLanderSpawnQueue(server);
+        // TODO: Port lander spawn queue processing
+        // processLanderSpawnQueue((ServerLevel) event.level);
 
-        // to be replaced with a proper setter/getter in grs, we will have invasions in other later dims as well
-        if (world.provider.getDimension() != 0) {
-            return;
-        }
-
-        PlayerList list = server.getMinecraftServer().getPlayerList();
-        MobHordeWorldData mobHordeWorldData = MobHordeWorldData.get(world);
-        list.getPlayers().forEach(p -> {
-            try {
-                mobHordeWorldData.getPlayerData(p.getPersistentID()).update(p);
-            } catch (NBTException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        mobHordeWorldData.markDirty();
+        // TODO: Port mob horde tick processing once MobHordeWorldData/PlayerData are ported
+        // ServerLevel server = (ServerLevel) event.level;
+        // if (server.dimension() != Level.OVERWORLD) return;
+        // ...
     }
 
-    private static @NotNull void handleEntityTransfer() {
+    private static void handleEntityTransfer(Level level) {
         List<DimensionRidingSwapData> toRemove = new ArrayList<>();
         for (DimensionRidingSwapData data : travellingPassengers) {
             Entity mount = data.mount;
             Entity passenger = data.passenger;
-            if (mount.dimension != passenger.dimension && passenger.getServer() != null &&
-                    mount.world.getTotalWorldTime() - data.time > 2) {
-                WorldServer newWorld = passenger.getServer().getWorld(mount.dimension);
+            if (mount.level().dimension() != passenger.level().dimension() && passenger.getServer() != null &&
+                    mount.level().getGameTime() - data.time > 2) {
+                ServerLevel newWorld = passenger.getServer().getLevel(mount.level().dimension());
 
-                passenger.setLocationAndAngles(mount.getPosition().getX(),
-                        mount.getPosition().getY(),
-                        mount.getPosition().getZ(),
-                        mount.rotationYaw,
-                        mount.rotationPitch);
-                passenger.getServer().getPlayerList().transferPlayerToDimension((EntityPlayerMP) passenger,
-                        mount.dimension,
-                        new GTTeleporter(newWorld, mount.getPosition().getX(), mount.getPosition().getY(),
-                                mount.getPosition().getZ()));
-                Entity realMount = newWorld.getEntityFromUuid(mount.getPersistentID());
+                passenger.teleportTo(newWorld,
+                        mount.getX(), mount.getY(), mount.getZ(),
+                        mount.getYRot(), mount.getXRot());
+
+                Entity realMount = newWorld.getEntity(mount.getUUID());
                 if (realMount != null) {
                     passenger.startRiding(realMount);
                 }
                 toRemove.add(data);
             }
-
         }
         for (DimensionRidingSwapData data : toRemove) {
             travellingPassengers.remove(data);
@@ -171,7 +106,7 @@ public class EventHandlers {
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.player.world.getTotalWorldTime() % 20 == 0 && event.phase == TickEvent.Phase.START) {
+        if (event.player.level().getGameTime() % 20 == 0 && event.phase == TickEvent.Phase.START) {
             DimensionBreathabilityHandler.tickPlayer(event.player);
         }
     }
@@ -179,8 +114,8 @@ public class EventHandlers {
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onEntityLivingFallEventStart(LivingFallEvent event) {
         Entity armor = event.getEntity();
-        if (armor instanceof EntityPlayer player) {
-            ItemStack boots = player.getItemStackFromSlot(EntityEquipmentSlot.FEET);
+        if (armor instanceof Player player) {
+            ItemStack boots = player.getItemBySlot(EquipmentSlot.FEET);
             if (!boots.isEmpty() && boots.getItem() instanceof SuSyArmorItem) {
                 if (player.fallDistance > 3.2F) {
                     player.fallDistance = 0;
@@ -191,100 +126,17 @@ public class EventHandlers {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onEntityLivingFallEvent(LivingFallEvent event) {
-        if (event.getEntity().world.provider instanceof WorldProviderPlanet provider) {
-            event.setDistance((float) (event.getDistance() * provider.getPlanet().gravity));
-        }
+        // TODO: Port planet-specific gravity fall adjustments once WorldProviderPlanet is available
+        // if (event.getEntity().level().dimensionType() ... )
 
         Entity armor = event.getEntity();
-        if (armor instanceof EntityPlayer player) {
-            ItemStack boots = player.getItemStackFromSlot(EntityEquipmentSlot.FEET);
+        if (armor instanceof Player player) {
+            ItemStack boots = player.getItemBySlot(EquipmentSlot.FEET);
             if (!boots.isEmpty() && boots.getItem() instanceof SuSyArmorItem) {
                 player.fallDistance = event.getDistance();
             }
         }
     }
 
-    @SubscribeEvent
-    public static void onBlockPlaceEvent(BlockEvent.EntityPlaceEvent event) {
-        if (event.getWorld().provider instanceof WorldProviderPlanet provider && !provider.getPlanet().supportsFire) {
-            Block block = event.getPlacedBlock().getBlock();
-            if (block instanceof BlockTorch) {
-                event.setCanceled(true);
-            }
-        }
-    }
-
-    /**
-     * Processes the lander spawn queue, decrementing timers and spawning landers when ready.
-     * This method handles cross-dimensional spawning and ensures chunks are loaded.
-     */
-    private static void processLanderSpawnQueue(WorldServer world) {
-        LanderSpawnQueue queue = LanderSpawnQueue.get(world);
-
-        if (queue.isEmpty()) {
-            return;
-        }
-
-        List<LanderSpawnEntry> toRemove = new ArrayList<>();
-
-        for (LanderSpawnEntry entry : queue.getEntries()) {
-            entry.decrementTicks();
-
-            if (entry.isReadyToSpawn()) {
-                spawnLander(world, entry);
-                toRemove.add(entry);
-            }
-        }
-
-        // Remove spawned entries from queue
-        for (LanderSpawnEntry entry : toRemove) {
-            queue.removeEntry(entry.getUuid());
-        }
-
-        if (!toRemove.isEmpty()) {
-            queue.markDirty();
-        }
-    }
-
-    /**
-     * Spawns a lander entity based on the provided spawn entry.
-     * Handles cross-dimensional spawning and inventory loading.
-     */
-    private static void spawnLander(WorldServer originWorld, LanderSpawnEntry entry) {
-        try {
-            // Get the target world (may be different dimension)
-            WorldServer targetWorld = originWorld.getMinecraftServer().getWorld(entry.getDimensionId());
-
-            if (targetWorld == null) {
-                SusyLog.logger.error("Failed to spawn lander: dimension {} does not exist", entry.getDimensionId());
-                return;
-            }
-
-            // Create the lander entity
-            EntityLander lander = new EntityLander(targetWorld, entry.getX(), entry.getY(), entry.getZ());
-            CargoItemStackHandler cargo = new CargoItemStackHandler(Integer.MAX_VALUE, Integer.MAX_VALUE);
-            lander.setInventory(cargo);
-
-            // Load inventory if present
-            if (entry.getInventoryData() != null) {
-                ItemStackHandler inventory = new ItemStackHandler(36);
-                inventory.deserializeNBT(entry.getInventoryData());
-
-                // Copy items to lander's inventory
-                for (int i = 0; i < Math.min(inventory.getSlots(), lander.getInventory().getSlots()); i++) {
-                    cargo.insertItem(0, inventory.getStackInSlot(i), false);
-                }
-            }
-            cargo.stopLoading();
-
-            // Spawn the lander
-            targetWorld.spawnEntity(lander);
-
-            SusyLog.logger.info("Spawned lander at ({}, {}, {}) in dimension {}",
-                    entry.getX(), entry.getY(), entry.getZ(), entry.getDimensionId());
-
-        } catch (Exception e) {
-            SusyLog.logger.error("Error spawning lander: {}", entry, e);
-        }
-    }
+    // TODO: Port torch block place prevention on fireless planets
 }

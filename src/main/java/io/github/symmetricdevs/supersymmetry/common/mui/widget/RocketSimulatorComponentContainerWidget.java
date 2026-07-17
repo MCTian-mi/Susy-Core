@@ -1,14 +1,14 @@
-package supersymmetry.common.mui.widget;
+package io.github.symmetricdevs.supersymmetry.common.mui.widget;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.language.I18n;
 
-import gregtech.api.gui.widgets.AbstractWidgetGroup;
-import gregtech.api.gui.widgets.LabelWidget;
-import gregtech.api.util.Position;
-import gregtech.api.util.Size;
+import com.gregtechceu.gtceu.api.gui.widgets.AbstractWidgetGroup;
+import com.gregtechceu.gtceu.api.gui.widgets.LabelWidget;
+import com.gregtechceu.gtceu.api.util.Position;
+import com.gregtechceu.gtceu.api.util.Size;
 
 public class RocketSimulatorComponentContainerWidget extends AbstractWidgetGroup {
 

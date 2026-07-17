@@ -1,4 +1,4 @@
-package supersymmetry.api.rocketry.components;
+package io.github.symmetricdevs.supersymmetry.api.rocketry.components;
 
 public interface RocketEngine {
 

@@ -20,36 +20,30 @@ import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 
-import java.util.function.Supplier;
-
-import static io.github.symmetricdevs.supersymmetry.SuSyValues.susyId;
-
 /**
- * SuSy block registry — <b>Phase 4c casing foundation</b>. Ported from the 1.12.2
- * {@code SuSyBlocks} / {@code SuSyMetaBlocks} (a reflection-registered set of
- * {@code VariantBlock} / {@code VariantActiveBlock} classes) onto the
- * GTCEu-Modern registrate idiom: one block per casing variant via
- * {@code REGISTRATE.block(...)}.
+ * SuSy block registry — <b>Phase 4c casing foundation + Phase 5 decorative blocks</b>.
+ * Ported from the 1.12.2 {@code SuSyBlocks} / {@code SuSyMetaBlocks} (a reflection-registered
+ * set of {@code VariantBlock} / {@code VariantActiveBlock} classes) onto the GTCEu-Modern
+ * registrate idiom: one block per variant via {@code REGISTRATE.block(...)}.
  * <p>
- * <b>Scope:</b> this file currently registers only the <em>casing blocks the
- * multiblock controllers reference</em> (Buckets B/C/D of the 4c port). Decorative
- * / non-casing blocks (concrete, regolith, hardened, wool, structural, deposit,
- * resource, stone variants, sheeted frames, rocket casings, …) port with their own
- * Phase 5 scope. Sheet/resource/stone blocks that hang off materials or worldgen are
- * deliberately left out here.
+ * <b>Phase 4c (existing):</b> casing blocks the multiblock controllers reference (Buckets B/C/D).
+ * <b>Phase 5 (new):</b> decorative / structural / resource blocks (concrete, regolith, hardened,
+ * deposit, resource, sheeted, structural, wool, bmrf, flares, support, stone variants).
+ * Rocket-casing blocks (rocketry/) are noted but deferred — their scope is the rocket/launch
+ * assembly in a later phase.
  * <p>
  * <b>Textures are placeholders.</b> The 1.12.2 art lives under the legacy
  * {@code assets/gregtech/textures/blocks/**} namespace with {@code assets/susy/}
  * forge_marker blockstates — both invalid in 1.20.1. Every block below points at a
  * GTCEu stock texture so it registers and renders sanely; the real SuSy texture
  * paths (1.12.2 {@code gregtech:blocks/...}) are recorded next to each entry as a
- * {@code // TODO))} for the Phase 6 texture/blockstate/CTM migration.
+ * {@code // TODO} } for the Phase 6 texture/blockstate/CTM migration.
  * <p>
  * Several 1.12.2 variants were <em>rotatable</em> (conveyor, separator rotor,
  * alternator coil, turbine rotor, metallurgy rolls, engine casing 2, girth gear) or
  * <em>active</em> (tank walls, electrodes, serpentine, sintering bricks, active
  * casing). They register here as plain cube-all / {@link ActiveBlock} blocks — the
- * rotation/animation behaviour is a {@code // TODO))} Phase 6 concern (modern model +
+ * rotation/animation behaviour is a {@code // TODO} } Phase 6 concern (modern model +
  * optional {@code BlockEntity} rotation), matching how the controllers only need the
  * block to exist in the pattern.
  */
@@ -109,7 +103,7 @@ public final class SusyBlocks {
      * rotated by the FACING state, so the block forms multiblock structures now and the
      * controller can auto-orient it in {@code onStructureFormed} (Bucket C/D
      * {@code horizontalOrientation} predicates). The 1.12.2 art orients a distinct
-     * front texture per-facing; that directional texture model is a {@code // TODO))}
+     * front texture per-facing; that directional texture model is a {@code // TODO} }
      * Phase 6 concern — for now the same texture shows on all faces.
      */
     private static BlockEntry<HorizontalOrientableBlock> createHorizontalOrientableCasingBlock(String name, ResourceLocation texture) {
@@ -183,7 +177,7 @@ public final class SusyBlocks {
     }
 
     // Placeholder textures (guaranteed to exist in GTCEu). The real SuSy texture for
-    // each block is recorded in a trailing TODO)) comment with its 1.12.2 path.
+    // each block is recorded in a trailing TODO) comment with its 1.12.2 path.
     private static final ResourceLocation TEX_STEEL = com.gregtechceu.gtceu.GTCEu
             .id("block/casings/solid/machine_casing_solid_steel");
     private static final ResourceLocation TEX_STEEL_PIPE = com.gregtechceu.gtceu.GTCEu
@@ -303,6 +297,349 @@ public final class SusyBlocks {
     // two structural variants; bloom-deco variants are decorative (Phase 5).
     public static final BlockEntry<ActiveBlock> SINTERING_BRICK = createActiveCasingBlock("sintering_brick", TEX_STEEL, TEX_STEEL); // TODO)) Phase 6: migrate gregtech:blocks/casings/sintering_bricks/sintering_bricks(_bloom)
     public static final BlockEntry<ActiveBlock> MAGNETOPLATED_SINTERING_BRICK = createActiveCasingBlock("magnetoplated_sintering_brick", TEX_STEEL, TEX_STEEL); // TODO)) Phase 6: migrate gregtech:blocks/casings/sintering_bricks/sintering_bricks_magnetic(_bloom)
+
+    // ==================================================================
+    // PHASE 5: DECORATIVE / STRUCTURAL BLOCKS
+    //
+    // Ported from the 1.12.2 VariantBlock classes in
+    // supersymmetry.common.blocks. Each legacy class held multiple
+    // variants packed into blockstate meta; here each variant is its
+    // own registrate entry with a placeholder texture (TEX_STEEL).
+    // Real SuSy art texture paths are recorded in trailing TODO)
+    // comments and will be migrated in Phase 6.
+    // ==================================================================
+
+    // ==================================================================
+    // Helpers for decorative blocks.
+    // ==================================================================
+
+    /** Stone-like block (sound/hardness from {@link Blocks#STONE}). */
+    private static BlockEntry<Block> createStoneDecorativeBlock(String name) {
+        return REGISTRATE.block(name, Block::new)
+                .initialProperties(() -> Blocks.STONE)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::solid)
+                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
+    /** Metal decorative block (sound/hardness from {@link Blocks#IRON_BLOCK}). */
+    private static BlockEntry<Block> createMetalDecorativeBlock(String name) {
+        return REGISTRATE.block(name, Block::new)
+                .initialProperties(() -> Blocks.IRON_BLOCK)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::solid)
+                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
+    /** Cloth-like block (sound/hardness from {@link Blocks#WHITE_WOOL}). */
+    private static BlockEntry<Block> createWoolDecorativeBlock(String name) {
+        return REGISTRATE.block(name, Block::new)
+                .initialProperties(() -> Blocks.WHITE_WOOL)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::solid)
+                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
+    /** Sand-like block (sound/hardness from {@link Blocks#SAND}). */
+    private static BlockEntry<Block> createSandDecorativeBlock(String name) {
+        return REGISTRATE.block(name, Block::new)
+                .initialProperties(() -> Blocks.SAND)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::solid)
+                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
+    /** Unbreakable block (bedrock-like, for worldgen deposits). */
+    private static BlockEntry<Block> createUnbreakableDecorativeBlock(String name) {
+        return REGISTRATE.block(name, Block::new)
+                .initialProperties(() -> Blocks.BEDROCK)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::solid)
+                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
+    // ==================================================================
+    // Random Concrete (1.12.2 BlockRandomConcrete, BlockRandomConcrete1)
+    // 16 + 1 variants. 1.12.2: translationKey "random_concrete" / "random_concrete1"
+    // tex gregtech:blocks/casings/random_concrete/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> GREY_INDUSTRIAL_CONCRETE = createStoneDecorativeBlock("grey_industrial_concrete"); // TODO)) tex greyindustrialconcrete
+    public static final BlockEntry<Block> MOSSY_INDUSTRIAL_CONCRETE = createStoneDecorativeBlock("mossy_industrial_concrete"); // TODO)) tex mossyindustrialconcrete
+    public static final BlockEntry<Block> SILVER_INDUSTRIAL_CONCRETE = createStoneDecorativeBlock("silver_industrial_concrete"); // TODO)) tex silverindustrialconcrete
+    public static final BlockEntry<Block> WHITE_INDUSTRIAL_CONCRETE = createStoneDecorativeBlock("white_industrial_concrete"); // TODO)) tex whiteindustrialconcrete
+    public static final BlockEntry<Block> DOTTED_PANEL = createStoneDecorativeBlock("dotted_panel"); // TODO)) tex dottedpanel
+    public static final BlockEntry<Block> DOTTED_PANEL_BORDER = createStoneDecorativeBlock("dotted_panel_border"); // TODO)) tex dottedpanelborder
+    public static final BlockEntry<Block> DOTTED_PANEL_COMB = createStoneDecorativeBlock("dotted_panel_comb"); // TODO)) tex dottedpanelcomb
+    public static final BlockEntry<Block> DOTTED_PANEL_GRID = createStoneDecorativeBlock("dotted_panel_grid"); // TODO)) tex dottedpanelgrid
+    public static final BlockEntry<Block> INDUSTRIAL_CINDER_BRICKS = createStoneDecorativeBlock("industrial_cinder_bricks"); // TODO)) tex industrialcinderbricks
+    public static final BlockEntry<Block> INDUSTRIAL_CINDER_BRICKS_CEMENT = createStoneDecorativeBlock("industrial_cinder_bricks_cement"); // TODO)) tex industrialcinderbrickscement
+    public static final BlockEntry<Block> INDUSTRIAL_CINDER_BRICKS_CEMENT_GRAY = createStoneDecorativeBlock("industrial_cinder_bricks_cement_gray"); // TODO)) tex industrialcinderbrickscementgray
+    public static final BlockEntry<Block> INDUSTRIAL_CINDER_BRICKS_DARK = createStoneDecorativeBlock("industrial_cinder_bricks_dark"); // TODO)) tex industrialcinderbricksdark
+    public static final BlockEntry<Block> INDUSTRIAL_CINDER_BRICKS_DARK_GRAY = createStoneDecorativeBlock("industrial_cinder_bricks_dark_gray"); // TODO)) tex industrialcinderbricksdarkgrey
+    public static final BlockEntry<Block> INDUSTRIAL_CINDER_BRICKS_GRAY = createStoneDecorativeBlock("industrial_cinder_bricks_gray"); // TODO)) tex industrialcinderbricksgrey
+    public static final BlockEntry<Block> SMOOTH_INDUSTRIAL_CONCRETE = createStoneDecorativeBlock("smooth_industrial_concrete"); // TODO)) tex smoothindustrialconcrete
+    public static final BlockEntry<Block> SMOOTH_INDUSTRIAL_CONCRETE_GRAY = createStoneDecorativeBlock("smooth_industrial_concrete_gray"); // TODO)) tex smoothindustrialconcretegrey
+    public static final BlockEntry<Block> SMOOTH_INDUSTRIAL_CONCRETE_WHITE = createStoneDecorativeBlock("smooth_industrial_concrete_white"); // TODO)) tex smoothindustrialconcretewhite
+
+    // ==================================================================
+    // Lunar Concrete (1.12.2 BlockLunarConcrete, 12 variants)
+    // translationKey "lunar_concrete", pickaxe harvest lv 1.
+    // Legacy: LUNAR_CONCRETE_SMOOTH drops LUNAR_CONCRETE_COBBLE.
+    // tex gregtech:blocks/casings/lunar_concrete/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> LUNAR_CONCRETE_SMOOTH = createStoneDecorativeBlock("lunar_concrete_smooth"); // TODO)) tex lunar_concrete_smooth
+    public static final BlockEntry<Block> LUNAR_CONCRETE_BRICKS = createStoneDecorativeBlock("lunar_concrete_bricks"); // TODO)) tex lunar_concrete_bricks
+    public static final BlockEntry<Block> LUNAR_CONCRETE_BRICKS_CRACKED = createStoneDecorativeBlock("lunar_concrete_bricks_cracked"); // TODO)) tex lunar_concrete_bricks_cracked
+    public static final BlockEntry<Block> LUNAR_CONCRETE_BRICKS_SMALL = createStoneDecorativeBlock("lunar_concrete_bricks_small"); // TODO)) tex lunar_concrete_bricks_small
+    public static final BlockEntry<Block> LUNAR_CONCRETE_BRICKS_SQUARE = createStoneDecorativeBlock("lunar_concrete_bricks_square"); // TODO)) tex lunar_concrete_bricks_square
+    public static final BlockEntry<Block> LUNAR_CONCRETE_CHISELED = createStoneDecorativeBlock("lunar_concrete_chiseled"); // TODO)) tex lunar_concrete_chiseled
+    public static final BlockEntry<Block> LUNAR_CONCRETE_COBBLE = createStoneDecorativeBlock("lunar_concrete_cobble"); // TODO)) tex lunar_concrete_cobble
+    public static final BlockEntry<Block> LUNAR_CONCRETE_POLISHED = createStoneDecorativeBlock("lunar_concrete_polished"); // TODO)) tex lunar_concrete_polished
+    public static final BlockEntry<Block> LUNAR_CONCRETE_TILED = createStoneDecorativeBlock("lunar_concrete_tiled"); // TODO)) tex lunar_concrete_tiled
+    public static final BlockEntry<Block> LUNAR_CONCRETE_TILED_SMALL = createStoneDecorativeBlock("lunar_concrete_tiled_small"); // TODO)) tex lunar_concrete_tiled_small
+    public static final BlockEntry<Block> LUNAR_CONCRETE_WINDMILL_A = createStoneDecorativeBlock("lunar_concrete_windmill_a"); // TODO)) tex lunar_concrete_windmill_a
+    public static final BlockEntry<Block> LUNAR_CONCRETE_WINDMILL_B = createStoneDecorativeBlock("lunar_concrete_windmill_b"); // TODO)) tex lunar_concrete_windmill_b
+
+    // ==================================================================
+    // Regolith (1.12.2 BlockRegolith extends VariantBlockFalling, 2 variants)
+    // translationKey "regolith", Material.SAND, shovel harvest.
+    // Legacy falling-block behaviour (VariantBlockFalling) is TODO.
+    // tex gregtech:blocks/casings/regolith/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> HIGHLAND_REGOLITH = createSandDecorativeBlock("highland_regolith"); // TODO)) falling block; tex highland
+    public static final BlockEntry<Block> LOWLAND_REGOLITH = createSandDecorativeBlock("lowland_regolith"); // TODO)) falling block; tex lowland
+
+    // ==================================================================
+    // Hardened Blocks (1.12.2 BlocksHardened, BlocksHardened1)
+    // 5 + 3 variants. Legacy: HardenedBlockType with specific drop behaviour.
+    // tex gregtech:blocks/casings/hardened_blocks/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> HARDENED_LAIR10 = createStoneDecorativeBlock("hardened_lair10"); // TODO)) tex lair10
+    public static final BlockEntry<Block> HARDENED_KRYP8 = createStoneDecorativeBlock("hardened_kryp8"); // TODO)) tex kryp8
+    public static final BlockEntry<Block> HARDENED_KRYP7 = createStoneDecorativeBlock("hardened_kryp7"); // TODO)) tex kryp7
+    public static final BlockEntry<Block> HARDENED_LAIR11 = createStoneDecorativeBlock("hardened_lair11"); // TODO)) tex lair11
+    public static final BlockEntry<Block> HARDENED_LAIR7 = createStoneDecorativeBlock("hardened_lair7"); // TODO)) tex lair7
+    public static final BlockEntry<Block> INDUSTRIAL_CONCRETE_HARDENED = createStoneDecorativeBlock("industrial_concrete_hardened"); // TODO)) tex industrial_concrete_hardened; custom drop
+    public static final BlockEntry<Block> MILITARY_CONCRETE_COBBLESTONE_HARDENED = createStoneDecorativeBlock("military_concrete_cobblestone_hardened"); // TODO)) tex military_concrete_cobblestone_hardened; custom drop
+    public static final BlockEntry<Block> MILITARY_CONCRETE_HARDENED = createStoneDecorativeBlock("military_concrete_hardened"); // TODO)) tex military_concrete_hardened; custom drop
+
+    // ==================================================================
+    // Deposit Blocks (1.12.2 BlockDeposit, 8 variants)
+    // translationKey "deposit_block", unbreakable, piston-proof, drops nothing.
+    // For worldgen ore deposits.
+    // tex gregtech:blocks/casings/deposit/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> ORTHOMAGMATIC_DEPOSIT = createUnbreakableDecorativeBlock("orthomagmatic_deposit"); // TODO)) tex orthomagmatic
+    public static final BlockEntry<Block> METAMORPHIC_DEPOSIT = createUnbreakableDecorativeBlock("metamorphic_deposit"); // TODO)) tex metamorphic
+    public static final BlockEntry<Block> SEDIMENTARY_DEPOSIT = createUnbreakableDecorativeBlock("sedimentary_deposit"); // TODO)) tex sedimentary
+    public static final BlockEntry<Block> HYDROTHERMAL_DEPOSIT = createUnbreakableDecorativeBlock("hydrothermal_deposit"); // TODO)) tex hydrothermal
+    public static final BlockEntry<Block> ALLUVIAL_DEPOSIT = createUnbreakableDecorativeBlock("alluvial_deposit"); // TODO)) tex alluvial
+    public static final BlockEntry<Block> MAGMATIC_HYDROTHERMAL_DEPOSIT = createUnbreakableDecorativeBlock("magmatic_hydrothermal_deposit"); // TODO)) tex magmatic_hydrothermal
+    public static final BlockEntry<Block> ICE_CAP_DEPOSIT = createUnbreakableDecorativeBlock("ice_cap_deposit"); // TODO)) tex ice_cap
+    public static final BlockEntry<Block> EVAPORITE_DEPOSIT = createUnbreakableDecorativeBlock("evaporite_deposit"); // TODO)) tex evaporite
+
+    // ==================================================================
+    // Resource Blocks (1.12.2 BlockResource, BlockResource1, 16 + 3 variants)
+    // translationKey "resource_block" / "resource_block_1", Material.IRON,
+    // pickaxe harvest lv 1. Mineral storage blocks.
+    // tex gregtech:blocks/casings/resource_block/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> BAUXITE_BLOCK = createMetalDecorativeBlock("bauxite_block"); // TODO)) tex bauxite
+    public static final BlockEntry<Block> CALICHE_BLOCK = createMetalDecorativeBlock("caliche_block"); // TODO)) tex caliche
+    public static final BlockEntry<Block> NON_MARINE_EVAPORITE_BLOCK = createMetalDecorativeBlock("non_marine_evaporite_block"); // TODO)) tex non_marine_evaporite
+    public static final BlockEntry<Block> HALIDE_EVAPORITE_BLOCK = createMetalDecorativeBlock("halide_evaporite_block"); // TODO)) tex halide_evaporite
+    public static final BlockEntry<Block> SULFATE_EVAPORITE_BLOCK = createMetalDecorativeBlock("sulfate_evaporite_block"); // TODO)) tex sulfate_evaporite
+    public static final BlockEntry<Block> CARBONATE_EVAPORITE_BLOCK = createMetalDecorativeBlock("carbonate_evaporite_block"); // TODO)) tex carbonate_evaporite
+    public static final BlockEntry<Block> MONAZITE_ALLUVIAL_BLOCK = createMetalDecorativeBlock("monazite_alluvial_block"); // TODO)) tex monazite_alluvial
+    public static final BlockEntry<Block> BASTNASITE_ALLUVIAL_BLOCK = createMetalDecorativeBlock("bastnasite_alluvial_block"); // TODO)) tex bastnasite_alluvial
+    public static final BlockEntry<Block> EUXENITE_ALLUVIAL_BLOCK = createMetalDecorativeBlock("euxenite_alluvial_block"); // TODO)) tex euxenite_alluvial
+    public static final BlockEntry<Block> XENOTIME_ALLUVIAL_BLOCK = createMetalDecorativeBlock("xenotime_alluvial_block"); // TODO)) tex xenotime_alluvial
+    public static final BlockEntry<Block> PLATINUM_PLACER_BLOCK = createMetalDecorativeBlock("platinum_placer_block"); // TODO)) tex platinum_placer
+    public static final BlockEntry<Block> GOLD_ALLUVIAL_BLOCK = createMetalDecorativeBlock("gold_alluvial_block"); // TODO)) tex gold_alluvial
+    public static final BlockEntry<Block> PHOSPHORITE_BLOCK = createMetalDecorativeBlock("phosphorite_block"); // TODO)) tex phosphorite
+    public static final BlockEntry<Block> POTASH_BLOCK = createMetalDecorativeBlock("potash_block"); // TODO)) tex potash
+    public static final BlockEntry<Block> SULFUR_BLOCK = createMetalDecorativeBlock("sulfur_block"); // TODO)) tex sulfur
+    public static final BlockEntry<Block> COAL_BLOCK = createMetalDecorativeBlock("coal_block"); // TODO)) tex coal; harvest lv 0
+    public static final BlockEntry<Block> NATIVE_COPPER_BLOCK = createMetalDecorativeBlock("native_copper_block"); // TODO)) tex native_copper
+    public static final BlockEntry<Block> ANTHRACITE_BLOCK = createMetalDecorativeBlock("anthracite_block"); // TODO)) tex anthracite; harvest lv 0
+    public static final BlockEntry<Block> LIGNITE_BLOCK = createMetalDecorativeBlock("lignite_block"); // TODO)) tex lignite; harvest lv 0
+
+    // ==================================================================
+    // Custom (Sheeted Frame) Sheets (1.12.2 BlocksCustomSheets, 4 variants)
+    // translationKey "custom_sheets", Material.IRON, metal sound.
+    // These are static decorative metal sheets, NOT the material-packing
+    // BlockSheetedFrame (that class handles per-material frame blocks).
+    // tex gregtech:blocks/casings/custom_sheets/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> DARK_WHITE_METAL_SHEET = createMetalDecorativeBlock("dark_white_metal_sheet"); // TODO)) tex darkwhitemetalsheet
+    public static final BlockEntry<Block> LIGHTER_GRAY_METAL_SHEET = createMetalDecorativeBlock("lighter_gray_metal_sheet"); // TODO)) tex lightergraymetalsheet
+    public static final BlockEntry<Block> DECORATIVE_COPPER_SHEET = createMetalDecorativeBlock("decorative_copper_sheet"); // TODO)) tex decorativecopper
+    public static final BlockEntry<Block> DECORATIVE_COPPER_BRICKS = createMetalDecorativeBlock("decorative_copper_bricks"); // TODO)) tex decorativecopperbricks
+
+    // ==================================================================
+    // Sheeted Frame (1.12.2 BlockSheetedFrame, material-packed variant)
+    // Legacy: BlockSheetedFrame packed 4 materials per block via PropertyMaterial
+    // + axis property, with custom SheetedFrameItemBlock for display names.
+    // Modern: create per-material entries here as plain blocks.
+    // The full BlockSheetedFrame reimplementation (axis collision, pipe
+    // integration, material rendering) is a later-phase concern.
+    // ==================================================================
+    // TODO: implement BlockSheetedFrame modern equivalent.
+    // When the materials that use sheeted frames are ported, register
+    // per-material frame blocks here.
+    // Currently deferred -- no recipes reference sheeted frames.
+
+    // ==================================================================
+    // Structural Blocks (1.12.2 BlockStructural, BlockStructural1, 16 + 10 variants)
+    // translationKey "structural_block" / "structural_block_1", Material.IRON,
+    // wrench harvest lv 2.
+    // tex gregtech:blocks/casings/structural_block/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> BASE_STRUCTURAL_BLOCK = createMetalDecorativeBlock("base_structural_block"); // TODO)) tex base_structural_block
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LOW = createMetalDecorativeBlock("structural_block_low"); // TODO)) tex structural_block_low
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LOWLIGHT = createMetalDecorativeBlock("structural_block_lowlight"); // TODO)) tex structural_block_lowlight
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_DANGER_A = createMetalDecorativeBlock("structural_block_danger_a"); // TODO)) tex structural_block_danger_a
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_DANGER_B = createMetalDecorativeBlock("structural_block_danger_b"); // TODO)) tex structural_block_danger_b
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_DANGER_C = createMetalDecorativeBlock("structural_block_danger_c"); // TODO)) tex structural_block_danger_c
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_DANGER_D = createMetalDecorativeBlock("structural_block_danger_d"); // TODO)) tex structural_block_danger_d
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_COLUMN = createMetalDecorativeBlock("structural_block_column"); // TODO)) tex structural_block_column
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_COLUMN_OLD = createMetalDecorativeBlock("structural_block_column_old"); // TODO)) tex structural_block_column_old
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LIGHT = createMetalDecorativeBlock("structural_block_light"); // TODO)) tex structural_block_light
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LIGHT_BROKEN = createMetalDecorativeBlock("structural_block_light_broken"); // TODO)) tex structural_block_light_broken
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LIGHT_CABLE = createMetalDecorativeBlock("structural_block_light_cable"); // TODO)) tex structural_block_light_cable
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_INSTRUMENTS = createMetalDecorativeBlock("structural_block_instruments"); // TODO)) tex structural_block_instruments
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_SIGN_0 = createMetalDecorativeBlock("structural_block_sign_0"); // TODO)) tex structural_block_sign_0
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_SIGN_1 = createMetalDecorativeBlock("structural_block_sign_1"); // TODO)) tex structural_block_sign_1
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_SIGN_2 = createMetalDecorativeBlock("structural_block_sign_2"); // TODO)) tex structural_block_sign_2
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_EXPOSED = createMetalDecorativeBlock("structural_block_exposed"); // TODO)) tex structural_block_exposed
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_EXPOSED_1 = createMetalDecorativeBlock("structural_block_exposed_1"); // TODO)) tex structural_block_exposed_1
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_EXPOSED_2 = createMetalDecorativeBlock("structural_block_exposed_2"); // TODO)) tex structural_block_exposed_2
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_DANGER_SIGN = createMetalDecorativeBlock("structural_block_danger_sign"); // TODO)) tex structural_block_danger_sign
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_CABLE = createMetalDecorativeBlock("structural_block_cable"); // TODO)) tex structural_block_cable
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_CABLE_HORIZONTAL = createMetalDecorativeBlock("structural_block_cable_horizontal"); // TODO)) tex structural_block_cable_horizontal
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_CABLE_JUNCTION = createMetalDecorativeBlock("structural_block_cable_junction"); // TODO)) tex structural_block_cable_junction
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_PIPOCALYPSE = createMetalDecorativeBlock("structural_block_pipocalypse"); // TODO)) tex structural_block_pipocalypse
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_VENT = createMetalDecorativeBlock("structural_block_vent"); // TODO)) tex structural_block_vent
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_VENT_BROKEN = createMetalDecorativeBlock("structural_block_vent_broken"); // TODO)) tex structural_block_vent_broken
+
+    // ==================================================================
+    // Fake Wool (1.12.2 BlocksFakeWool, 16 color variants)
+    // translationKey "fake_wool", Material.ROCK with CLOTH sound.
+    // tex gregtech:blocks/casings/fake_wool/<color>
+    // ==================================================================
+    public static final BlockEntry<Block> WHITE_FAKE_WOOL = createWoolDecorativeBlock("white_fake_wool"); // TODO)) tex whitefakewool
+    public static final BlockEntry<Block> ORANGE_FAKE_WOOL = createWoolDecorativeBlock("orange_fake_wool"); // TODO)) tex orangefakewool
+    public static final BlockEntry<Block> MAGENTA_FAKE_WOOL = createWoolDecorativeBlock("magenta_fake_wool"); // TODO)) tex magentafakewool
+    public static final BlockEntry<Block> LIGHT_BLUE_FAKE_WOOL = createWoolDecorativeBlock("light_blue_fake_wool"); // TODO)) tex lightbluefakewool
+    public static final BlockEntry<Block> YELLOW_FAKE_WOOL = createWoolDecorativeBlock("yellow_fake_wool"); // TODO)) tex yellowfakewool
+    public static final BlockEntry<Block> LIME_FAKE_WOOL = createWoolDecorativeBlock("lime_fake_wool"); // TODO)) tex limefakewool
+    public static final BlockEntry<Block> PINK_FAKE_WOOL = createWoolDecorativeBlock("pink_fake_wool"); // TODO)) tex pinkfakewool
+    public static final BlockEntry<Block> GRAY_FAKE_WOOL = createWoolDecorativeBlock("gray_fake_wool"); // TODO)) tex grayfakewool
+    public static final BlockEntry<Block> LIGHT_GRAY_FAKE_WOOL = createWoolDecorativeBlock("light_gray_fake_wool"); // TODO)) tex lightgrayfakewool
+    public static final BlockEntry<Block> CYAN_FAKE_WOOL = createWoolDecorativeBlock("cyan_fake_wool"); // TODO)) tex cyanfakewool
+    public static final BlockEntry<Block> PURPLE_FAKE_WOOL = createWoolDecorativeBlock("purple_fake_wool"); // TODO)) tex purplefakewool
+    public static final BlockEntry<Block> BLUE_FAKE_WOOL = createWoolDecorativeBlock("blue_fake_wool"); // TODO)) tex bluefakewool
+    public static final BlockEntry<Block> BROWN_FAKE_WOOL = createWoolDecorativeBlock("brown_fake_wool"); // TODO)) tex brownfakewool
+    public static final BlockEntry<Block> GREEN_FAKE_WOOL = createWoolDecorativeBlock("green_fake_wool"); // TODO)) tex greenfakewool
+    public static final BlockEntry<Block> RED_FAKE_WOOL = createWoolDecorativeBlock("red_fake_wool"); // TODO)) tex redfakewool
+    public static final BlockEntry<Block> BLACK_FAKE_WOOL = createWoolDecorativeBlock("black_fake_wool"); // TODO)) tex blackfakewool
+
+    // ==================================================================
+    // BMRF Blocks (1.12.2 BlocksBMRF, 9 variants)
+    // translationKey "bmrf_blocks", Material.ROCK, stone sound.
+    // tex gregtech:blocks/casings/bmrf/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> BMRF1 = createStoneDecorativeBlock("bmrf1"); // TODO)) tex bmrf1
+    public static final BlockEntry<Block> BMRF2 = createStoneDecorativeBlock("bmrf2"); // TODO)) tex bmrf2
+    public static final BlockEntry<Block> BMRF3 = createStoneDecorativeBlock("bmrf3"); // TODO)) tex bmrf3
+    public static final BlockEntry<Block> BMRF4 = createStoneDecorativeBlock("bmrf4"); // TODO)) tex bmrf4
+    public static final BlockEntry<Block> BMRF5 = createStoneDecorativeBlock("bmrf5"); // TODO)) tex bmrf5
+    public static final BlockEntry<Block> BMRF6 = createStoneDecorativeBlock("bmrf6"); // TODO)) tex bmrf6
+    public static final BlockEntry<Block> BMRF7 = createStoneDecorativeBlock("bmrf7"); // TODO)) tex bmrf7
+    public static final BlockEntry<Block> BMRF8 = createStoneDecorativeBlock("bmrf8"); // TODO)) tex bmrf8
+    public static final BlockEntry<Block> BMRF9 = createStoneDecorativeBlock("bmrf9"); // TODO)) tex bmrf9
+
+    // ==================================================================
+    // Raid Flare (1.12.2 BlocksRaidFlare, 2 variants)
+    // translationKey "raid_flare_block", Material.IRON, light level 1.
+    // Has TileEntityFlare with faction-hate mechanics.
+    // tex gregtech:blocks/casings/raid_flare/<variant>
+    // ==================================================================
+    public static final BlockEntry<Block> BANDIT_FLARE = createMetalDecorativeBlock("bandit_flare"); // TODO)) tile entity + faction hate; tex bandit_flare
+    public static final BlockEntry<Block> FED_FLARE = createMetalDecorativeBlock("fed_flare"); // TODO)) tile entity + faction hate; tex fed_flare
+
+    // ==================================================================
+    // Support Block (1.12.2 BlockSupport, 1 variant)
+    // translationKey "support", unbreakable, entity velocity clamp behaviour.
+    // Legacy: used as launch-pad floor for rocket scope.
+    // tex gregtech:blocks/casings/support/lv
+    // ==================================================================
+    public static final BlockEntry<Block> SUPPORT_BLOCK = createCasingBlock("support_block", TEX_STEEL); // TODO)) unbreakable + entity collision clamp; tex gregtech:blocks/casings/support/lv
+
+    // ==================================================================
+    // Stone Variant Blocks (1.12.2 SusyStoneVariantBlock, 3 stone variants)
+    // Legacy: 3 block instances (SMOOTH, COBBLE, BRICKS) each holding 12
+    // StoneType variants (gabbro, gneiss, limestone, etc.) with walking-speed
+    // bonuses and custom COBBLE drop for SMOOTH.
+    //
+    // Modern: the full 3x12 = 36 individual blocks with material properties
+    // are deferred. Register one representative per stone variant so the
+    // enum strings exist and the BlockSheetedFrame drop tables can resolve
+    // when needed. The per-StoneType textures are Phase 6.
+    //
+    // tex gregtech:blocks/casings/stone_variant/<stoneVariant>/<stoneType>
+    // ==================================================================
+    public static final BlockEntry<Block> SUSY_STONE_SMOOTH = createStoneDecorativeBlock("susy_stone_smooth"); // TODO)) 12 stone types; tex susy_stone_smooth
+    public static final BlockEntry<Block> SUSY_STONE_COBBLE = createStoneDecorativeBlock("susy_stone_cobble"); // TODO)) 12 stone types; tex susy_stone_cobble
+    public static final BlockEntry<Block> SUSY_STONE_BRICKS = createStoneDecorativeBlock("susy_stone_bricks"); // TODO)) 12 stone types; tex susy_stone_bricks
+
+    // ==================================================================
+    // Rocket Casing Blocks (deferred -- rocket/launch scope)
+    //
+    // These 1.12.2 classes live in supersymmetry.common.blocks.rocketry:
+    //   BlockCombustionChamber  (3 variants: bipropellant/monopropellant/oxidiser)
+    //   BlockTurboPump          (1 variant: basic)
+    //   BlockRocketNozzle       (3 variants: bell/plug/expanding)
+    //   BlockLifeSupport        (1 variant: oxygen_regen)
+    //   BlockRoomPadding        (1 variant: padding)
+    //   BlockSpacecraftHull     (1 variant: al_li)
+    //   BlockFairingHull        (1 variant: al_7075)
+    //   BlockFairingConnector   (inherits FairingType)
+    //   BlockGuidanceSystem     (1 variant: soyuz)
+    //   BlockTankShell          (2 variants: al_2219, steel)
+    //   BlockTankShell1         (1 variant: carbon)
+    //   BlockRocketControl      (1 variant: basic)
+    //   BlockProcessorCluster   (1 variant: tier1)
+    //   BlockOuterHatch         (1 variant: al_2219)
+    //   BlockInterStage         (1 variant: al_7075)
+    //   BlockRocketMultiblockCasing (4 variants: vinyl_ceiling_tile, ceiling_grid_filter_unit,
+    //                                vinyl_composite_flooring, aerospace_gasket)
+    //
+    // Some are directional or weighted (rocket mass system). The entire
+    // rocket assembly is a separate later-phase scope. For now these are
+    // left as TODO entries so the enum names are documented.
+    // ==================================================================
+    // TODO: register rocket casing blocks with their full behaviour.
 
     public static void init() {}
 

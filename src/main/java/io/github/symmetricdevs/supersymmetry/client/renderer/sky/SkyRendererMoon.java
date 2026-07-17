@@ -1,153 +1,110 @@
-package supersymmetry.client.renderer.sky;
-
-import java.util.Random;
+package io.github.symmetricdevs.supersymmetry.client.renderer.sky;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.WorldClient;
-import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.IRenderHandler;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.resources.ResourceLocation;
 
-import org.lwjgl.opengl.GL11;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 
-import supersymmetry.Supersymmetry;
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
 
-public class SkyRendererMoon extends IRenderHandler {
+import org.joml.Matrix4f;
 
-    public static ResourceLocation EARTH_TEXTURE = new ResourceLocation(Supersymmetry.MODID,
+/**
+ * Planet sky renderer — porting in progress.
+ * <p>
+ * The 1.12.2 implementation extended {@code IRenderHandler} and used
+ * {@code WorldClient}, {@code GLAllocation}, direct GL calls, and the old
+ * {@code Tessellator} API. In 1.20.1 the sky rendering pipeline has been
+ * substantially reworked: custom sky is added through
+ * {@link net.minecraft.client.renderer.DimensionSpecialEffects} and
+ * the level renderer's sky hook.
+ * <p>
+ * This stub registers the {@code ISkyRenderer} callback and calls through to
+ * the old star/earth/sun rendering methods ported to {@code RenderSystem}
+ * and {@code Tesselator} as a best-effort port. A full reimplementation
+ * that uses the {@code DimensionSpecialEffects} API will follow.
+ */
+public class SkyRendererMoon {
+
+    public static ResourceLocation EARTH_TEXTURE = ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID,
             "textures/environment/earth_phases.png");
-    private static final ResourceLocation SUN_TEXTURES = new ResourceLocation("textures/environment/sun.png");
+    private static final ResourceLocation SUN_TEXTURES = ResourceLocation.withDefaultNamespace("textures/environment/sun.png");
 
-    private final float earthSize = 6;
+    private static final float EARTH_SIZE = 6;
 
-    private int starGLCallList;
-    private boolean isInitialized = false;
+    private static boolean isInitialized = false;
 
     public SkyRendererMoon() {}
 
-    @Override
-    public void render(float partialTicks, WorldClient world, Minecraft mc) {
-        if (!isInitialized) {
-            this.starGLCallList = GLAllocation.generateDisplayLists(3);
-            GL11.glPushMatrix();
-            GL11.glNewList(this.starGLCallList, GL11.GL_COMPILE);
-            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-            this.renderStars(buffer);
-            Tessellator.getInstance().draw();
-            GL11.glEndList();
-            GL11.glPopMatrix();
-            isInitialized = true;
-        }
+    /**
+     * Called from the dimension's {@code DimensionSpecialEffects} or
+     * from a mixin to the level renderer. Replaces the old
+     * {@code render(float, WorldClient, Minecraft)} signature.
+     */
+    public static void renderSky(float partialTick, ClientLevel level, Minecraft mc) {
+        PoseStack poseStack = new PoseStack();
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buffer = tesselator.getBuilder();
 
-        GlStateManager.pushMatrix();
-        GlStateManager.disableFog();
-        GlStateManager.enableBlend();
-        BufferBuilder bb = Tessellator.getInstance().getBuffer();
+        RenderSystem.disableBlend();
+        RenderSystem.depthMask(false);
 
-        GlStateManager.enableTexture2D();
-        // GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE,
-        // GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-
-        mc.getTextureManager().bindTexture(EARTH_TEXTURE);
-        bb.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        // Earth render
+        mc.getTextureManager().bindForSetup(EARTH_TEXTURE);
         int distEarth = 50;
-        int phase = calculateEarthPhase(partialTicks, world);
+        int phase = calculateEarthPhase(partialTick, level);
         int phaseX = phase % 4;
         int phaseY = phase / 4 % 2;
         float phaseXL = (float) (phaseX) / 4.0F;
         float phaseYU = (float) (phaseY) / 2.0F;
         float phaseXR = (float) (phaseX + 1) / 4.0F;
         float phaseYD = (float) (phaseY + 1) / 2.0F;
-        bb.pos(-earthSize, distEarth, -earthSize).tex(phaseXR, phaseYU).endVertex();
-        bb.pos(earthSize, distEarth, -earthSize).tex(phaseXL, phaseYU).endVertex();
-        bb.pos(earthSize, distEarth, earthSize).tex(phaseXL, phaseYD).endVertex();
-        bb.pos(-earthSize, distEarth, earthSize).tex(phaseXR, phaseYD).endVertex();
-        Tessellator.getInstance().draw();
+
+        Matrix4f mat = poseStack.last().pose();
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        buffer.vertex(mat, -EARTH_SIZE, distEarth, -EARTH_SIZE).uv(phaseXR, phaseYU).endVertex();
+        buffer.vertex(mat, EARTH_SIZE, distEarth, -EARTH_SIZE).uv(phaseXL, phaseYU).endVertex();
+        buffer.vertex(mat, EARTH_SIZE, distEarth, EARTH_SIZE).uv(phaseXL, phaseYD).endVertex();
+        buffer.vertex(mat, -EARTH_SIZE, distEarth, EARTH_SIZE).uv(phaseXR, phaseYD).endVertex();
+        tesselator.end();
 
         // Sun render
-        GlStateManager.pushMatrix();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.rotate(-90F, 0.0F, 1.0F, 0.0F);
-        GlStateManager.rotate(getSunAngle(world), 0.0F, 0.0F, 1.0F);
-        GlStateManager.rotate(world.getCelestialAngle(partialTicks) * 360.0F, 1.0F, 0.0F, 0.0F);
-        float sunSize = 25F; // A little smaller than on Earth, but mostly to exaggerate the distance between the sun
-                             // and Earth in the sky
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        float sunAngle = level.getTimeOfDay(partialTick) * 360.0F;
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(-90F));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(getSunAngle(level)));
+        poseStack.mulPose(Axis.XP.rotationDegrees(sunAngle));
+        float sunSize = 25F;
         double distSun = distEarth * 2;
+        mat = poseStack.last().pose();
 
-        mc.getTextureManager().bindTexture(SUN_TEXTURES);
-        bb.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-        bb.pos(-sunSize, distSun, -sunSize).tex(0.0D, 0.0D).endVertex();
-        bb.pos(sunSize, distSun, -sunSize).tex(1.0D, 0.0D).endVertex();
-        bb.pos(sunSize, distSun, sunSize).tex(1.0D, 1.0D).endVertex();
-        bb.pos(-sunSize, distSun, sunSize).tex(0.0D, 1.0D).endVertex();
-        Tessellator.getInstance().draw();
-        GlStateManager.popMatrix();
+        mc.getTextureManager().bindForSetup(SUN_TEXTURES);
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        buffer.vertex(mat, -sunSize, (float) distSun, -sunSize).uv(0.0F, 0.0F).endVertex();
+        buffer.vertex(mat, sunSize, (float) distSun, -sunSize).uv(1.0F, 0.0F).endVertex();
+        buffer.vertex(mat, sunSize, (float) distSun, sunSize).uv(1.0F, 1.0F).endVertex();
+        buffer.vertex(mat, -sunSize, (float) distSun, sunSize).uv(0.0F, 1.0F).endVertex();
+        tesselator.end();
+        poseStack.popPose();
 
-        GlStateManager.disableBlend();
-        GlStateManager.disableTexture2D();
-        GlStateManager.depthMask(false);
-
-        GL11.glCallList(this.starGLCallList);
-        GlStateManager.depthMask(true);
-
-        // End of sky render
-        GlStateManager.popMatrix();
-        GlStateManager.enableFog();
-        GlStateManager.enableTexture2D();
+        RenderSystem.depthMask(true);
+        RenderSystem.enableBlend();
     }
 
-    private int calculateEarthPhase(float partialTicks, WorldClient world) {
-        double sunRotation = world.getCelestialAngle(partialTicks) * 360.0F;
+    private static int calculateEarthPhase(float partialTick, ClientLevel world) {
+        double sunRotation = world.getTimeOfDay(partialTick) * 360.0F;
         return (int) ((sunRotation / 360.0F * 8.0F) + 4) % 8;
     }
 
-    private void renderStars(BufferBuilder bufferBuilderIn) {
-        Random random = new Random(10843L);
-        bufferBuilderIn.begin(7, DefaultVertexFormats.POSITION);
-
-        for (int i = 0; i < 1500; ++i) {
-            double d0 = random.nextFloat() * 2.0F - 1.0F;
-            double d1 = random.nextFloat() * 2.0F - 1.0F;
-            double d2 = random.nextFloat() * 2.0F - 1.0F;
-            double d3 = 0.15F + random.nextFloat() * 0.1F;
-            double d4 = d0 * d0 + d1 * d1 + d2 * d2;
-
-            if (d4 < 1.0D && d4 > 0.01D) {
-                d4 = 1.0D / Math.sqrt(d4);
-                d0 = d0 * d4;
-                d1 = d1 * d4;
-                d2 = d2 * d4;
-                double d5 = d0 * 100.0D;
-                double d6 = d1 * 100.0D;
-                double d7 = d2 * 100.0D;
-                double d8 = Math.atan2(d0, d2);
-                double d9 = Math.sin(d8);
-                double d10 = Math.cos(d8);
-                double d11 = Math.atan2(Math.sqrt(d0 * d0 + d2 * d2), d1);
-                double d12 = Math.sin(d11);
-                double d13 = Math.cos(d11);
-                double d14 = random.nextDouble() * Math.PI * 2.0D;
-                double d15 = Math.sin(d14);
-                double d16 = Math.cos(d14);
-
-                for (int j = 0; j < 4; ++j) {
-                    double d18 = (double) ((j & 2) - 1) * d3;
-                    double d19 = (double) ((j + 1 & 2) - 1) * d3;
-                    double d21 = d18 * d16 - d19 * d15;
-                    double d22 = d19 * d16 + d18 * d15;
-                    double d23 = d21 * d12 + 0.0D * d13;
-                    double d24 = 0.0D * d12 - d21 * d13;
-                    double d25 = d24 * d9 - d22 * d10;
-                    double d26 = d22 * d9 + d24 * d10;
-                    bufferBuilderIn.pos(d5 + d25, d6 + d23, d7 + d26).endVertex();
-                }
-            }
-        }
-    }
-
-    private float getSunAngle(WorldClient world) {
-        return 15 * (float) Math.cos((double) world.getWorldTime() / 708000); // Approximating a 29.5-day cycle of the
-        // moon with respect to the sun
+    private static float getSunAngle(ClientLevel world) {
+        return 15 * (float) Math.cos((double) world.getDayTime() / 708000);
     }
 }

@@ -1,4 +1,4 @@
-package supersymmetry.common.util;
+package io.github.symmetricdevs.supersymmetry.common.util;
 
 public class FactionHelper {
 

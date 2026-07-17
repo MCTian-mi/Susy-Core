@@ -1,37 +1,76 @@
-package supersymmetry.api.util;
+package io.github.symmetricdevs.supersymmetry.api.util;
 
-import net.minecraft.util.DamageSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
+
+/**
+ * Ported from the 1.12.2 {@code supersymmetry.api.util.SuSyDamageSources}.
+ * <p>
+ * In 1.20.1, {@link DamageSource} is created via {@link DamageSources} helpers
+ * or via custom {@link DamageType} resource keys registered in datapack JSON.
+ * This class provides static helpers for SuSy-specific damage sources.
+ * <p>
+ * TODO: Register these as actual {@link DamageType} entries if they need
+ * death-message formatting or scaling. For now they use raw string names.
+ */
 public class SuSyDamageSources {
 
-    private static final DamageSource SUFFOCATION = new DamageSource("suffocation").setDamageBypassesArmor();
-    private static final DamageSource TOXIC_ATMO = new DamageSource("toxic_atmo").setDamageBypassesArmor();
+    // Resource keys for custom damage types (register in datapack if needed)
+    private static final ResourceKey<DamageType> SUFFOCATION = key("suffocation");
+    private static final ResourceKey<DamageType> TOXIC_ATMO = key("toxic_atmo");
+    private static final ResourceKey<DamageType> CRUSHER = key("crusher");
+    private static final ResourceKey<DamageType> PRESSURE = key("pressure");
+    private static final ResourceKey<DamageType> DEPRESSURIZATION = key("depressurization");
+    private static final ResourceKey<DamageType> IMPACT = key("impact");
+    private static final ResourceKey<DamageType> VAPORIZATION = key("vaporization");
 
-    private static final DamageSource CRUSHER = new DamageSource("crusher");
-
-    public static final DamageSource PRESSURE = new DamageSource("pressure");
-    public static final DamageSource DEPRESSURIZATION = new DamageSource("depressurization");
-    public static final DamageSource IMPACT = new DamageSource("impact");
-    public static final DamageSource VAPORIZATION = new DamageSource("vaporization").setFireDamage();
-    public static final DamageSource ALPHA_RADIATION = new DamageSource("alpha_radiation");
-    public static final DamageSource BETA_RADIATION = new DamageSource("beta_radiation");
-    public static final DamageSource NEUTRON_RADIATION = new DamageSource("neutron_radiation");
-    public static final DamageSource UV_RADIATION = new DamageSource("uv_radiation");
-    public static final DamageSource X_RADIATION = new DamageSource("x_radiation");
-    public static final DamageSource GAMMA_RADIATION = new DamageSource("gamma_radiation");
-    public static final DamageSource SPAGHETTIFICATION = new DamageSource("spaghettification");
-    public static final DamageSource AGE = new DamageSource("age");
-    public static final DamageSource CHRONOERASURE = new DamageSource("chronoerasure");
-
-    public static DamageSource getSuffocationDamage() {
-        return SUFFOCATION;
+    private static ResourceKey<DamageType> key(String name) {
+        return ResourceKey.create(Registries.DAMAGE_TYPE,
+                ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, name));
     }
 
-    public static DamageSource getToxicAtmoDamage() {
-        return TOXIC_ATMO;
+    public static DamageSource getSuffocationDamage(Level level) {
+        return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+                .getHolderOrThrow(SUFFOCATION));
     }
 
-    public static DamageSource getCrusherDamage() {
-        return CRUSHER;
+    public static DamageSource getToxicAtmoDamage(Level level) {
+        return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+                .getHolderOrThrow(TOXIC_ATMO));
     }
+
+    public static DamageSource getCrusherDamage(Level level) {
+        return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+                .getHolderOrThrow(CRUSHER));
+    }
+
+    public static DamageSource pressure(Level level) {
+        return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+                .getHolderOrThrow(PRESSURE));
+    }
+
+    public static DamageSource depressurization(Level level) {
+        return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+                .getHolderOrThrow(DEPRESSURIZATION));
+    }
+
+    public static DamageSource impact(Level level) {
+        return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+                .getHolderOrThrow(IMPACT));
+    }
+
+    public static DamageSource vaporization(Level level) {
+        return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+                .getHolderOrThrow(VAPORIZATION));
+    }
+
+    private SuSyDamageSources() {}
 }

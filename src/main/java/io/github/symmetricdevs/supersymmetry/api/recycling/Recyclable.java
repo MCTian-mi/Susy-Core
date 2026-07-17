@@ -1,56 +1,96 @@
-package supersymmetry.api.recycling;
+package io.github.symmetricdevs.supersymmetry.api.recycling;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
 
 import org.apache.commons.lang3.math.Fraction;
 
-import com.cleanroommc.groovyscript.api.IIngredient;
+import java.util.Map;
 
-import gregtech.api.items.metaitem.MetaItem.MetaValueItem;
-import gregtech.api.unification.OreDictUnifier;
-import gregtech.api.unification.material.Material;
-import gregtech.api.unification.stack.MaterialStack;
-import gregtech.api.unification.stack.UnificationEntry;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import supersymmetry.loaders.recipes.handlers.RecyclingManager;
+/**
+ * An abstract base class representing something that can be recycled.
+ * <p>
+ * Subclasses represent different kinds of recyclable objects:
+ * <ul>
+ *   <li>{@link MaterialRecyclable} — wraps a material (by name) for material-level recycling</li>
+ *   <li>{@link ItemLikeRecyclable} — wraps an item-like for item-level recycling</li>
+ * </ul>
+ * </p>
+ * This API is intentionally free of GTCEu dependencies. Materials are
+ * referenced by their {@link String} registry name.
+ */
+public abstract class Recyclable {
 
-public interface Recyclable {
+    /** A no-op recyclable that always produces an empty stack. */
+    public static final Recyclable EMPTY = new Recyclable() {
+        @Override
+        public ItemStack asStack(int size) {
+            return ItemStack.EMPTY;
+        }
 
-    Recyclable EMPTY = v -> ItemStack.EMPTY;
+        @Override
+        public String toString() {
+            return "Recyclable.EMPTY";
+        }
+    };
 
-    // TODO: registry?
-    static Recyclable from(Object obj) {
+    /**
+     * Converts an arbitrary object into a {@link Recyclable} if recognised.
+     *
+     * @param obj the object to convert
+     * @return a matching Recyclable, or {@link #EMPTY} if unrecognised
+     */
+    public static Recyclable from(Object obj) {
         return switch (obj) {
             case ItemStack itemStack -> new ItemLikeRecyclable(itemStack);
-            case Item item -> new ItemLikeRecyclable(item);
-            case Block block -> new ItemLikeRecyclable(block);
-            case MetaValueItem metaValueItem -> new ItemLikeRecyclable(metaValueItem.getStackForm());
-            case UnificationEntry unificationEntry -> new ItemLikeRecyclable(OreDictUnifier.get(unificationEntry));
-            case String oreDict -> new ItemLikeRecyclable(OreDictUnifier.get(oreDict));
-            case IIngredient ingredient -> new ItemLikeRecyclable(ingredient.getFirst());
-            case MaterialStack ms -> new MaterialRecyclable(ms);
+            case ItemLike itemLike -> new ItemLikeRecyclable(itemLike);
+            case String materialName -> new MaterialRecyclable(materialName);
+            case null -> EMPTY;
             default -> EMPTY;
         };
     }
 
-    default int value(Object obj) {
+    /**
+     * Returns an integer "value" for the given object relative to this recyclable.
+     * The base implementation always returns {@code 1}.
+     */
+    public int value(Object obj) {
         return 1;
     }
 
-    default boolean isEmpty() {
-        return EMPTY.equals(this);
+    /**
+     * Returns {@code true} if this is the {@link #EMPTY} instance.
+     */
+    public boolean isEmpty() {
+        return this == EMPTY;
     }
 
-    ItemStack asStack(int size);
+    /**
+     * Produces an {@link ItemStack} of the given size from this recyclable.
+     *
+     * @param size the stack size
+     * @return the resulting ItemStack
+     */
+    public abstract ItemStack asStack(int size);
 
-    default ItemStack asStack() {
+    /**
+     * Produces a single {@link ItemStack} from this recyclable.
+     */
+    public ItemStack asStack() {
         return asStack(1);
     }
 
-    default void addToMStack(Object2ObjectMap<Material, Fraction> mStacks, Fraction count) {
+    /**
+     * Adds this recyclable's material contributions to the given map.
+     * <p>
+     * Subclasses should override this to contribute their material content.
+     * The base implementation is a no-op.
+     * </p>
+     *
+     * @param mStacks map from material name to accumulated fraction
+     * @param count   the count to add
+     */
+    public void addToMStack(Map<String, Fraction> mStacks, Fraction count) {
         if (Fraction.ZERO.equals(count)) return;
-        RecyclingManager.addItemStackToMaterialStacks(asStack(), mStacks, count);
     }
 }

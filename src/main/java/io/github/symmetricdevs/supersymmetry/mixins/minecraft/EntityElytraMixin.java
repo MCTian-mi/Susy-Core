@@ -1,10 +1,10 @@
-package supersymmetry.mixins.minecraft;
+package io.github.symmetricdevs.supersymmetry.mixins.minecraft;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemFirework;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumHand;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemFirework;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.Level;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,9 +18,9 @@ public abstract class EntityElytraMixin {
             method = "onItemRightClick",
             at = @At(
                      value = "INVOKE",
-                     target = "Lnet/minecraft/entity/item/EntityFireworkRocket;<init>(Lnet/minecraft/world/World;Lnet/minecraft/item/ItemStack;Lnet/minecraft/entity/EntityLivingBase;)V"),
+                     target = "Lnet/minecraft/entity/item/EntityFireworkRocket;<init>(Lnet/minecraft/world/World;Lnet/minecraft/item/ItemStack;Lnet/minecraft/entity/LivingEntity;)V"),
             cancellable = true)
-    public void onUse(World world, EntityPlayer player, EnumHand hand, CallbackInfoReturnable<ItemStack> cir) {
+    public void onUse(World world, Player player, InteractionHand hand, CallbackInfoReturnable<ItemStack> cir) {
         if (player.isElytraFlying()) {
             ItemStack stack = player.getHeldItem(hand);
 

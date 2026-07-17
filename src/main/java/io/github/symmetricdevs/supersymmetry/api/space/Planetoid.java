@@ -1,15 +1,16 @@
-package supersymmetry.api.space;
+package io.github.symmetricdevs.supersymmetry.api.space;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
-import dev.tianmi.sussypatches.common.helper.DimDisplayRegistry;
-
+/**
+ * Porting stub — the sussypatches mod (dev.tianmi.sussypatches) does not exist on 1.20.1,
+ * so DimDisplayRegistry calls are removed. Rocketry/space is deferred to Phase 8.
+ */
 public class Planetoid extends CelestialObject {
 
     private PlanetType planetType;
@@ -41,9 +42,7 @@ public class Planetoid extends CelestialObject {
     }
 
     public ItemStack getDisplayItem() {
-        if (DimDisplayRegistry.getDisplayItem(this.dimension).isEmpty()) {
-            return new ItemStack(Item.getItemById(this.dimension + 1));
-        }
-        return DimDisplayRegistry.getDisplayItem(this.dimension);
+        // DimDisplayRegistry is 1.12.2-only (sussypatches); deferred to Phase 8.
+        return ItemStack.EMPTY;
     }
 }

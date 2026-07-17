@@ -1,14 +1,14 @@
-package supersymmetry.common.mui.widget;
+package io.github.symmetricdevs.supersymmetry.common.mui.widget;
 
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 
-import gregtech.api.gui.IRenderContext;
-import gregtech.api.gui.Widget;
-import gregtech.api.gui.widgets.AbstractWidgetGroup;
-import gregtech.api.util.Position;
-import gregtech.api.util.Size;
-import gregtech.client.utils.RenderUtil;
-import supersymmetry.api.gui.SusyGuiTextures;
+import com.gregtechceu.gtceu.api.gui.IRenderContext;
+import com.gregtechceu.gtceu.api.gui.Widget;
+import com.gregtechceu.gtceu.api.gui.widgets.AbstractWidgetGroup;
+import com.gregtechceu.gtceu.api.util.Position;
+import com.gregtechceu.gtceu.api.util.Size;
+import com.gregtechceu.gtceu.client.utils.RenderUtil;
+import io.github.symmetricdevs.supersymmetry.api.gui.SusyGuiTextures;
 
 /** basically ScrollableListWidget but horizontal, mostly a copy */
 public class HorizontalScrollableListWidget extends AbstractWidgetGroup {

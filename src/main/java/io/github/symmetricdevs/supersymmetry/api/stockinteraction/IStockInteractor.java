@@ -1,10 +1,10 @@
-package supersymmetry.api.stockinteraction;
+package io.github.symmetricdevs.supersymmetry.api.stockinteraction;
 
-import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.world.phys.AABB;
 
 // Is this really necessary?
 public interface IStockInteractor {
 
     // Defines the area in which the machine can find and interact with stocks
-    AxisAlignedBB getInteractionBoundingBox();
+    AABB getInteractionBoundingBox();
 }

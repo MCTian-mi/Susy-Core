@@ -1,58 +1,76 @@
-package supersymmetry.client.renderer.particles;
+package io.github.symmetricdevs.supersymmetry.client.renderer.particles;
 
-import net.minecraft.client.particle.Particle;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.world.World;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.SingleQuadParticle;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-public class SusyParticleFlareSmoke extends Particle {
+/**
+ * Ported to 1.20.1: replaces World with ClientLevel, updated Particle API.
+ */
+@OnlyIn(Dist.CLIENT)
+public class SusyParticleFlareSmoke extends SingleQuadParticle {
 
-    public SusyParticleFlareSmoke(World worldIn, double x, double y, double z, float R, float G, float B) {
-        super(worldIn, x, y, z);
-
-        this.motionX = (rand.nextDouble() - 0.5) * 0.01;
-        this.motionY = 0.4;
-        this.motionZ = (rand.nextDouble() - 0.5) * 0.01;
-
-        this.particleRed = R;
-        this.particleGreen = G;
-        this.particleBlue = B;
-
-        this.particleScale = 10f;
-        this.multipleParticleScaleBy(3.0f); // MUCH larger final size
-
-        this.particleMaxAge = 100;
-
-        this.canCollide = false;
+    public SusyParticleFlareSmoke(ClientLevel level, double x, double y, double z,
+                                  double xSpeed, double ySpeed, double zSpeed,
+                                  float R, float G, float B) {
+        super(level, x, y, z, xSpeed, ySpeed, zSpeed);
+        this.xd = (random.nextDouble() - 0.5) * 0.01;
+        this.yd = 0.4;
+        this.zd = (random.nextDouble() - 0.5) * 0.01;
+        this.rCol = R;
+        this.gCol = G;
+        this.bCol = B;
+        this.quadSize = 10f;
+        this.lifetime = 100;
+        this.gravity = 0.0F;
     }
 
     @Override
-    public void onUpdate() {
-        this.prevPosX = this.posX;
-        this.prevPosY = this.posY;
-        this.prevPosZ = this.posZ;
+    public void tick() {
+        super.tick();
+        this.xo = this.x;
+        this.yo = this.y;
+        this.zo = this.z;
 
-        if (this.particleAge++ >= this.particleMaxAge) {
-            this.setExpired();
+        if (this.age++ >= this.lifetime) {
+            this.remove();
         }
 
-        // Move upward
-        this.motionY += 0.0005; // slight acceleration
-        this.move(this.motionX, this.motionY, this.motionZ);
+        this.yd += 0.0005;
+        this.move(this.xd, this.yd, this.zd);
 
-        // Fade out slowly
-        this.particleAlpha = 1.0f - ((float) this.particleAge / this.particleMaxAge);
+        this.alpha = 1.0f - ((float) this.age / this.lifetime);
     }
 
     @Override
-    public void renderParticle(BufferBuilder buffer, net.minecraft.entity.Entity entityIn,
-                               float partialTicks, float rotationX, float rotationZ,
-                               float rotationYZ, float rotationXY, float rotationXZ) {
-        super.renderParticle(buffer, entityIn, partialTicks,
-                rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
+    public ParticleRenderType getRenderType() {
+        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 
     @Override
-    public boolean shouldDisableDepth() {
-        return true;
+    public boolean shouldCull() {
+        return false;
+    }
+
+    @Override
+    protected float getU0() {
+        return 0;
+    }
+
+    @Override
+    protected float getU1() {
+        return 1;
+    }
+
+    @Override
+    protected float getV0() {
+        return 0;
+    }
+
+    @Override
+    protected float getV1() {
+        return 1;
     }
 }

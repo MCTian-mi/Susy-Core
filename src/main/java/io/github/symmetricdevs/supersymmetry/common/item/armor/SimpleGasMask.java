@@ -1,86 +1,79 @@
-package supersymmetry.common.item.armor;
+package io.github.symmetricdevs.supersymmetry.common.item.armor;
 
-import static supersymmetry.common.event.DimensionBreathabilityHandler.ABSORB_ALL;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
 
-import gregtech.api.items.metaitem.stats.IItemDurabilityManager;
-import supersymmetry.api.items.IBreathingArmorLogic;
-import supersymmetry.common.event.DimensionBreathabilityHandler;
-
-public class SimpleGasMask implements IBreathingArmorLogic, IItemDurabilityManager {
+/**
+ * Simple gas mask for LV-tier protection in the Beneath.
+ * Tracks wear as a double "damage" value in NBT, lasting {@link #LIFETIME} seconds.
+ */
+public class SimpleGasMask implements IBreathingArmorLogic {
 
     public static final double LIFETIME = 600;
 
     @Override
-    public EntityEquipmentSlot getEquipmentSlot(ItemStack itemStack) {
-        return EntityEquipmentSlot.HEAD;
+    public ArmorItem.Type getArmorType() {
+        return ArmorItem.Type.HELMET;
     }
 
     @Override
-    public String getArmorTexture(ItemStack stack, Entity entity, EntityEquipmentSlot slot, String type) {
-        return "gregtech:textures/armor/simple_gas_mask.png";
+    public ResourceLocation getArmorTexture(@NotNull ItemStack stack, @Nullable Entity entity,
+                                            @NotNull EquipmentSlot slot, @Nullable String type) {
+        return ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "textures/armor/simple_gas_mask.png");
     }
 
     @Override
-    public double getDurabilityForDisplay(ItemStack itemStack) {
-        return 1 - getDamage(itemStack);
+    public int getArmorDisplay(@NotNull Player player, @NotNull ItemStack armor, @NotNull EquipmentSlot slot) {
+        return 0;
     }
 
     @Override
-    public boolean canBreakWithDamage(ItemStack stack) {
-        return getDamage(stack) >= 1;
+    public boolean mayBreatheWith(@NotNull ItemStack stack, @NotNull Player player) {
+        return BreathabilityHelper.isInHazardousEnvironment(player) && getDamage(stack) < 1;
     }
 
     @Override
-    public boolean mayBreatheWith(ItemStack stack, EntityPlayer player) {
-        return player.dimension == DimensionBreathabilityHandler.BENEATH_ID && getDamage(stack) < 1;
-    }
-
-    @Override
-    public boolean isValidArmor(ItemStack itemStack, Entity entity, EntityEquipmentSlot equipmentSlot) {
-        return true;
-    }
-
-    @Override
-    public double getDamageAbsorbed(ItemStack stack, EntityPlayer player) {
-        if (DimensionBreathabilityHandler.isInHazardousEnvironment(player)) {
-            changeDamage(stack, 1. / LIFETIME); // It's actually ticked every overall second, not just every tick.
+    public double getDamageAbsorbed(@NotNull ItemStack stack, @NotNull Player player) {
+        if (BreathabilityHelper.isInHazardousEnvironment(player)) {
+            changeDamage(stack, 1.0 / LIFETIME);
         }
         if (getDamage(stack) >= 1) {
-            player.renderBrokenItemStack(stack);
+            // Destroy the item
             stack.shrink(1);
-            player.setItemStackToSlot(EntityEquipmentSlot.HEAD, ItemStack.EMPTY);
+            player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
         }
-        return ABSORB_ALL;
+        return BreathabilityHelper.ABSORB_ALL;
     }
 
     @Override
-    public void addInformation(ItemStack stack, List<String> tooltips) {
+    public void addInformation(ItemStack stack, List<Component> tooltips) {
         int secondsRemaining = (int) (LIFETIME - getDamage(stack) * LIFETIME);
-        tooltips.add(I18n.format("supersymmetry.seconds_left", secondsRemaining));
+        tooltips.add(Component.translatable("supersymmetry.seconds_left", secondsRemaining));
     }
 
     private double getDamage(ItemStack stack) {
-        if (stack.getTagCompound() == null) {
-            stack.setTagCompound(new NBTTagCompound());
+        var tag = stack.getOrCreateTag();
+        if (!tag.contains("damage")) {
+            tag.putDouble("damage", 0);
         }
-        if (!stack.getTagCompound().hasKey("damage")) {
-            stack.getTagCompound().setDouble("damage", 0);
-        }
-        return stack.getTagCompound().getDouble("damage");
+        return tag.getDouble("damage");
     }
 
     private void changeDamage(ItemStack stack, double damageChange) {
-        NBTTagCompound compound = stack.getTagCompound();
-        compound.setDouble("damage", getDamage(stack) + damageChange);
-        stack.setTagCompound(compound);
+        var tag = stack.getOrCreateTag();
+        tag.putDouble("damage", getDamage(stack) + damageChange);
     }
 }

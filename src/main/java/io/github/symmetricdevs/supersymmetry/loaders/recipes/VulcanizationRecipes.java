@@ -1,4 +1,4 @@
-package supersymmetry.loaders.recipes;
+package io.github.symmetricdevs.supersymmetry.loaders.recipes;
 
 public class VulcanizationRecipes {
 

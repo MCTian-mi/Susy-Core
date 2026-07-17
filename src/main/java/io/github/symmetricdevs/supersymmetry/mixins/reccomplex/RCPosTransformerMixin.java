@@ -1,6 +1,6 @@
-package supersymmetry.mixins.reccomplex;
+package io.github.symmetricdevs.supersymmetry.mixins.reccomplex;
 
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,8 +15,8 @@ public class RCPosTransformerMixin {
 
     // Adds NBT to spawned TileEntities that prevents them from being cheesed with RefinedTools storage scanners
     @Inject(method = "transformAdditionalData", at = @At("HEAD"))
-    private static void transformAdditionalData(TileEntity tileEntity, AxisAlignedTransform2D transform, int[] size,
+    private static void transformAdditionalData(BlockEntity BlockEntity, AxisAlignedTransform2D transform, int[] size,
                                                 CallbackInfo ci) {
-        tileEntity.getTileData().setBoolean("StorageScannerBlacklisted", true);
+        BlockEntity.getTileData().setBoolean("StorageScannerBlacklisted", true);
     }
 }

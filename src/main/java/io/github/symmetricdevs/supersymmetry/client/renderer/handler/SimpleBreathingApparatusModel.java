@@ -1,40 +1,24 @@
-package supersymmetry.client.renderer.handler;
+package io.github.symmetricdevs.supersymmetry.client.renderer.handler;
 
-import static supersymmetry.api.util.SuSyUtility.susyId;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.resources.ResourceLocation;
 
-import net.minecraft.client.model.ModelBiped;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.util.ResourceLocation;
+import static io.github.symmetricdevs.supersymmetry.api.util.SuSyUtility.susyId;
 
-public class SimpleBreathingApparatusModel extends ModelBiped {
+/**
+ * Stub — the 1.12.2 version used OBJ models (OBJModelRender) as children.
+ * OBJ rendering and ModelBiped are removed in 1.20.1.
+ */
+public class SimpleBreathingApparatusModel extends HumanoidModel<LivingEntity> {
 
-    public SimpleBreathingApparatusModel(String name, EntityEquipmentSlot slot) {
-        this.textureWidth = 64;
-        this.textureHeight = 64;
-
-        this.bipedHead.cubeList.clear();
-        this.bipedHeadwear.cubeList.clear();
-        this.bipedBody.cubeList.clear();
-        this.bipedRightArm.cubeList.clear();
-        this.bipedLeftArm.cubeList.clear();
-        this.bipedLeftLeg.cubeList.clear();
-        this.bipedRightLeg.cubeList.clear();
-
-        addChildren(name, slot);
-    }
-
-    public void addChildren(String name, EntityEquipmentSlot slot) {
-        switch (slot) {
-            case CHEST -> this.bipedBody.addChild(modelForPart(name, "tank"));
-            case HEAD -> this.bipedHead.addChild(modelForPart(name, "mask"));
-        }
+    public SimpleBreathingApparatusModel(ModelPart modelPart, String name, EquipmentSlot slot) {
+        super(modelPart);
     }
 
     public ResourceLocation modelLocationFromPart(String armor, String model) {
         return susyId("models/armor/" + armor + "_" + model + ".obj");
-    }
-
-    public OBJModelRender modelForPart(String armor, String model) {
-        return new OBJModelRender(this, modelLocationFromPart(armor, model), 17);
     }
 }

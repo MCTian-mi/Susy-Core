@@ -1,25 +1,22 @@
-package supersymmetry.common.event;
+package io.github.symmetricdevs.supersymmetry.common.event;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.nbt.NBTException;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTUtil;
-import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.util.Constants;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import supersymmetry.api.event.MobHordeEvent;
-import supersymmetry.common.faction.FactionHateManager;
+import io.github.symmetricdevs.supersymmetry.api.event.MobHordeEvent;
 
-public class MobHordePlayerData implements INBTSerializable<NBTTagCompound> {
+public class MobHordePlayerData implements INBTSerializable<CompoundTag> {
 
     public static int DEFAULT_GRACE_PERIOD = 72000; // setting grace period as 1 hour (also made it static)
 
@@ -41,50 +38,49 @@ public class MobHordePlayerData implements INBTSerializable<NBTTagCompound> {
     }
 
     @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagCompound result = new NBTTagCompound();
-        result.setInteger("ticksUntilCanSpawn", ticksUntilCanSpawn);
-        result.setIntArray("invasionTimers", invasionTimers);
-        result.setBoolean("hasActiveInvasion", hasActiveInvasion);
+    public CompoundTag serializeNBT() {
+        CompoundTag result = new CompoundTag();
+        result.putInt("ticksUntilCanSpawn", ticksUntilCanSpawn);
+        result.putIntArray("invasionTimers", invasionTimers);
+        result.putBoolean("hasActiveInvasion", hasActiveInvasion);
         if (this.hasActiveInvasion && !this.invasionEntitiesUUIDs.isEmpty()) {
-            result.setString("currentInvasion", currentInvasion);
-            result.setInteger("timeoutPeriod", this.timeoutPeriod);
-            result.setInteger("ticksActive", this.ticksActive);
-            NBTTagList tagList = new NBTTagList();
+            result.putString("currentInvasion", currentInvasion);
+            result.putInt("timeoutPeriod", this.timeoutPeriod);
+            result.putInt("ticksActive", this.ticksActive);
+            ListTag tagList = new ListTag();
             invasionEntitiesUUIDs.stream()
-                    .forEach(uuid -> tagList.appendTag(NBTUtil.createUUIDTag(uuid)));
-            result.setTag("invasionEntitiesUUIDs", tagList);
+                    .forEach(uuid -> tagList.add(NbtUtils.createUUID(uuid)));
+            result.put("invasionEntitiesUUIDs", tagList);
         }
-        NBTTagList scriptedList = new NBTTagList();
+        ListTag scriptedList = new ListTag();
         for (String key : completedScriptedEvents) {
-            scriptedList.appendTag(new NBTTagCompound() {
-
-                {
-                    setString("key", key);
-                }
-            });
+            CompoundTag entry = new CompoundTag();
+            entry.putString("key", key);
+            scriptedList.add(entry);
         }
-        result.setTag("completedScriptedEvents", scriptedList);
+        result.put("completedScriptedEvents", scriptedList);
         return result;
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound nbt) {
-        ticksUntilCanSpawn = nbt.getInteger("ticksUntilCanSpawn");
+    public void deserializeNBT(CompoundTag nbt) {
+        ticksUntilCanSpawn = nbt.getInt("ticksUntilCanSpawn");
         invasionTimers = Arrays.copyOf(nbt.getIntArray("invasionTimers"), MobHordeEvent.EVENTS.size());
         hasActiveInvasion = nbt.getBoolean("hasActiveInvasion");
         if (hasActiveInvasion) {
             invasionEntitiesUUIDs.clear();
             this.currentInvasion = nbt.getString("currentInvasion");
-            this.timeoutPeriod = nbt.getInteger("timeoutPeriod");
-            this.ticksActive = nbt.getInteger("ticksActive");
-            NBTTagList tagList = nbt.getTagList("invasionEntitiesUUIDs", Constants.NBT.TAG_COMPOUND);
-            tagList.forEach(compound -> invasionEntitiesUUIDs.add(NBTUtil.getUUIDFromTag((NBTTagCompound) compound)));
+            this.timeoutPeriod = nbt.getInt("timeoutPeriod");
+            this.ticksActive = nbt.getInt("ticksActive");
+            ListTag tagList = nbt.getList("invasionEntitiesUUIDs", 10); // TAG_COMPOUND
+            for (int i = 0; i < tagList.size(); i++) {
+                invasionEntitiesUUIDs.add(NbtUtils.loadUUID(tagList.getCompound(i)));
+            }
         }
         completedScriptedEvents.clear();
-        NBTTagList scriptedList = nbt.getTagList("completedScriptedEvents", Constants.NBT.TAG_COMPOUND);
-        for (int i = 0; i < scriptedList.tagCount(); i++) {
-            NBTTagCompound tag = scriptedList.getCompoundTagAt(i);
+        ListTag scriptedList = nbt.getList("completedScriptedEvents", 10); // TAG_COMPOUND
+        for (int i = 0; i < scriptedList.size(); i++) {
+            CompoundTag tag = scriptedList.getCompound(i);
             completedScriptedEvents.add(tag.getString("key"));
         }
     }
@@ -97,7 +93,7 @@ public class MobHordePlayerData implements INBTSerializable<NBTTagCompound> {
         completedScriptedEvents.add(key);
     }
 
-    public void update(EntityPlayerMP player) throws NBTException {
+    public void update(ServerPlayer player) {
         if (hasActiveInvasion) {
             ++ticksActive;
             if (this.ticksActive > this.timeoutPeriod) {
@@ -134,8 +130,8 @@ public class MobHordePlayerData implements INBTSerializable<NBTTagCompound> {
 
     @SubscribeEvent
     public void onEntityDeath(LivingDeathEvent event) {
-        EntityLivingBase deadEntity = event.getEntityLiving();
-        UUID deadEntityUUID = deadEntity.getPersistentID();
+        LivingEntity deadEntity = event.getEntity();
+        UUID deadEntityUUID = deadEntity.getUUID();
 
         if (invasionEntitiesUUIDs.contains(deadEntityUUID)) {
             removeDeadEntity(deadEntityUUID);
@@ -168,32 +164,33 @@ public class MobHordePlayerData implements INBTSerializable<NBTTagCompound> {
         this.ticksActive = 0;
     }
 
-    public void stopInvasion(EntityPlayerMP player) {
+    public void stopInvasion(ServerPlayer player) {
         if (!this.hasActiveInvasion) return;
 
-        WorldServer world = player.getServerWorld();
+        ServerLevel world = player.serverLevel();
 
         for (UUID uuid : invasionEntitiesUUIDs) {
-            Entity entity = world.getEntityFromUuid(uuid);
+            Entity entity = world.getEntity(uuid);
 
             if (entity == null) continue;
 
-            NBTTagCompound entityTag = entity.getEntityData();
-            if (!entityTag.hasKey("susy")) continue;
+            CompoundTag entityTag = entity.getPersistentData();
+            if (!entityTag.contains("susy")) continue;
 
-            NBTTagCompound susy = entityTag.getCompoundTag("susy");
+            CompoundTag susy = entityTag.getCompound("susy");
 
             String faction = susy.getString("faction");
-            int hate = susy.getInteger("hate");
+            int hate = susy.getInt("hate");
             hate = hate * -1;
 
             if (!faction.isEmpty()) {
                 // surviving mob inverts hate and adds to player
-                FactionHateManager.addHate(player, faction, hate);
+                // TODO: Port FactionHateManager
+                // FactionHateManager.addHate(player, faction, hate);
             }
 
             // despawn / escape
-            entity.setDead();
+            entity.discard();
         }
 
         this.invasionEntitiesUUIDs.clear();
@@ -201,13 +198,13 @@ public class MobHordePlayerData implements INBTSerializable<NBTTagCompound> {
     }
 
     // moved over loxos code
-    public void killInvasion(EntityPlayerMP player) {
+    public void killInvasion(ServerPlayer player) {
         if (this.hasActiveInvasion) {
-            WorldServer world = player.getServerWorld();
+            ServerLevel world = player.serverLevel();
             this.invasionEntitiesUUIDs.stream()
-                    .map(uuid -> world.getEntityFromUuid(uuid))
+                    .map(uuid -> world.getEntity(uuid))
                     .filter(Objects::nonNull)
-                    .forEach(entity -> entity.setDead());
+                    .forEach(entity -> entity.discard());
             // Will get called implicitly from onEntityDeath, but I am doing it again just to be sure
             this.finishInvasion();
         }

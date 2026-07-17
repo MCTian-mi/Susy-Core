@@ -1,34 +1,12 @@
-package supersymmetry.client.renderer.handler;
+package io.github.symmetricdevs.supersymmetry.client.renderer.handler;
 
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.resources.ResourceLocation;
 
-import software.bernie.geckolib3.model.AnimatedGeoModel;
-import supersymmetry.common.tileentities.AnimatablePartTileEntity;
-
-@SideOnly(Side.CLIENT)
-public class AnimatablePartRenderer extends FixedGeoBlockRenderer<AnimatablePartTileEntity> {
-
-    public AnimatablePartRenderer() {
-        super(new ModelDispatcher());
-    }
-
-    public static class ModelDispatcher extends AnimatedGeoModel<AnimatablePartTileEntity> {
-
-        @Override
-        public ResourceLocation getModelLocation(AnimatablePartTileEntity animatablePart) {
-            return animatablePart.getPartBlock().modelRL();
-        }
-
-        @Override
-        public ResourceLocation getTextureLocation(AnimatablePartTileEntity animatablePart) {
-            return animatablePart.getPartBlock().textureRL();
-        }
-
-        @Override
-        public ResourceLocation getAnimationFileLocation(AnimatablePartTileEntity animatablePart) {
-            return animatablePart.getPartBlock().animationRL();
-        }
-    }
-}
+/**
+ * Stub — GeckoLib 3 renderer removed.
+ * <p>
+ * In 1.12.2 this was a {@code FixedGeoBlockRenderer<AnimatablePartTileEntity>}
+ * using GeckoLib 3. GeckoLib 3 is not available on 1.20.1; animation and
+ * custom block rendering will be re-added when GeckoLib 4 is integrated.
+ */
+public class AnimatablePartRenderer {}

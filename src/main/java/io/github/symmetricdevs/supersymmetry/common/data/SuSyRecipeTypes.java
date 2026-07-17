@@ -25,9 +25,9 @@ import static com.lowdragmc.lowdraglib.gui.texture.ProgressTexture.FillDirection
 
 /**
  * SuSy recipe types. Ported from the 1.12.2 {@code SuSyRecipeMaps} (~100
- * {@code RecipeMap}s).
+ * {@code GTRecipeType}s).
  * <p>
- * Each 1.12.2 {@code new RecipeMap<>(name, iIn, iOut, fIn, fOut, builder, hidden)}
+ * Each 1.12.2 {@code new GTRecipeType<>(name, iIn, iOut, fIn, fOut, builder, hidden)}
  * becomes {@code register(name, group).setMaxIOSize(iIn, iOut, fIn, fOut)}; the
  * per-map {@code RecipeBuilder} subclass collapses into recipe data (see
  * {@code SuSyRecipePropertyKeys}) applied during datagen, and {@code isHidden}

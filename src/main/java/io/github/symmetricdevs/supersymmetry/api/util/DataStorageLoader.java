@@ -1,19 +1,19 @@
-package supersymmetry.api.util;
+package io.github.symmetricdevs.supersymmetry.api.util;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagString;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
 import org.jetbrains.annotations.NotNull;
 
-import gregtech.api.capability.GregtechDataCodes;
-import gregtech.api.capability.impl.NotifiableItemStackHandler;
-import gregtech.api.metatileentity.MetaTileEntity;
+import com.gregtechceu.gtceu.api.capability.GregtechDataCodes;
+import com.gregtechceu.gtceu.api.capability.NotifiableItemStackHandler;
+import com.gregtechceu.gtceu.api.machine.MetaMachine;
 
 public class DataStorageLoader extends NotifiableItemStackHandler implements IItemHandlerModifiable {
 
@@ -98,27 +98,27 @@ public class DataStorageLoader extends NotifiableItemStackHandler implements IIt
 
     public void clearNBT() {
         if (dataStorage.hasTagCompound()) {
-            dataStorage.setTagCompound(new NBTTagCompound());
+            dataStorage.setTagCompound(new CompoundTag());
         }
     }
 
-    public void setNBT(Function<NBTTagCompound, NBTTagCompound> consumer) {
+    public void setNBT(Function<CompoundTag, CompoundTag> consumer) {
         if (!dataStorage.hasTagCompound()) {
-            dataStorage.setTagCompound(new NBTTagCompound());
+            dataStorage.setTagCompound(new CompoundTag());
         }
         dataStorage.setTagCompound(consumer.apply(dataStorage.getTagCompound()));
     }
 
     public void mutateItem(String key, String value) {
         if (!dataStorage.hasTagCompound()) {
-            dataStorage.setTagCompound(new NBTTagCompound());
+            dataStorage.setTagCompound(new CompoundTag());
         }
         dataStorage.getTagCompound().setTag(key, new NBTTagString(value)); // do not worry about warning
     }
 
     public void setImageType(int id) {
         if (!dataStorage.hasTagCompound()) {
-            dataStorage.setTagCompound(new NBTTagCompound());
+            dataStorage.setTagCompound(new CompoundTag());
         }
         dataStorage.setItemDamage(id);
     }

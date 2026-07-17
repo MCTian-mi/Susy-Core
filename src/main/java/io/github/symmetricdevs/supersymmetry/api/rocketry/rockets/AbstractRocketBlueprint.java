@@ -1,15 +1,15 @@
-package supersymmetry.api.rocketry.rockets;
+package io.github.symmetricdevs.supersymmetry.api.rocketry.rockets;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 
-import supersymmetry.Supersymmetry;
-import supersymmetry.api.rocketry.fuels.RocketFuelEntry;
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
+import io.github.symmetricdevs.supersymmetry.api.rocketry.fuels.RocketFuelEntry;
 
 public abstract class AbstractRocketBlueprint {
 
@@ -97,9 +97,9 @@ public abstract class AbstractRocketBlueprint {
         return (stages.stream().allMatch(x -> x.isPopulated()));
     }
 
-    public abstract boolean readFromNBT(NBTTagCompound tag);
+    public abstract boolean readFromNBT(CompoundTag tag);
 
-    public abstract NBTTagCompound writeToNBT();
+    public abstract CompoundTag writeToNBT();
 
     public String getName() {
         return name;

@@ -1,11 +1,11 @@
-package supersymmetry.api.items;
+package io.github.symmetricdevs.supersymmetry.api.items;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
+/**
+ * Interface for items that provide breathable air.
+ */
 public interface IBreathingItem {
 
-    boolean isValid(ItemStack stack, EntityPlayer player);
-
-    double getDamageAbsorbed(ItemStack stack, EntityPlayer player);
+    int getAirAmount(ItemStack stack);
 }

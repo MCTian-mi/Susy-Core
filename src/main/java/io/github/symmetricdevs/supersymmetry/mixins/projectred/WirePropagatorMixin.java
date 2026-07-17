@@ -1,8 +1,8 @@
-package supersymmetry.mixins.projectred;
+package io.github.symmetricdevs.supersymmetry.mixins.projectred;
 
 import java.lang.reflect.Field;
 
-import net.minecraft.block.BlockRedstoneWire;
+import net.minecraft.world.level.block.BlockRedstoneWire;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import org.spongepowered.asm.mixin.Mixin;

@@ -456,13 +456,13 @@ public final class SusyMachines {
 
     // ==================================================================
     // Phase 4c — Multiblock controllers (Bucket A1: GT-casing simple recipe multis)
-    // Ported from 1.12.2 RecipeMapMultiblockController.createStructurePattern onto the
+    // Ported from 1.12.2 WorkableElectricMultiblockMachine.createStructurePattern onto the
     // GTCEu-Modern .multiblock/.pattern idiom. Plain WorkableElectricMultiblockMachine
     // controllers (no bespoke class) — recipe behaviour via .recipeModifier. Front
     // overlays are GTCEu placeholders pending the Phase 6 SusyTextures port.
     // ==================================================================
 
-    // ---- coking_tower (perfect OC (1.12.2 MultiblockRecipeLogic(this,true))) ----
+    // ---- coking_tower (perfect OC (1.12.2 RecipeLogic(this,true))) ----
     public static final MultiblockMachineDefinition COKING_TOWER = REGISTRATE
             .multiblock("coking_tower", WorkableElectricMultiblockMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
@@ -497,7 +497,7 @@ public final class SusyMachines {
     public static final MultiblockMachineDefinition CATALYTIC_REFORMER = REGISTRATE
             .multiblock("catalytic_reformer", WorkableElectricMultiblockMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
-            .allowExtendedFacing(false) // 1.12.2 RecipeMapMultiblockController default (not overridden)
+            .allowExtendedFacing(false) // 1.12.2 WorkableElectricMultiblockMachine default (not overridden)
             .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
             .recipeType(SuSyRecipeTypes.CATALYTIC_REFORMER_RECIPES)
             .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
@@ -923,7 +923,7 @@ public final class SusyMachines {
             .rotationState(RotationState.NON_Y_AXIS)
             .appearanceBlock(() -> GTBlocks.CASING_TITANIUM_STABLE.get())
             .recipeType(SuSyRecipeTypes.SCRAP_RECYCLER_RECIPES)
-            // 1.12.2 used `new MultiblockRecipeLogic(this, true)` -> perfect overclocking.
+            // 1.12.2 used `new RecipeLogic(this, true)` -> perfect overclocking.
             .recipeModifier(GTRecipeModifiers.OC_PERFECT)
             .pattern(definition -> {
                 TraceabilityPredicate casing = Predicates.blocks(GTBlocks.CASING_TITANIUM_STABLE.get());
@@ -959,7 +959,7 @@ public final class SusyMachines {
             })
             // Base casing matches the 1.12.2 getBaseTexture (Textures.STABLE_TITANIUM_CASING).
             // Front overlay is a PLACEHOLDER: 1.12.2 did not override getFrontOverlay for this
-            // machine, so it used the default RecipeMapMultiblockController overlay. Phase 6
+            // machine, so it used the default WorkableElectricMultiblockMachine overlay. Phase 6
             // should point this at the correct scrap-recycler / default-multiblock overlay.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_stable_titanium"),
                     GTCEu.id("block/multiblock/blast_furnace"))
@@ -1634,7 +1634,7 @@ public final class SusyMachines {
     // GTCEu placeholders pending Phase 6 (real SuSy paths recorded per machine).
     // ==================================================================
 
-    // ---- advanced_arc_furnace (perfect OC: 1.12.2 MultiblockRecipeLogic(this,true)) ----
+    // ---- advanced_arc_furnace (perfect OC: 1.12.2 RecipeLogic(this,true)) ----
     public static final MultiblockMachineDefinition ADVANCED_ARC_FURNACE = REGISTRATE
             .multiblock("advanced_arc_furnace", WorkableElectricMultiblockMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)

@@ -1,0 +1,74 @@
+{
+  "rocket_loop": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "supersymmetry:rocket_loop",
+        "stream": false
+      }
+    ]
+  },
+  "drone_takeoff": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "supersymmetry:drone_takeoff",
+        "stream": false
+      }
+    ]
+  },
+  "rocket_launch": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "supersymmetry:rocket_launch",
+        "stream": false
+      }
+    ]
+  },
+  "jet_engine_active": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "supersymmetry:jet_engine_active",
+        "stream": true
+      }
+    ]
+  },
+  "locked_crate": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "supersymmetry:locked_crate",
+        "stream": true
+      }
+    ]
+  },
+  "complex_alarm": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "supersymmetry:complex_alarm",
+        "stream": true
+      }
+    ]
+  },
+  "metal_door_close": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "supersymmetry:metal_door_close",
+        "stream": true
+      }
+    ]
+  },
+  "metal_drawer_open": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "supersymmetry:metal_drawer_open",
+        "stream": true
+      }
+    ]
+  }
+}

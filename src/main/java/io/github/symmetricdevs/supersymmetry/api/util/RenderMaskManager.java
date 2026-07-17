@@ -1,4 +1,4 @@
-package supersymmetry.api.util;
+package io.github.symmetricdevs.supersymmetry.api.util;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -6,14 +6,15 @@ import java.util.Map;
 import java.util.Set;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockPos.MutableBlockPos;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos.MutableBlockPos;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class RenderMaskManager {
 
     public final static ThreadLocal<Boolean> isBuildingChunk = ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -41,8 +42,10 @@ public class RenderMaskManager {
             maxZ = Math.max(maxZ, pos.getZ());
         }
 
-        Minecraft.getMinecraft().world.markBlockRangeForRenderUpdate(new BlockPos(minX, minY, minZ),
-                new BlockPos(maxX, maxY, maxZ));
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level != null) {
+            level.setBlocksDirty(new BlockPos(minX, minY, minZ), new BlockPos(maxX, maxY, maxZ));
+        }
     }
 
     public static void addDisableModel(BlockPos controllerPos, Collection<BlockPos> poses, boolean updateRendering) {

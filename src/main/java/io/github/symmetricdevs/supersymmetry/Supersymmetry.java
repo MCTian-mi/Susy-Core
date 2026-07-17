@@ -1,11 +1,13 @@
 package io.github.symmetricdevs.supersymmetry;
 
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
+import io.github.symmetricdevs.supersymmetry.api.sound.SusySounds;
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyRecipeTypes;
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyWorldgenRecipeTypes;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyBlocks;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyCreativeModeTabs;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyMachines;
+import io.github.symmetricdevs.supersymmetry.common.item.SusyItems;
 import io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials;
 import io.github.symmetricdevs.supersymmetry.config.SusyConfig;
 import io.github.symmetricdevs.supersymmetry.data.SusyDatagen;
@@ -63,7 +65,11 @@ public class Supersymmetry {
         // here (before registerRegistrate) — the 4c casing foundation the multiblocks
         // reference.
         SusyBlocks.init();
+        SusyItems.init();
         SusyDatagen.init();
+
+        // Register deferred sound events on the mod event bus.
+        SusySounds.SOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         // Register for the material lifecycle events fired on the mod bus
         // (MaterialRegistryEvent / MaterialEvent / PostMaterialEvent below).

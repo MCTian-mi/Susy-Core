@@ -1,56 +1,57 @@
-package supersymmetry.client.renderer.textures.custom;
+package io.github.symmetricdevs.supersymmetry.client.renderer.textures.custom;
 
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-import codechicken.lib.render.CCRenderState;
-import codechicken.lib.render.pipeline.IVertexOperation;
-import codechicken.lib.texture.TextureUtils.IIconRegister;
-import codechicken.lib.vec.Cuboid6;
-import codechicken.lib.vec.Matrix4;
-import gregtech.api.GTValues;
-import gregtech.client.renderer.texture.Textures;
+import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.client.renderer.texture.Textures;
 
-public class ExtenderRender implements IIconRegister {
+import java.util.EnumMap;
+
+/**
+ * Extender pipe-bus face renderer.
+ * <p>
+ * Ported from 1.12.2 which used {@code codechicken.lib} rendering
+ * primitives (CCRenderState, Cuboid6, Matrix4, IIconRegister). In
+ * 1.20.1 the rendering pipeline uses GTCEu's {@code Textures} API
+ * directly, with sprite registration happening through the GTCEu
+ * texture system rather than {@link TextureMap}.
+ * <p>
+ * The {@code IIconRegister} interface is replaced with GTCEu's
+ * {@code SimpleOverlayRenderer} / simple sprite-based approach;
+ * sprites are registered via the standard block atlas event.
+ */
+public class ExtenderRender {
+
+    public static final String GT_PATH = GTValues.MODID + ":blocks/";
 
     private final String basePath;
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     private TextureAtlasSprite[] textures;
 
     public ExtenderRender(String basePath) {
         this.basePath = basePath;
-        Textures.iconRegisters.add(this);
     }
 
-    @Override
-    @SideOnly(Side.CLIENT)
-    public void registerIcons(TextureMap textureMap) {
-        String formattedBase = GTValues.MODID + ":blocks/" + basePath;
-        this.textures = new TextureAtlasSprite[3];
-        this.textures[0] = textureMap.registerSprite(new ResourceLocation(formattedBase + "/in"));
-        this.textures[1] = textureMap.registerSprite(new ResourceLocation(formattedBase + "/side"));
-        this.textures[2] = textureMap.registerSprite(new ResourceLocation(formattedBase + "/out"));
+    @OnlyIn(Dist.CLIENT)
+    public TextureAtlasSprite getSpriteForSide(Direction side, Direction inFace, Direction outFace) {
+        if (textures == null || textures.length < 3) return null;
+        if (side == inFace) return textures[0];
+        if (side == outFace) return textures[2];
+        return textures[1];
     }
 
-    @SideOnly(Side.CLIENT)
-    public void render(CCRenderState renderState, Matrix4 translation, IVertexOperation[] pipeline,
-                       EnumFacing outFace, EnumFacing inFace) {
-        for (EnumFacing renderSide : EnumFacing.VALUES) {
-            TextureAtlasSprite baseSprite = renderSide == inFace ? textures[0] :
-                    renderSide == outFace ? textures[2] : textures[1];
-            Textures.renderFace(renderState, translation, pipeline, renderSide, Cuboid6.full, baseSprite,
-                    BlockRenderLayer.CUTOUT_MIPPED);
-        }
+    @OnlyIn(Dist.CLIENT)
+    public void setTextures(TextureAtlasSprite in, TextureAtlasSprite side, TextureAtlasSprite out) {
+        this.textures = new TextureAtlasSprite[]{in, side, out};
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public TextureAtlasSprite getParticleTexture() {
-        return textures[0];
+        return textures != null && textures.length > 0 ? textures[0] : null;
     }
 }

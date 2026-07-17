@@ -1,38 +1,57 @@
-package supersymmetry.api.sound;
+package io.github.symmetricdevs.supersymmetry.api.sound;
 
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundEvent;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
 
-import supersymmetry.Supersymmetry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.RegistryObject;
 
+/**
+ * Sound event registry for Supersymmetry.
+ * <p>
+ * Uses DeferredRegister to register SoundEvents on the mod event bus.
+ * Register via {@code SusySounds.SOUNDS.register(modEventBus)} in the mod constructor.
+ */
 public class SusySounds {
 
-    public static SoundEvent ROCKET_LOOP;
-    public static SoundEvent DRONE_TAKEOFF;
-    public static SoundEvent ROCKET_LAUNCH;
-    public static SoundEvent JET_ENGINE_LOOP;
-    public static SoundEvent LOCKED_CRATE;
-    public static SoundEvent COMPLEX_ALARM;
-    public static SoundEvent METAL_DOOR_CLOSE;
-    public static SoundEvent METAL_DRAWER_OPEN;
+    public static final DeferredRegister<SoundEvent> SOUNDS =
+            DeferredRegister.create(Registries.SOUND_EVENT, Supersymmetry.MOD_ID);
 
-    public static void registerSounds() {
-        ROCKET_LOOP = registerSound("entity.rocket_loop");
-        DRONE_TAKEOFF = registerSound("entity.drone_takeoff");
-        ROCKET_LAUNCH = registerSound("entity.rocket_launch");
-        JET_ENGINE_LOOP = registerSound("item.jet_wingpack_engine_active");
-        LOCKED_CRATE = registerSound("block.locked_crate");
-        COMPLEX_ALARM = registerSound("block.complex_alarm");
-        METAL_DOOR_CLOSE = registerSound("block.metal_door_close");
-        METAL_DRAWER_OPEN = registerSound("block.metal_drawer_open");
-    }
+    private SusySounds() {}
 
-    private static SoundEvent registerSound(String soundNameIn) {
-        ResourceLocation location = new ResourceLocation(Supersymmetry.MODID, soundNameIn);
-        SoundEvent event = new SoundEvent(location);
-        event.setRegistryName(location);
-        ForgeRegistries.SOUND_EVENTS.register(event);
-        return event;
-    }
+    // Rocket/engine sounds
+    public static final RegistryObject<SoundEvent> ROCKET_LOOP = SOUNDS.register("rocket_loop",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "rocket_loop")));
+
+    public static final RegistryObject<SoundEvent> DRONE_TAKEOFF = SOUNDS.register("drone_takeoff",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "drone_takeoff")));
+
+    public static final RegistryObject<SoundEvent> ROCKET_LAUNCH = SOUNDS.register("rocket_launch",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "rocket_launch")));
+
+    public static final RegistryObject<SoundEvent> JET_ENGINE_LOOP = SOUNDS.register("jet_engine_active",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "jet_engine_active")));
+
+    // Block sounds
+    public static final RegistryObject<SoundEvent> LOCKED_CRATE = SOUNDS.register("locked_crate",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "locked_crate")));
+
+    public static final RegistryObject<SoundEvent> COMPLEX_ALARM = SOUNDS.register("complex_alarm",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "complex_alarm")));
+
+    public static final RegistryObject<SoundEvent> METAL_DOOR_CLOSE = SOUNDS.register("metal_door_close",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "metal_door_close")));
+
+    public static final RegistryObject<SoundEvent> METAL_DRAWER_OPEN = SOUNDS.register("metal_drawer_open",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "metal_drawer_open")));
 }

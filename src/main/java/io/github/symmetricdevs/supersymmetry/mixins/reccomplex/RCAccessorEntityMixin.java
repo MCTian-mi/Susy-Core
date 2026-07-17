@@ -1,8 +1,8 @@
-package supersymmetry.mixins.reccomplex;
+package io.github.symmetricdevs.supersymmetry.mixins.reccomplex;
 
 import java.util.UUID;
 
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;

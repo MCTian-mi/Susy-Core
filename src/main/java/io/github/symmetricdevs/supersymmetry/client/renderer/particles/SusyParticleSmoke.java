@@ -1,29 +1,46 @@
-package supersymmetry.client.renderer.particles;
+package io.github.symmetricdevs.supersymmetry.client.renderer.particles;
 
-import net.minecraft.client.particle.IParticleFactory;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
-import net.minecraft.client.particle.ParticleSmokeNormal;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.particle.ParticleProvider;
+import net.minecraft.client.particle.SimpleAnimatedParticle;
+import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-import org.jetbrains.annotations.NotNull;
+/**
+ * Ported to 1.20.1: replaces ParticleSmokeNormal (removed) with SimpleAnimatedParticle.
+ */
+@OnlyIn(Dist.CLIENT)
+public class SusyParticleSmoke extends SimpleAnimatedParticle {
 
-@SideOnly(Side.CLIENT)
-public class SusyParticleSmoke extends ParticleSmokeNormal {
-
-    public SusyParticleSmoke(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn,
-                             double ySpeedIn, double zSpeedIn) {
-        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn, 3.F);
+    protected SusyParticleSmoke(ClientLevel level, double x, double y, double z,
+                                double xSpeed, double ySpeed, double zSpeed, SpriteSet sprites) {
+        super(level, x, y, z, sprites, 3.0F);
+        this.gravity = 0.0F;
     }
 
-    @SideOnly(Side.CLIENT)
-    public static class Factory implements IParticleFactory {
+    @Override
+    public void tick() {
+        super.tick();
+    }
 
-        public Particle createParticle(int particleID, @NotNull World worldIn, double xCoordIn, double yCoordIn,
-                                       double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn,
-                                       int @NotNull... parameters) {
-            return new SusyParticleSmoke(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
+    @OnlyIn(Dist.CLIENT)
+    public static class Factory implements ParticleProvider<SimpleParticleType> {
+        private final SpriteSet spriteSet;
+
+        public Factory(SpriteSet spriteSet) {
+            this.spriteSet = spriteSet;
+        }
+
+        @Override
+        public Particle createParticle(SimpleParticleType type, ClientLevel level,
+                                       double x, double y, double z,
+                                       double xSpeed, double ySpeed, double zSpeed) {
+            SusyParticleSmoke particle = new SusyParticleSmoke(level, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
+            particle.setSpriteFromAge(this.spriteSet);
+            return particle;
         }
     }
 }

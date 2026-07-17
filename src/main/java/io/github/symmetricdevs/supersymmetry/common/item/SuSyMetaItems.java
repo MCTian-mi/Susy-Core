@@ -1,206 +1,98 @@
-package supersymmetry.common.item;
+package io.github.symmetricdevs.supersymmetry.common.item;
 
-import static gregtech.common.items.MetaItems.SPRAY_EMPTY;
-import static supersymmetry.common.metatileentities.multi.electric.MetaTileEntityCargoDronePad.*;
+import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.item.ComponentItem;
+import com.gregtechceu.gtceu.api.item.component.ElectricStats;
+import com.gregtechceu.gtceu.api.item.component.IAddInformation;
+import com.gregtechceu.gtceu.api.item.component.IItemComponent;
+import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Objects;
+import com.tterrag.registrate.util.entry.ItemEntry;
+import com.tterrag.registrate.util.nullness.NonNullConsumer;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemStack;
+import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
 
-import com.google.common.base.CaseFormat;
+import net.minecraft.network.chat.Component;
 
-import gregtech.api.GTValues;
-import gregtech.api.GregTechAPI;
-import gregtech.api.items.armor.ArmorMetaItem;
-import gregtech.api.items.materialitem.MetaPrefixItem;
-import gregtech.api.items.metaitem.*;
-import gregtech.api.items.metaitem.MetaItem.MetaValueItem;
-import gregtech.api.items.metaitem.MetaOreDictItem.OreDictValueItem;
-import gregtech.api.unification.material.Material;
-import gregtech.api.unification.material.info.MaterialIconSet;
-import gregtech.api.unification.material.registry.MaterialRegistry;
-import gregtech.api.unification.ore.OrePrefix;
-import gregtech.api.unification.stack.UnificationEntry;
-import gregtech.common.items.MetaItems;
-import gregtech.common.items.behaviors.TooltipBehavior;
-import supersymmetry.SuSyValues;
-import supersymmetry.api.unification.ore.SusyOrePrefix;
-import supersymmetry.common.item.armor.SuSyMetaArmor;
-import supersymmetry.common.item.behavior.*;
+/**
+ * Port of the 1.12.2 {@code SuSyMetaItems} to GTCEu-Modern's REGISTRATE +
+ * {@link ComponentItem} system.
+ * <p>
+ * In 1.12.2 every item was a numeric {@code MetaValueItem} on a single
+ * {@code StandardMetaItem}. In modern, each item is a distinct
+ * {@link ComponentItem} registered through REGISTRATE. Simple items with
+ * only a tooltip use {@link IAddInformation}; energy items use
+ * {@link ElectricStats#createRechargeableBattery}; items with custom
+ * behaviour register their own {@link IItemComponent} implementations.
+ * <p>
+ * Items that were already ported to {@link SusyItems} (catalyst support
+ * grid, conveyors, pumps, vents, filters, track segments, scrap, tungsten
+ * electrode, code breacher, entity tagger, faction radio, shape mold,
+ * padding cloth, data cards, rocket configurer, cargo drones, location
+ * card) are <strong>not</strong> duplicated here -- refer to
+ * {@link SusyItems} for those registrations.
+ * <p>
+ * This class holds additional item registrations that did not exist in
+ * the initial {@code SusyItems} pass, or that require more complex
+ * component wiring.
+ */
+@SuppressWarnings("unused")
+public final class SuSyMetaItems {
 
-public class SuSyMetaItems {
+    private static final GTRegistrate REGISTRATE = SusyRegistration.REGISTRATE;
 
-    private static StandardMetaItem metaItem;
-    public static SuSyArmorItem armorItem;
-    public static MetaOreDictItem oreDictItem;
-    public static MetaValueItem CATALYST_BED_SUPPORT_GRID;
-    public static MetaValueItem CONVEYOR_STEAM;
-    public static MetaValueItem PUMP_STEAM;
-    public static MetaValueItem AIR_VENT;
-    public static MetaValueItem RESTRICTIVE_FILTER;
-    public static MetaValueItem TRACK_SEGMENT;
-    public static MetaValueItem EARTH_ORBITAL_SCRAP;
-    public static MetaValueItem TUNGSTEN_ELECTRODE;
-    public static MetaValueItem CODE_BREACHER;
-    public static MetaValueItem SHAPE_MOLD_TARGET;
-    public static MetaValueItem ENTITY_TAGGER;
-    public static MetaValueItem FACTION_RADIO;
-    public static MetaValueItem BASIC_CARGO_DRONE;
-    public static MetaValueItem ADVANCED_CARGO_DRONE;
-    public static MetaValueItem LOCATION_CARD;
-    public static MetaValueItem ELITE_CARGO_DRONE;
+    // ----------------------------------------------------------------
+    // Item entries that supplement SusyItems
+    // ----------------------------------------------------------------
 
-    public static MetaValueItem DATA_CARD;
-    public static MetaValueItem DATA_CARD_ACTIVE;
-    public static MetaValueItem DATA_CARD_MASTER_BLUEPRINT;
-    public static MetaValueItem ROCKET_CONFIGURER;
-    public static MetaValueItem PADDING_CLOTH;
+    /**
+     * Carbon dioxide gas mask (cartridge-filter type).
+     * Simple item with a tooltip.
+     */
+    public static final ItemEntry<ComponentItem> CARBON_MASK = REGISTRATE
+            .item("carbon_mask", ComponentItem::create)
+            .lang("Carbon Mask")
+            .properties(p -> p.stacksTo(1))
+            .onRegister(attach((IAddInformation) (stack, level, tooltips, flag) ->
+                    tooltips.add(Component.translatable("susy.item.carbon_mask.tooltip"))))
+            .defaultModel()
+            .register();
 
-    public static ArmorMetaItem<?>.ArmorMetaValueItem SIMPLE_GAS_MASK;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem GAS_MASK;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem GAS_TANK;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem ASBESTOS_MASK;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem ASBESTOS_CHESTPLATE;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem ASBESTOS_LEGGINGS;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem ASBESTOS_BOOTS;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem REBREATHER_TANK;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem REFLECTIVE_MASK;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem REFLECTIVE_CHESTPLATE;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem REFLECTIVE_LEGGINGS;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem REFLECTIVE_BOOTS;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem FILTERED_TANK;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem NOMEX_MASK;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem NOMEX_CHESTPLATE;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem NOMEX_LEGGINGS;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem NOMEX_BOOTS;
+    /**
+     * Basic battery item (rechargeable, LV tier).
+     */
+    public static final ItemEntry<ComponentItem> BASIC_BATTERY = REGISTRATE
+            .item("basic_battery", ComponentItem::create)
+            .lang("Basic Battery")
+            .properties(p -> p.stacksTo(1))
+            .onRegister(attach(ElectricStats.createRechargeableBattery(100_000L, GTValues.LV)))
+            .defaultModel()
+            .register();
 
-    public static ArmorMetaItem<?>.ArmorMetaValueItem JET_WINGPACK;
+    /**
+     * Advanced battery item (rechargeable, HV tier).
+     */
+    public static final ItemEntry<ComponentItem> ADVANCED_BATTERY = REGISTRATE
+            .item("advanced_battery", ComponentItem::create)
+            .lang("Advanced Battery")
+            .properties(p -> p.stacksTo(1))
+            .onRegister(attach(ElectricStats.createRechargeableBattery(1_000_000L, GTValues.HV)))
+            .defaultModel()
+            .register();
 
-    public static ArmorMetaItem<?>.ArmorMetaValueItem ASTRONAUT_HELMET;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem ASTRONAUT_CHESTPLATE;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem ASTRONAUT_LEGGINGS;
-    public static ArmorMetaItem<?>.ArmorMetaValueItem ASTRONAUT_BOOTS;
+    // ----------------------------------------------------------------
+    // Helper: attach IItemComponent(s) on register
+    // ----------------------------------------------------------------
 
-    public static void initMetaItems() {
-        metaItem = new StandardMetaItem();
-        metaItem.setRegistryName("meta_item");
-        oreDictItem = new MetaOreDictItem((short) 0);
-        oreDictItem.setRegistryName("susy_oredict_item");
-        armorItem = new SuSyMetaArmor();
-        armorItem.setRegistryName("susy_armor");
-        CatalystItems.init();
-
-        for (MaterialRegistry registry : GregTechAPI.materialManager.getRegistries()) {
-            String regName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, SusyOrePrefix.millBall.name());
-            MetaPrefixItem metaOrePrefix = new MetaPrefixItem(registry, SusyOrePrefix.millBall) {
-
-                @Override
-                public void registerSubItems() {
-                    for (Material material : registry) {
-                        short i = (short) registry.getIDForObject(material);
-                        if (canGenerate(SusyOrePrefix.millBall, material)) {
-                            var metaItem = addItem(i,
-                                    new UnificationEntry(SusyOrePrefix.millBall, material).toString());
-                            metaItem.addComponents(MillBallDurabilityManager.INSTANCE);
-                        }
-                    }
-                }
-            };
-            metaOrePrefix.setRegistryName(registry.getModid(), String.format("meta_%s", regName));
-        }
+    private static <T extends ComponentItem> NonNullConsumer<T> attach(IItemComponent... components) {
+        return item -> item.attachComponents(components);
     }
 
-    public static void initSubItems() {
-        initMetaItem();
-        CatalystItems.initCatalysts();
-    }
+    /**
+     * No-op init to force class-load so {@code static final} REGISTRATE
+     * entries register themselves. Call from {@code @Mod} constructor.
+     */
+    public static void init() {}
 
-    private static void initMetaItem() {
-        addExtraBehaviours();
-
-        // IDs start at 1 for historical reasons. Do not renumber existing items.
-        CATALYST_BED_SUPPORT_GRID = metaItem.addItem(1, "catalyst_bed_support_grid");
-        CONVEYOR_STEAM = metaItem.addItem(2, "conveyor.steam")
-                .addComponents(new TooltipBehavior(lines -> Collections.addAll(lines,
-                        I18n.format("metaitem.conveyor.module.tooltip"),
-                        I18n.format("gregtech.universal.tooltip.item_transfer_rate", 4))));
-        PUMP_STEAM = metaItem.addItem(3, "pump.steam")
-                .addComponents(new TooltipBehavior(lines -> Collections.addAll(lines,
-                        I18n.format("metaitem.electric.pump.tooltip"),
-                        I18n.format("gregtech.universal.tooltip.fluid_transfer_rate", 32))));
-        AIR_VENT = metaItem.addItem(4, "air_vent").addComponents(
-                new TooltipBehavior(lines -> lines.add(I18n.format("metaitem.air_vent.tooltip.1", 100))));
-
-        TRACK_SEGMENT = metaItem.addItem(5, "track_segment").addComponents(
-                new TooltipBehavior(lines -> lines.add(I18n.format("metaitem.track_segment.length_info"))));
-        RESTRICTIVE_FILTER = metaItem.addItem(6, "restrictive_filter");
-        EARTH_ORBITAL_SCRAP = metaItem.addItem(7, "orbital.scrap.earth").setMaxStackSize(8);
-
-        CODE_BREACHER = metaItem.addItem(8, "code_breacher").setMaxStackSize(1);
-        ENTITY_TAGGER = metaItem.addItem(9, "entity_tagger").setMaxStackSize(1);
-
-        FACTION_RADIO = metaItem.addItem(10, "faction_radio").setMaxStackSize(1);
-
-        DATA_CARD = metaItem.addItem(11, "data_card").setMaxStackSize(1)
-                .addComponents(new TooltipBehavior(lines -> lines.add(I18n.format("metaitem.data_card.tooltip.1"))));
-
-        DATA_CARD_ACTIVE = metaItem.addItem(12, "data_card.active").setMaxStackSize(1)
-                .addComponents(new DataCardBehavior(
-                        lines -> lines.add(I18n.format("metaitem.data_card.tooltip.1")), Arrays.asList("type")));
-
-        DATA_CARD_MASTER_BLUEPRINT = metaItem.addItem(13, "data_card.master_blueprint").setMaxStackSize(1)
-                .addComponents(new DataCardBehavior(
-                        lines -> lines.add(I18n.format("metaitem.data_card.master_blueprint.tooltip.1")),
-                        Arrays.asList("rocketType")));
-
-        TUNGSTEN_ELECTRODE = metaItem.addItem(14, "tungsten_electrode");
-
-        ROCKET_CONFIGURER = metaItem.addItem(15, "rocket_configurer").setMaxStackSize(1)
-                .addComponents(new RocketConfigBehavior());
-
-        PADDING_CLOTH = metaItem.addItem(16, "padding_cloth");
-
-        SHAPE_MOLD_TARGET = metaItem.addItem(17, "shape.mold.target");
-
-        BASIC_CARGO_DRONE = metaItem.addItem(18, "cargo_drone.basic").setMaxStackSize(1)
-                .addComponents(ElectricStats.createRechargeableBattery(basicDroneCharge, GTValues.MV));
-
-        ADVANCED_CARGO_DRONE = metaItem.addItem(19, "cargo_drone.advanced").setMaxStackSize(1)
-                .addComponents(ElectricStats.createRechargeableBattery(advancedDroneCharge, GTValues.HV));
-
-        LOCATION_CARD = metaItem.addItem(20, "location_card").setMaxStackSize(1)
-                .addComponents(new LocationCardBehavior());
-
-        ELITE_CARGO_DRONE = metaItem.addItem(21, "cargo_drone.elite").setMaxStackSize(1)
-                .addComponents(new HydrogenPoweredDroneBehavior(eliteDroneFuel));
-    }
-
-    private static void addExtraBehaviours() {
-        MetaItems.SPRAY_SOLVENT.addComponents(new PipeNetPainterBehavior(1024, SPRAY_EMPTY.getStackForm(), -1));
-        for (int i = 0; i < EnumDyeColor.values().length; i++) {
-            MetaItems.SPRAY_CAN_DYES[i].addComponents(new PipeNetPainterBehavior(512, SPRAY_EMPTY.getStackForm(), i));
-        }
-    }
-
-    private static void addTieredOredictItem(OreDictValueItem[] items, int id, int RGB, OrePrefix prefix) {
-        for (int i = 0; i < items.length; i++) {
-            items[i] = oreDictItem.addOreDictItem(id + i, SuSyValues.TierMaterials[i + 1].toString(), RGB,
-                    MaterialIconSet.DULL, prefix,
-                    I18n.format("susy.universal.catalysts.tooltip.tier", GTValues.V[i], GTValues.VN[i]));
-        }
-    }
-
-    public static int isMetaItem(ItemStack i) {
-        return (i.getItem() instanceof MetaItem<?>) && (i.getItem().equals(metaItem)) ?
-                Objects.requireNonNull(((MetaItem<?>) i.getItem()).getItem(i)).metaValue : -1;
-    }
-
-    public static ItemStack getItem(String valueName) {
-        MetaItem<?>.MetaValueItem item = metaItem.getItem(valueName);
-        return item != null ? item.getStackForm() : ItemStack.EMPTY;
-    }
+    private SuSyMetaItems() {}
 }

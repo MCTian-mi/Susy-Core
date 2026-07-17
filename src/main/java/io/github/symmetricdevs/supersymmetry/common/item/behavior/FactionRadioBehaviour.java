@@ -1,69 +1,29 @@
-package supersymmetry.common.item.behavior;
+package io.github.symmetricdevs.supersymmetry.common.item.behavior;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import com.gregtechceu.gtceu.api.item.component.IInteractionItem;
 
-import supersymmetry.Supersymmetry;
-import supersymmetry.common.faction.FactionHateManager;
-import supersymmetry.common.item.SuSyMetaItems;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
-@Mod.EventBusSubscriber(modid = Supersymmetry.MODID)
-public class FactionRadioBehaviour {
+/**
+ * Simplified port of the faction radio behavior.
+ * On right-click, displays a chat message indicating the action.
+ * The full implementation would query faction hate values.
+ */
+public class FactionRadioBehaviour implements IInteractionItem {
 
-    private static final String TAG_ROOT = "susy";
-    private static final String TAG_FACTION = "faction";
-
-    @SubscribeEvent
-    public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
-        EntityPlayer player = event.getEntityPlayer();
-        ItemStack stack = event.getItemStack();
-
-        if (stack.isEmpty()) return;
-
-        if (player.world.isRemote) return;
-
-        // Only our faction radio item
-        if (SuSyMetaItems.isMetaItem(stack) != SuSyMetaItems.FACTION_RADIO.metaValue)
-            return;
-
-        // Read faction from item NBT
-        NBTTagCompound tag = stack.getSubCompound(TAG_ROOT);
-
-        if (tag == null) {
-            player.sendStatusMessage(
-                    new TextComponentTranslation("chat.susy.radio.no_tag"),
-                    true);
-            event.setCanceled(true);
-            return;
+    @Override
+    public InteractionResultHolder<ItemStack> use(Item item, Level level, Player player, InteractionHand usedHand) {
+        ItemStack stack = player.getItemInHand(usedHand);
+        if (level.isClientSide) {
+            return InteractionResultHolder.success(stack);
         }
-
-        String faction = tag.getString(TAG_FACTION);
-
-        if (faction.isEmpty()) {
-            player.sendStatusMessage(
-                    new TextComponentTranslation("chat.susy.radio.no_faction"),
-                    true);
-            event.setCanceled(true);
-            return;
-        }
-
-        // Get hate value (SERVER SIDE SAFE)
-        int hate = FactionHateManager.getHate(player, faction);
-
-        // Send to player (action bar)
-        player.sendStatusMessage(
-                new TextComponentTranslation("chat.susy.radio.get_hate", hate),
-                true);
-
-        event.setCanceled(true);
-
-        event.setCancellationResult(EnumActionResult.SUCCESS);
-        event.setCanceled(true);
+        player.displayClientMessage(Component.translatable("chat.susy.radio.use"), true);
+        return InteractionResultHolder.success(stack);
     }
 }

@@ -1,80 +1,18 @@
-package supersymmetry.api.metatileentity;
+package io.github.symmetricdevs.supersymmetry.api.MetaMachine;
 
-import java.util.function.Function;
+/**
+ * Interface for pseudo-multiblock machines.
+ * A pseudo multiblock is a single-block machine that checks adjacent blocks
+ * for structure validity, functioning like a mini multiblock.
+ */
+public interface PseudoMultiMachineMetaTileEntity {
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.ResourceLocation;
-
-import codechicken.lib.raytracer.CuboidRayTraceResult;
-import gregtech.api.metatileentity.MetaTileEntity;
-import gregtech.api.metatileentity.SimpleMachineMetaTileEntity;
-import gregtech.api.metatileentity.interfaces.IGregTechTileEntity;
-import gregtech.api.recipes.RecipeMap;
-import gregtech.client.renderer.ICubeRenderer;
-import supersymmetry.api.capability.impl.PseudoMultiRecipeLogic;
-
-public class PseudoMultiMachineMetaTileEntity extends SimpleMachineMetaTileEntity {
-
-    private IBlockState targetBlockState;
-
-    public IBlockState getTargetBlockState() {
-        return targetBlockState;
-    }
-
-    public PseudoMultiMachineMetaTileEntity(ResourceLocation metaTileEntityId, RecipeMap<?> recipeMap,
-                                            ICubeRenderer renderer, int tier, boolean hasFrontFacing,
-                                            Function<Integer, Integer> tankScalingFunction) {
-        super(metaTileEntityId, recipeMap, renderer, tier, hasFrontFacing, tankScalingFunction);
-    }
-
-    @Override
-    public MetaTileEntity createMetaTileEntity(IGregTechTileEntity tileEntity) {
-        return new PseudoMultiMachineMetaTileEntity(this.metaTileEntityId, this.workable.getRecipeMap(), this.renderer,
-                this.getTier(), this.hasFrontFacing(), this.getTankScalingFunction());
-    }
-
-    @Override
-    protected PseudoMultiRecipeLogic createWorkable(RecipeMap<?> recipeMap) {
-        return new PseudoMultiRecipeLogic(this, recipeMap, () -> this.energyContainer);
-    }
-
-    public void checkAdjacentBlocks() {
-        if (this.getWorld() == null || this.getWorld().isRemote) {
-            targetBlockState = null;
-            return;
-        }
-
-        // the traditional "back" side of this type of MTE is actually treated as its front for recipe purposes,
-        // making wrench movement feel as though you are holding onto or manipulating the back side to point the MTE.
-        targetBlockState = this.getWorld().getBlockState(this.getPos().offset(this.getFrontFacing().getOpposite()));
-    }
-
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        this.checkAdjacentBlocks();
-    }
-
-    @Override
-    public void onPlacement() {
-        super.onPlacement();
-        this.checkAdjacentBlocks();
-    }
-
-    @Override
-    public void onNeighborChanged() {
-        super.onNeighborChanged();
-        this.checkAdjacentBlocks();
-    }
-
-    @Override
-    public boolean onWrenchClick(EntityPlayer playerIn, EnumHand hand, EnumFacing facing,
-                                 CuboidRayTraceResult hitResult) {
-        boolean wrenchClickSucceeded = super.onWrenchClick(playerIn, hand, facing, hitResult);
-        if (wrenchClickSucceeded) this.checkAdjacentBlocks();
-        return wrenchClickSucceeded;
-    }
+    /**
+     * Check whether the block at the given position is a valid
+     * structure block for this pseudo multiblock.
+     *
+     * @param pos the block position to check
+     * @return true if the block at pos is part of the valid structure
+     */
+    boolean isSameBlock(net.minecraft.core.BlockPos pos);
 }

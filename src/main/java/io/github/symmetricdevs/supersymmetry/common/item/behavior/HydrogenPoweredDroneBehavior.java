@@ -1,68 +1,88 @@
-package supersymmetry.common.item.behavior;
+package io.github.symmetricdevs.supersymmetry.common.item.behavior;
 
-import java.awt.*;
+import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.item.component.IAddInformation;
+import com.gregtechceu.gtceu.api.item.component.IDurabilityBar;
+import com.gregtechceu.gtceu.api.item.component.forge.IComponentCapability;
+import com.gregtechceu.gtceu.api.capability.forge.GTCapability;
+import com.gregtechceu.gtceu.api.item.capability.ElectricItem;
 
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.fluids.capability.IFluidTankProperties;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.util.LazyOptional;
 
-import org.apache.commons.lang3.tuple.Pair;
+import it.unimi.dsi.fastutil.ints.IntIntPair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import gregtech.api.capability.IFilter;
-import gregtech.api.capability.impl.GTFluidHandlerItemStack;
-import gregtech.api.items.metaitem.stats.IItemBehaviour;
-import gregtech.api.items.metaitem.stats.IItemCapabilityProvider;
-import gregtech.api.items.metaitem.stats.IItemDurabilityManager;
-import gregtech.api.unification.material.Materials;
-import gregtech.api.util.GradientUtil;
+import java.util.List;
 
-public class HydrogenPoweredDroneBehavior implements IItemDurabilityManager, IItemCapabilityProvider, IItemBehaviour {
+/**
+ * Hydrogen-powered drone behavior.
+ * Provides electric energy storage (rechargeable) using GTCEu-Modern's ElectricItem pattern,
+ * and renders a custom durability bar for the energy level.
+ */
+public class HydrogenPoweredDroneBehavior implements IComponentCapability, IDurabilityBar, IAddInformation {
 
-    private static final IFilter<FluidStack> HYDROGEN_FILTER = new IFilter<>() {
+    public final long maxCharge;
 
-        @Override
-        public boolean test(@NotNull FluidStack fluidStack) {
-            return fluidStack.isFluidEqual(new FluidStack(Materials.Hydrogen.getFluid(), 1));
-        }
-
-        @Override
-        public int getPriority() {
-            return IFilter.whitelistLikePriority();
-        }
-    };
-
-    public final int maxCapacity;
-    private final Pair<Color, Color> durabilityBarColors;
-
-    public HydrogenPoweredDroneBehavior(int internalCapacity) {
-        this.maxCapacity = internalCapacity;
-        this.durabilityBarColors = GradientUtil.getGradient(0x0097CE, 10);
+    public HydrogenPoweredDroneBehavior(long maxCharge) {
+        this.maxCharge = maxCharge;
     }
 
     @Override
-    public double getDurabilityForDisplay(@NotNull ItemStack itemStack) {
-        IFluidHandlerItem fluidHandlerItem = itemStack
-                .getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
-        if (fluidHandlerItem == null) return 0;
-        IFluidTankProperties fluidTankProperties = fluidHandlerItem.getTankProperties()[0];
-        FluidStack fluidStack = fluidTankProperties.getContents();
-        return fluidStack == null ? 0 : (double) fluidStack.amount / (double) fluidTankProperties.getCapacity();
+    public @NotNull <T> LazyOptional<T> getCapability(ItemStack itemStack, @NotNull Capability<T> cap) {
+        return GTCapability.CAPABILITY_ELECTRIC_ITEM.orEmpty(cap,
+                LazyOptional.of(() -> new ElectricItem(itemStack, maxCharge, GTValues.LV, true, false)));
+    }
+
+    // -- Durability bar --
+
+    @Override
+    public float getDurabilityForDisplay(ItemStack stack) {
+        var electricItem = getElectricItem(stack);
+        if (electricItem != null) {
+            return 1.0F - (float) electricItem.getCharge() / (float) electricItem.getMaxCharge();
+        }
+        return 1.0F;
+    }
+
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        var electricItem = getElectricItem(stack);
+        return electricItem != null && electricItem.getCharge() < electricItem.getMaxCharge();
+    }
+
+    @Override
+    @Nullable
+    public IntIntPair getDurabilityColorsForDisplay(ItemStack itemStack) {
+        // Blue gradient for hydrogen energy bar: 0x0097CE
+        return IntIntPair.of(0x0097CE, 0x004E73);
+    }
+
+    @Override
+    public boolean showFullBar(ItemStack itemStack) {
+        return false;
+    }
+
+    // -- Tooltip --
+
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents,
+                                TooltipFlag isAdvanced) {
+        var electricItem = getElectricItem(stack);
+        if (electricItem != null) {
+            tooltipComponents.add(Component.translatable("metaitem.generic.electric_item.tooltip",
+                    electricItem.getCharge(), electricItem.getMaxCharge(), GTValues.VNF[electricItem.getTier()]));
+        }
     }
 
     @Nullable
-    @Override
-    public Pair<Color, Color> getDurabilityColorsForDisplay(ItemStack itemStack) {
-        return durabilityBarColors;
-    }
-
-    @Override
-    public ICapabilityProvider createProvider(ItemStack itemStack) {
-        return new GTFluidHandlerItemStack(itemStack, maxCapacity)
-                .setFilter(HYDROGEN_FILTER);
+    private static com.gregtechceu.gtceu.api.capability.IElectricItem getElectricItem(ItemStack stack) {
+        var cap = stack.getCapability(GTCapability.CAPABILITY_ELECTRIC_ITEM);
+        return cap.resolve().orElse(null);
     }
 }

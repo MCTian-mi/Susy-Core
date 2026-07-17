@@ -1,4 +1,4 @@
-package supersymmetry.common.mui.widget;
+package io.github.symmetricdevs.supersymmetry.common.mui.widget;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -7,25 +7,25 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.gui.Font;
+import com.mojang.blaze3d.platform.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.RenderItem;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.util.Mth;
 
-import gregtech.api.gui.GuiTextures;
-import gregtech.api.gui.IRenderContext;
-import gregtech.api.gui.Widget;
-import gregtech.api.items.metaitem.MetaItem;
-import gregtech.api.recipes.Recipe;
-import gregtech.api.util.Position;
-import gregtech.api.util.Size;
-import gregtech.client.utils.RenderUtil;
-import supersymmetry.api.SusyLog;
+import com.gregtechceu.gtceu.api.gui.GuiTextures;
+import com.gregtechceu.gtceu.api.gui.IRenderContext;
+import com.gregtechceu.gtceu.api.gui.Widget;
+import com.gregtechceu.gtceu.api.items.metaitem.MetaItem;
+import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.util.Position;
+import com.gregtechceu.gtceu.api.util.Size;
+import com.gregtechceu.gtceu.client.utils.RenderUtil;
+import io.github.symmetricdevs.supersymmetry.api.SusyLog;
 
 // some parts copied from ScrollableListWidget
 public class ItemCostWidget extends Widget {
@@ -154,7 +154,7 @@ public class ItemCostWidget extends Widget {
                     100,
                     buf -> {
                         buf.writeInt(items.size());
-                        items.forEach(x -> buf.writeCompoundTag(x.writeToNBT(new NBTTagCompound())));
+                        items.forEach(x -> buf.writeCompoundTag(x.writeToNBT(new CompoundTag())));
                     });
             this.lastSyncedItems = items;
         }
@@ -166,7 +166,7 @@ public class ItemCostWidget extends Widget {
         Position pos = new Position(getPosition().x, getPosition().y);
         // TODO: move this out of the widget and just use a text widget
         if (lastSyncedItems.size() > 0) {
-            FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
+            FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
             fontRenderer.drawString(
                     I18n.format("susy.machine.rocket_assembler.gui.required_items"),
                     pos.x,
@@ -234,7 +234,7 @@ public class ItemCostWidget extends Widget {
         RenderHelper.enableStandardItemLighting();
         RenderHelper.enableGUIStandardItemLighting();
         GlStateManager.pushMatrix();
-        RenderItem itemRender = Minecraft.getMinecraft().getRenderItem();
+        RenderItem itemRender = Minecraft.getInstance().getRenderItem();
 
         GlStateManager.scale(HEIGHT_SCALE, HEIGHT_SCALE, HEIGHT_SCALE);
         itemRender.renderItemAndEffectIntoGUI(
@@ -250,7 +250,7 @@ public class ItemCostWidget extends Widget {
         }
         GlStateManager.pushMatrix();
         GlStateManager.scale(HEIGHT_SCALE, HEIGHT_SCALE, HEIGHT_SCALE);
-        FontRenderer fontRenderer = Minecraft.getMinecraft().fontRenderer;
+        FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
         fontRenderer.drawString(
                 String.format("%s, x%d", item_name, stack.getCount()),
                 (int) ((pos.x + HEIGHT_OFFSET + 6 / HEIGHT_SCALE) / HEIGHT_SCALE),
@@ -260,7 +260,7 @@ public class ItemCostWidget extends Widget {
     }
 
     @Override
-    public void readUpdateInfo(int id, PacketBuffer buffer) {
+    public void readUpdateInfo(int id, FriendlyByteBuf buffer) {
         super.readUpdateInfo(id, buffer);
         if (id == 100) {
 

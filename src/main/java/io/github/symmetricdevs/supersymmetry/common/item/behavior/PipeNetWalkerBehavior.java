@@ -1,106 +1,97 @@
-package supersymmetry.common.item.behavior;
+package io.github.symmetricdevs.supersymmetry.common.item.behavior;
 
-import static supersymmetry.common.item.behavior.TraverseOptions.*;
+import com.gregtechceu.gtceu.api.capability.ICoverable;
+import com.gregtechceu.gtceu.api.item.component.IAddInformation;
+import com.gregtechceu.gtceu.api.item.component.IInteractionItem;
+import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
+import com.gregtechceu.gtceu.utils.input.SyncedKeyMappings;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.*;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+/**
+ * Pipe net walker behavior for connecting/disconnecting/blocking/unblocking pipes.
+ * Attached to tools via IItemComponent system.
+ */
+public class PipeNetWalkerBehavior implements IInteractionItem, IAddInformation {
 
-import org.jetbrains.annotations.NotNull;
+    public static final PipeNetWalkerBehavior INSTANCE = new PipeNetWalkerBehavior();
 
-import codechicken.lib.raytracer.CuboidRayTraceResult;
-import gregtech.api.cover.CoverRayTracer;
-import gregtech.api.items.toolitem.IGTTool;
-import gregtech.api.items.toolitem.ToolHelper;
-import gregtech.api.items.toolitem.behavior.IToolBehavior;
-import gregtech.api.pipenet.tile.IPipeTile;
-import gregtech.api.util.input.KeyBind;
-import supersymmetry.mixins.gregtech.BlockPipeAccessor;
-
-public enum PipeNetWalkerBehavior implements IToolBehavior {
-
-    INSTANCE;
-
-    private static void onActionDone(ItemStack stack, EntityPlayer player, World world, EnumHand hand, int walked) {
-        IGTTool tool = ((IGTTool) stack.getItem());
-        ToolHelper.damageItem(stack, player, walked);
-        SoundEvent sound = tool.getSound();
-
-        if (sound != null) {
-            world.playSound(null, player.posX, player.posY, player.posZ,
-                    sound, SoundCategory.PLAYERS, 1.0F, 1.0F);
-        }
-        player.swingArm(hand);
-    }
+    private PipeNetWalkerBehavior() {}
 
     @Override
-    public EnumActionResult onItemUseFirst(@NotNull EntityPlayer player,
-                                           @NotNull World world,
-                                           @NotNull BlockPos pos,
-                                           @NotNull EnumFacing side,
-                                           float hitX, float hitY, float hitZ,
-                                           @NotNull EnumHand hand) {
-        if (KeyBind.TOOL_AOE_CHANGE.isKeyDown(player)) {
-            TileEntity te = world.getTileEntity(pos);
-            if (te instanceof IPipeTile<?, ?>pipe) {
+    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
+        Player player = context.getPlayer();
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        Direction side = context.getClickedFace();
 
-                var block = pipe.getPipeBlock();
-                ItemStack toolStack = player.getHeldItem(hand);
+        if (player == null) return InteractionResult.PASS;
 
-                if (!((BlockPipeAccessor) block).checkPipeTool(toolStack)) return EnumActionResult.FAIL;
+        if (SyncedKeyMappings.TOOL_AOE_CHANGE.isKeyDown(player)) {
+            BlockEntity te = level.getBlockEntity(pos);
+            if (te instanceof IPipeNode<?, ?> pipe) {
 
-                CuboidRayTraceResult rayTraceResult = block.getServerCollisionRayTrace(player, pos, world);
-
-                if (rayTraceResult == null) return EnumActionResult.FAIL;
-
-                EnumFacing gridSide = CoverRayTracer.traceCoverSide(rayTraceResult);
-
-                if (gridSide == null) return EnumActionResult.FAIL;
+                Direction gridSide = ICoverable.traceCoverSide(context.getHitResult());
+                if (gridSide == null) return InteractionResult.FAIL;
 
                 TraverseOptions option = null;
                 if (pipe.isConnected(gridSide)) {
-                    if (player.isSneaking()) {
-                        option = pipe.isFaceBlocked(gridSide) ? UNBLOCKING : BLOCKING;
+                    if (player.isShiftKeyDown()) {
+                        option = pipe.isBlocked(gridSide) ? TraverseOptions.UNBLOCKING : TraverseOptions.BLOCKING;
                     } else {
-                        option = DISCONNECTING;
+                        option = TraverseOptions.DISCONNECTING;
                     }
-                } else if (!player.isSneaking()) {
-                    option = CONNECTING;
+                } else if (!player.isShiftKeyDown()) {
+                    option = TraverseOptions.CONNECTING;
                 }
 
-                if (option == null) return EnumActionResult.FAIL;
+                if (option == null) return InteractionResult.FAIL;
 
-                NBTTagCompound toolTag = ToolHelper.getToolTag(toolStack);
-                int maxWalks = toolTag.getInteger(ToolHelper.MAX_DURABILITY_KEY) -
-                        toolTag.getInteger(ToolHelper.DURABILITY_KEY);
+                int maxWalks = stack.getMaxDamage() - stack.getDamageValue();
+                if (maxWalks <= 0) return InteractionResult.FAIL;
 
-                if (maxWalks <= 0) return EnumActionResult.FAIL;
+                int walkedBlocks = PipeOperationWalker.collectPipeNet(level, pos, pipe, gridSide, option, maxWalks);
 
-                int walkedBlocks = PipeOperationWalker.collectPipeNet(world, pos, pipe, gridSide, option, maxWalks);
+                if (!player.getAbilities().instabuild) {
+                    int damageToApply = (int) Math.ceil(Math.sqrt(walkedBlocks));
+                    int newDamage = stack.getDamageValue() + damageToApply;
+                    if (newDamage >= stack.getMaxDamage()) {
+                        stack.shrink(1);
+                    } else {
+                        stack.setDamageValue(newDamage);
+                    }
+                }
 
-                onActionDone(toolStack, player, world, hand, MathHelper.ceil(MathHelper.sqrt(walkedBlocks)));
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 1.0F);
+                player.swing(context.getHand());
 
-                return EnumActionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
         }
-        return EnumActionResult.PASS;
+        return InteractionResult.PASS;
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
-    public void addInformation(@NotNull ItemStack stack, World world, List<String> tooltip,
-                               @NotNull ITooltipFlag flag) {
-        tooltip.add(I18n.format("item.susy.tool.behavior.pipeliner"));
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents,
+                                TooltipFlag isAdvanced) {
+        tooltipComponents.add(Component.translatable("item.susy.tool.behavior.pipeliner")
+                .withStyle(ChatFormatting.GRAY));
     }
 }

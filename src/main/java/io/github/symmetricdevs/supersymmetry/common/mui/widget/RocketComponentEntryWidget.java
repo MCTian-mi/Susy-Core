@@ -1,21 +1,21 @@
-package supersymmetry.common.mui.widget;
+package io.github.symmetricdevs.supersymmetry.common.mui.widget;
 
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import net.minecraft.util.Tuple;
+import org.apache.commons.lang3.tuple.Pair;
 
-import gregtech.api.gui.widgets.AbstractWidgetGroup;
-import gregtech.api.gui.widgets.ClickButtonWidget;
-import gregtech.api.gui.widgets.ImageCycleButtonWidget;
-import gregtech.api.gui.widgets.ImageWidget;
-import gregtech.api.gui.widgets.SlotWidget;
-import gregtech.api.gui.widgets.TextFieldWidget2;
-import gregtech.api.util.Position;
-import gregtech.api.util.Size;
-import supersymmetry.api.gui.SusyGuiTextures;
-import supersymmetry.api.util.DataStorageLoader;
+import com.gregtechceu.gtceu.api.gui.widgets.AbstractWidgetGroup;
+import com.gregtechceu.gtceu.api.gui.widgets.ClickButtonWidget;
+import com.gregtechceu.gtceu.api.gui.widgets.ImageCycleButtonWidget;
+import com.gregtechceu.gtceu.api.gui.widgets.ImageWidget;
+import com.gregtechceu.gtceu.api.gui.widgets.SlotWidget;
+import com.gregtechceu.gtceu.api.gui.widgets.TextFieldWidget2;
+import com.gregtechceu.gtceu.api.util.Position;
+import com.gregtechceu.gtceu.api.util.Size;
+import io.github.symmetricdevs.supersymmetry.api.gui.SusyGuiTextures;
+import io.github.symmetricdevs.supersymmetry.api.util.DataStorageLoader;
 
 public class RocketComponentEntryWidget extends AbstractWidgetGroup {
 

@@ -1,6 +1,6 @@
-package supersymmetry.common.event;
+package io.github.symmetricdevs.supersymmetry.common.event;
 
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 
 public class DimensionRidingSwapData {
 
@@ -11,6 +11,6 @@ public class DimensionRidingSwapData {
     public DimensionRidingSwapData(Entity mount, Entity passenger) {
         this.mount = mount;
         this.passenger = passenger;
-        this.time = mount.world.getTotalWorldTime();
+        this.time = mount.level().getGameTime();
     }
 }

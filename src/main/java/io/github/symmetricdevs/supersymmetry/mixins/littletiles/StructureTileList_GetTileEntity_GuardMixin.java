@@ -1,4 +1,4 @@
-package supersymmetry.mixins.littletiles;
+package io.github.symmetricdevs.supersymmetry.mixins.littletiles;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import com.creativemd.littletiles.common.structure.exception.NotYetConnectedException;
 import com.creativemd.littletiles.common.tile.parent.StructureTileList;
-import com.creativemd.littletiles.common.tileentity.TileEntityLittleTiles;
+import com.creativemd.littletiles.common.BlockEntity.TileEntityLittleTiles;
 
 /**
  * Prevent NPEs during explosions by guarding the call to getTe() inside getTileEntity().
@@ -29,7 +29,7 @@ public abstract class StructureTileList_GetTileEntity_GuardMixin {
               method = "getTileEntity",
               at = @At(
                        value = "INVOKE",
-                       target = "Lcom/creativemd/littletiles/common/tile/parent/StructureTileList;getTe()Lcom/creativemd/littletiles/common/tileentity/TileEntityLittleTiles;"),
+                       target = "Lcom/creativemd/littletiles/common/tile/parent/StructureTileList;getTe()Lcom/creativemd/littletiles/common/BlockEntity/TileEntityLittleTiles;"),
               remap = false)
     private TileEntityLittleTiles susy$guardGetTeForGetTileEntity(StructureTileList self) throws NotYetConnectedException {
         if (((StructureTileList) (Object) this).isRemoved()) {

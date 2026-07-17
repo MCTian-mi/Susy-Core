@@ -1,66 +1,70 @@
-package supersymmetry.api.recycling;
+package io.github.symmetricdevs.supersymmetry.api.recycling;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 import org.apache.commons.lang3.math.Fraction;
 
-import gregtech.api.unification.material.MarkerMaterial;
-import gregtech.api.unification.material.Material;
-import gregtech.api.unification.stack.MaterialStack;
-import gregtech.api.unification.stack.UnificationEntry;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import java.util.Map;
+import java.util.Objects;
 
-public record MaterialRecyclable(Material material) implements Recyclable {
+/**
+ * A {@link Recyclable} that represents a material by its registry name.
+ * <p>
+ * This is a pure-Java replacement for the old {@code MaterialRecyclable}
+ * that held a GTCEu {@code Material}. Materials are referenced as
+ * {@link String} names.
+ * </p>
+ */
+public final class MaterialRecyclable extends Recyclable {
 
-    public MaterialRecyclable(UnificationEntry unificationEntry) {
-        this(unificationEntry.material);
+    private final String materialName;
+
+    /**
+     * Creates a new MaterialRecyclable wrapping the given material name.
+     *
+     * @param materialName the material's registry name
+     */
+    public MaterialRecyclable(String materialName) {
+        this.materialName = Objects.requireNonNull(materialName, "materialName");
     }
 
-    public MaterialRecyclable(MaterialStack mStack) {
-        this(mStack.material);
+    /**
+     * Returns the material name this recyclable wraps.
+     *
+     * @return the material registry name
+     */
+    public String getMaterialName() {
+        return materialName;
     }
 
     @Override
     public ItemStack asStack(int size) {
-        throw new UnsupportedOperationException("Cannot create an ItemStack from a MaterialRecyclable instance!");
+        throw new UnsupportedOperationException(
+                "Cannot create an ItemStack from a MaterialRecyclable instance!");
     }
 
     @Override
-    public void addToMStack(Object2ObjectMap<Material, Fraction> mStacks, Fraction count) {
+    public void addToMStack(Map<String, Fraction> mStacks, Fraction count) {
         if (Fraction.ZERO.equals(count)) return;
-        if (material instanceof MarkerMaterial) return; /// Do nothing if this is a marker material
-        mStacks.put(material, mStacks.getOrDefault(material, Fraction.ZERO).add(count));
-    }
-
-    @Override
-    public int value(Object obj) {
-        if (obj instanceof MaterialStack ms) {
-            return (int) ms.amount;
-        }
-        // TODO:?
-        return 1;
+        mStacks.merge(materialName, count, Fraction::add);
     }
 
     @Override
     public int hashCode() {
-        return material.hashCode();
+        return materialName.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        } else if (obj instanceof MaterialRecyclable) {
-            /// Not comparing registries here since they'll have the same oreDict in the end anyway...
-            /// This is better for performance, and it's generally not a good practice
-            /// to have materials with the same name in two registries.
-            return material.getName().equals(((MaterialRecyclable) (obj)).material.getName());
+        if (this == obj) return true;
+        if (obj instanceof MaterialRecyclable other) {
+            return materialName.equals(other.materialName);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return String.format("M[%s]", material.getRegistryName());
+        return String.format("M[%s]", materialName);
     }
 }

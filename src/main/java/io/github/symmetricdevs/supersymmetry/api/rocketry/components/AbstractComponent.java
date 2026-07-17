@@ -1,4 +1,4 @@
-package supersymmetry.api.rocketry.components;
+package io.github.symmetricdevs.supersymmetry.api.rocketry.components;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,22 +9,22 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Items;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Tuple;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.Items;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.apache.commons.lang3.tuple.Pair;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
-import supersymmetry.api.SusyLog;
-import supersymmetry.api.rocketry.WeightedBlock;
-import supersymmetry.api.util.StructAnalysis;
-import supersymmetry.api.util.StructAnalysis.BuildStat;
-import supersymmetry.common.tileentities.TileEntityCoverable;
+import io.github.symmetricdevs.supersymmetry.api.SusyLog;
+import io.github.symmetricdevs.supersymmetry.api.rocketry.WeightedBlock;
+import io.github.symmetricdevs.supersymmetry.api.util.StructAnalysis;
+import io.github.symmetricdevs.supersymmetry.api.util.StructAnalysis.BuildStat;
+import io.github.symmetricdevs.supersymmetry.common.tileentities.TileEntityCoverable;
 
 public abstract class AbstractComponent<T extends AbstractComponent<T>> {
 
@@ -109,11 +109,11 @@ public abstract class AbstractComponent<T extends AbstractComponent<T>> {
     public void writeBlocksToNBT(Set<BlockPos> blocks, World world) {
         Map<String, Integer> counts = new HashMap<String, Integer>();
         for (BlockPos blockpos : blocks) {
-            IBlockState state = world.getBlockState(blockpos);
+            BlockState state = world.getBlockState(blockpos);
             Block block = state.getBlock();
 
             int meta = block.damageDropped(state);
-            TileEntity te = world.getTileEntity(blockpos);
+            BlockEntity te = world.getTileEntity(blockpos);
             if (te != null) {
                 if (te instanceof TileEntityCoverable) {
                     TileEntityCoverable teCoverable = (TileEntityCoverable) te;
@@ -131,7 +131,7 @@ public abstract class AbstractComponent<T extends AbstractComponent<T>> {
 
         for (Map.Entry<String, Integer> e : counts.entrySet()) {
             String[] p = e.getKey().split("#", 3);
-            // NBTTagCompound c = new NBTTagCompound();
+            // CompoundTag c = new CompoundTag();
             // c.setString("registryName", p[0]);
             // c.setInteger("meta", Integer.parseInt(p[1]));
             // c.setString("type", p[2]);
@@ -141,7 +141,7 @@ public abstract class AbstractComponent<T extends AbstractComponent<T>> {
         }
     }
 
-    public static double getMassOfBlock(IBlockState state) {
+    public static double getMassOfBlock(BlockState state) {
         Block block = state.getBlock();
         if (block instanceof WeightedBlock weightedBlock) {
             return weightedBlock.getMass(state);
@@ -217,9 +217,9 @@ public abstract class AbstractComponent<T extends AbstractComponent<T>> {
         this.detectionPredicate = predicate;
     }
 
-    public abstract Optional<NBTTagCompound> analyzePattern(StructAnalysis analysis, AxisAlignedBB aabb);
+    public abstract Optional<CompoundTag> analyzePattern(StructAnalysis analysis, AABB aabb);
 
-    public void collectInfo(StructAnalysis analysis, Set<BlockPos> connected, NBTTagCompound tag) {
+    public void collectInfo(StructAnalysis analysis, Set<BlockPos> connected, CompoundTag tag) {
         // These are sometimes done separately.
         if (!tag.hasKey("radius")) {
             this.radius = analysis.getRadius(connected);
@@ -237,18 +237,18 @@ public abstract class AbstractComponent<T extends AbstractComponent<T>> {
         tag.setString("name", name);
     }
 
-    public void writeToNBT(NBTTagCompound tag) {
+    public void writeToNBT(CompoundTag tag) {
         tag.setString("name", this.getName());
         tag.setString("type", this.getType());
         tag.setDouble("mass", this.getMass());
-        NBTTagList list = new NBTTagList();
+        ListTag list = new ListTag();
         for (MaterialCost material : this.getMaterials()) {
             list.appendTag(material.toNBT());
         }
         tag.setTag("materials", list);
     }
 
-    public abstract Optional<T> readFromNBT(NBTTagCompound compound);
+    public abstract Optional<T> readFromNBT(CompoundTag compound);
 
     public double getHeight() {
         return this.height;

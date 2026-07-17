@@ -1,4 +1,4 @@
-package supersymmetry.api.space;
+package io.github.symmetricdevs.supersymmetry.api.space;
 
 import org.jetbrains.annotations.Nullable;
 

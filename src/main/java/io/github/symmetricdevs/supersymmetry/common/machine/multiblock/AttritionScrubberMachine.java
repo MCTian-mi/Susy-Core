@@ -9,7 +9,7 @@ import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMa
  *
  * <p>Behaviour inventory of the legacy controller, and where each piece lives now:
  * <ul>
- * <li>{@code new MultiblockRecipeLogic(this, false)} — non-perfect overclocking —
+ * <li>{@code new RecipeLogic(this, false)} — non-perfect overclocking —
  * is the definition's {@code GTRecipeModifiers.OC_NON_PERFECT} recipe modifier.</li>
  * <li>{@code getBaseTexture(...) == ABRASION_RESISTANT_CASING} is the definition's
  * appearance block and base casing model.</li>

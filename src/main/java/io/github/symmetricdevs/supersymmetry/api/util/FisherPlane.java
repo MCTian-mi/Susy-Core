@@ -1,6 +1,6 @@
-package supersymmetry.api.util;
+package io.github.symmetricdevs.supersymmetry.api.util;
 
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.Vec3;
 
 public class FisherPlane {
 
@@ -8,7 +8,7 @@ public class FisherPlane {
      * @param grid 3D grid with two classes of points.
      * @return Fisher discriminant normal vector (pointing from 0s to 1s)
      */
-    public static Vec3d fisherNormal(boolean[][][] grid, boolean normalize) {
+    public static Vec3 fisherNormal(boolean[][][] grid, boolean normalize) {
         int n = grid.length;
 
         double sum1x = 0, sum1y = 0, sum1z = 0;
@@ -35,7 +35,7 @@ public class FisherPlane {
                 }
 
         if (c1 == 0 || c0 == 0)
-            return new Vec3d(0, 0, 0);
+            return new Vec3(0, 0, 0);
 
         double m1x = sum1x / c1;
         double m1y = sum1y / c1;
@@ -77,7 +77,7 @@ public class FisherPlane {
         double det = sxx * (syy * szz - syz * syz) - sxy * (sxy * szz - sxz * syz) + sxz * (sxy * syz - sxz * syy);
 
         if (Math.abs(det) < 1e-12)
-            return new Vec3d(0, 0, 0);
+            return new Vec3(0, 0, 0);
 
         double inv00 = (syy * szz - syz * syz) / det;
         double inv01 = (sxz * syz - sxy * szz) / det;
@@ -98,7 +98,7 @@ public class FisherPlane {
         double wy = inv01 * dx + inv11 * dy + inv12 * dz;
         double wz = inv02 * dx + inv12 * dy + inv22 * dz;
 
-        Vec3d normal = new Vec3d(wx, wy, wz);
+        Vec3 normal = new Vec3(wx, wy, wz);
 
         if (normalize) {
             return normal.normalize();
@@ -107,7 +107,7 @@ public class FisherPlane {
         }
     }
 
-    public static Vec3d fisherNormal(boolean[][][] grid) {
+    public static Vec3 fisherNormal(boolean[][][] grid) {
         return fisherNormal(grid, true);
     }
 }

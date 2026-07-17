@@ -1,4 +1,4 @@
-package supersymmetry.api.stockinteraction;
+package io.github.symmetricdevs.supersymmetry.api.stockinteraction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,37 +8,37 @@ import java.util.regex.PatternSyntaxException;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.ChatFormatting;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.items.ItemStackHandler;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.cleanroommc.modularui.api.drawable.IKey;
-import com.cleanroommc.modularui.drawable.UITexture;
-import com.cleanroommc.modularui.screen.ModularPanel;
-import com.cleanroommc.modularui.screen.RichTooltip;
-import com.cleanroommc.modularui.utils.Alignment;
-import com.cleanroommc.modularui.utils.Color;
-import com.cleanroommc.modularui.value.sync.BooleanSyncValue;
-import com.cleanroommc.modularui.value.sync.PanelSyncManager;
-import com.cleanroommc.modularui.value.sync.StringSyncValue;
-import com.cleanroommc.modularui.value.sync.SyncHandlers;
-import com.cleanroommc.modularui.widget.Widget;
-import com.cleanroommc.modularui.widgets.SlotGroupWidget;
-import com.cleanroommc.modularui.widgets.ToggleButton;
-import com.cleanroommc.modularui.widgets.layout.Flow;
-import com.cleanroommc.modularui.widgets.slot.PhantomItemSlot;
-import com.cleanroommc.modularui.widgets.slot.SlotGroup;
+// MUI2 removed: import com.cleanroommc.modularui.api.drawable.IKey;
+// MUI2 removed: import com.cleanroommc.modularui.drawable.UITexture;
+// MUI2 removed: import com.cleanroommc.modularui.screen.ModularPanel;
+// MUI2 removed: import com.cleanroommc.modularui.screen.RichTooltip;
+// MUI2 removed: import com.cleanroommc.modularui.utils.Alignment;
+// MUI2 removed: import com.cleanroommc.modularui.utils.Color;
+// MUI2 removed: import com.cleanroommc.modularui.value.sync.BooleanSyncValue;
+// MUI2 removed: import com.cleanroommc.modularui.value.sync.PanelSyncManager;
+// MUI2 removed: import com.cleanroommc.modularui.value.sync.StringSyncValue;
+// MUI2 removed: import com.cleanroommc.modularui.value.sync.SyncHandlers;
+// MUI2 removed: import com.cleanroommc.modularui.widget.Widget;
+// MUI2 removed: import com.cleanroommc.modularui.widgets.SlotGroupWidget;
+// MUI2 removed: import com.cleanroommc.modularui.widgets.ToggleButton;
+// MUI2 removed: import com.cleanroommc.modularui.widgets.layout.Flow;
+// MUI2 removed: import com.cleanroommc.modularui.widgets.slot.PhantomItemSlot;
+// MUI2 removed: import com.cleanroommc.modularui.widgets.slot.SlotGroup;
 
 import cam72cam.immersiverailroading.entity.EntityRollingStock;
-import supersymmetry.api.gui.SusyGuiTextures;
-import supersymmetry.api.metatileentity.Mui2Utils;
-import supersymmetry.common.mui.widget.HighlightedTextField;
+import io.github.symmetricdevs.supersymmetry.api.gui.SusyGuiTextures;
+import io.github.symmetricdevs.supersymmetry.api.MetaMachine.Mui2Utils;
+import io.github.symmetricdevs.supersymmetry.common.mui.widget.HighlightedTextField;
 
-public class StockFilter implements INBTSerializable<NBTTagCompound>, Predicate<EntityRollingStock> {
+public class StockFilter implements INBTSerializable<CompoundTag>, Predicate<EntityRollingStock> {
 
     protected final int size;
     protected StockFilterReader handler;
@@ -66,22 +66,22 @@ public class StockFilter implements INBTSerializable<NBTTagCompound>, Predicate<
     }
 
     @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setString("patternString", patternString);
-        nbt.setBoolean("errored", errored);
-        nbt.setBoolean("enabled", enabled);
-        NBTTagCompound handlerNbt = handler.serializeNBT();
-        nbt.setTag("handler", handlerNbt);
+    public CompoundTag serializeNBT() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString("patternString", patternString);
+        nbt.putBoolean("errored", errored);
+        nbt.putBoolean("enabled", enabled);
+        CompoundTag handlerNbt = handler.serializeNBT();
+        nbt.put("handler", handlerNbt);
         return nbt;
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound nbt) {
+    public void deserializeNBT(CompoundTag nbt) {
         patternString = nbt.getString("patternString");
         errored = nbt.getBoolean("errored");
         enabled = nbt.getBoolean("enabled");
-        handler.deserializeNBT(nbt.getCompoundTag("handler"));
+        handler.deserializeNBT(nbt.getCompound("handler"));
         refreshAllDefinitions();
         refreshPattern();
     }
@@ -187,34 +187,34 @@ public class StockFilter implements INBTSerializable<NBTTagCompound>, Predicate<
         for (int i = 0; i < builder.length(); i++) {
             switch (builder.charAt(i)) {
                 case '|', '&', '.', '[', ']' -> {
-                    builder.insert(i, TextFormatting.GREEN);
+                    builder.insert(i, ChatFormatting.GREEN);
                     i += 2;
                 }
                 case '*', '?' -> {
-                    builder.insert(i, TextFormatting.DARK_AQUA);
+                    builder.insert(i, ChatFormatting.DARK_AQUA);
                     i += 2;
                 }
                 case '!' -> {
-                    builder.insert(i, TextFormatting.RED);
+                    builder.insert(i, ChatFormatting.RED);
                     i += 2;
                 }
                 case '^', '$' -> {
-                    builder.insert(i++, TextFormatting.GOLD);
+                    builder.insert(i++, ChatFormatting.GOLD);
                     i += 2;
                 }
                 case '(', ')' -> {
-                    builder.insert(i, TextFormatting.LIGHT_PURPLE);
+                    builder.insert(i, ChatFormatting.LIGHT_PURPLE);
                     i += 2;
                 }
                 case '\\' -> {
-                    builder.insert(i, TextFormatting.DARK_GREEN);
+                    builder.insert(i, ChatFormatting.DARK_GREEN);
                     i += 2;
                 }
                 default -> {
                     continue;
                 }
             }
-            builder.insert(i + 1, TextFormatting.RESET);
+            builder.insert(i + 1, ChatFormatting.RESET);
         }
         return builder.toString();
     }

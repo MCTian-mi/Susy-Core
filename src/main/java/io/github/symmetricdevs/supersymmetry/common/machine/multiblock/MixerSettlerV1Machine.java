@@ -176,7 +176,7 @@ public class MixerSettlerV1Machine extends WorkableElectricMultiblockMachine {
 
     /**
      * 1.12.2 V1 {@code super.autoAbilities(true, false)} resolves to the 2-arg
-     * (maintenance, muffler) overload on MultiblockWithDisplayBase — maintenance only,
+     * (maintenance, muffler) overload on MultiblockControllerMachine — maintenance only,
      * no muffler — plus INPUT_ENERGY (1..2, preview 1) and a single IMPORT_ITEMS bus.
      * Item OUTPUT is only accepted on the 'E' edge positions; fluids only on the fixed
      * 'I'/'O' positions. No parallel hatch (SuSy pure-parallel is recipe-side).

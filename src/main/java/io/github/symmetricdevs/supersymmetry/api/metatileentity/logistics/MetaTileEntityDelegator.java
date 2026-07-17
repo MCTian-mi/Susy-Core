@@ -1,23 +1,23 @@
-package supersymmetry.api.metatileentity.logistics;
+package io.github.symmetricdevs.supersymmetry.api.MetaMachine.logistics;
 
 import java.util.List;
 import java.util.function.Predicate;
 
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 
@@ -31,13 +31,13 @@ import codechicken.lib.render.pipeline.ColourMultiplier;
 import codechicken.lib.render.pipeline.IVertexOperation;
 import codechicken.lib.vec.Cuboid6;
 import codechicken.lib.vec.Matrix4;
-import gregtech.api.capability.GregtechCapabilities;
-import gregtech.api.capability.IEnergyContainer;
-import gregtech.api.gui.ModularUI;
-import gregtech.api.metatileentity.MetaTileEntity;
-import gregtech.api.metatileentity.MetaTileEntityHolder;
-import gregtech.api.util.GTUtility;
-import gregtech.client.renderer.texture.Textures;
+import com.gregtechceu.gtceu.api.capability.GregtechCapabilities;
+import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
+import com.gregtechceu.gtceu.api.gui.ModularUI;
+import com.gregtechceu.gtceu.api.machine.MetaMachine;
+import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
+import com.gregtechceu.gtceu.utils.GTUtil;
+import com.gregtechceu.gtceu.client.renderer.texture.Textures;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 
 public abstract class MetaTileEntityDelegator extends MetaTileEntity implements IDelegator {
@@ -53,21 +53,21 @@ public abstract class MetaTileEntityDelegator extends MetaTileEntity implements 
     }
 
     @Override
-    public <T> T getCapability(Capability<T> capability, EnumFacing side) {
+    public <T> T getCapability(Capability<T> capability, Direction side) {
         T delegatedCapability = getDelegatedCapability(capability, side);
         return delegatedCapability == null ? getDefaultCapability(capability, side) : delegatedCapability;
     }
 
-    protected <T> T getDefaultCapability(Capability<T> capability, EnumFacing side) {
+    protected <T> T getDefaultCapability(Capability<T> capability, Direction side) {
         return side != null && capFilter.test(capability) && DefaultCapabilities.hasCapability(capability) ?
                 DefaultCapabilities.getCapability(capability) : super.getCapability(capability, side);
     }
 
-    protected <T> T getDelegatedCapability(Capability<T> capability, EnumFacing side) {
+    protected <T> T getDelegatedCapability(Capability<T> capability, Direction side) {
         if (capability == null || !capFilter.test(capability) || side == null) return null;
-        EnumFacing delegatingFacing = getDelegatingFacing(side);
+        Direction delegatingFacing = getDelegatingFacing(side);
         if (delegatingFacing == null) return null;
-        TileEntity te = getWorld().getTileEntity(getPos().offset(delegatingFacing));
+        BlockEntity te = getWorld().getTileEntity(getPos().offset(delegatingFacing));
         if (te == null ||
                 (te instanceof MetaTileEntityHolder holder && holder.getMetaTileEntity() instanceof IDelegator))
             return null;
@@ -79,7 +79,7 @@ public abstract class MetaTileEntityDelegator extends MetaTileEntity implements 
     public void renderMetaTileEntity(CCRenderState renderState, Matrix4 translation, IVertexOperation[] pipeline) {
         IVertexOperation[] colouredPipeline = ArrayUtils.add(pipeline,
                 new ColourMultiplier(GTUtility.convertRGBtoOpaqueRGBA_CL(this.getPaintingColorForRendering())));
-        for (EnumFacing facing : EnumFacing.values()) {
+        for (Direction facing : Direction.values()) {
             Textures.renderFace(renderState, translation, colouredPipeline, facing, Cuboid6.full, this.getBaseTexture(),
                     BlockRenderLayer.CUTOUT_MIPPED);
         }
@@ -114,7 +114,7 @@ public abstract class MetaTileEntityDelegator extends MetaTileEntity implements 
     }
 
     @Override
-    protected ModularUI createUI(EntityPlayer entityPlayer) {
+    protected ModularUI createUI(Player Player) {
         return null;
     }
 

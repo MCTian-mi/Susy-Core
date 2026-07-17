@@ -1,8 +1,8 @@
-package supersymmetry.mixins.minecraft;
+package io.github.symmetricdevs.supersymmetry.mixins.minecraft;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.Entity;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.commands.CommandSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -10,10 +10,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import supersymmetry.common.event.GravityHandler;
+import io.github.symmetricdevs.supersymmetry.common.event.GravityHandler;
 
 @Mixin(Entity.class)
-public abstract class EntityMixin implements ICommandSender, ICapabilitySerializable<NBTTagCompound> {
+public abstract class EntityMixin implements ICommandSender, ICapabilitySerializable<CompoundTag> {
 
     @Inject(method = "onUpdate", at = @At("TAIL"))
     public void applyGravity(CallbackInfo callback) {

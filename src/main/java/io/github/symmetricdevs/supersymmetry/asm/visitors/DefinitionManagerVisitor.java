@@ -1,4 +1,4 @@
-package supersymmetry.asm.visitors;
+package io.github.symmetricdevs.supersymmetry.asm.visitors;
 
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;

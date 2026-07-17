@@ -1,4 +1,4 @@
-package supersymmetry.api.util;
+package io.github.symmetricdevs.supersymmetry.api.util;
 
 import java.util.ArrayList;
 import java.util.Collections;

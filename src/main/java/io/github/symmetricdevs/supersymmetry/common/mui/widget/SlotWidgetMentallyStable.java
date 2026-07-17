@@ -1,21 +1,21 @@
-package supersymmetry.common.mui.widget;
+package io.github.symmetricdevs.supersymmetry.common.mui.widget;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GlStateManager;
+import com.mojang.blaze3d.platform.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.RenderItem;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.ClickType;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.Container;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.SlotItemHandler;
@@ -24,15 +24,15 @@ import org.jetbrains.annotations.NotNull;
 
 import com.google.common.base.Preconditions;
 
-import gregtech.api.gui.INativeWidget;
-import gregtech.api.gui.IRenderContext;
-import gregtech.api.gui.ISizeProvider;
-import gregtech.api.gui.Widget;
-import gregtech.api.gui.impl.ModularUIGui;
-import gregtech.api.gui.resources.IGuiTexture;
-import gregtech.api.util.LocalizationUtils;
-import gregtech.api.util.Position;
-import gregtech.api.util.Size;
+import com.gregtechceu.gtceu.api.gui.INativeWidget;
+import com.gregtechceu.gtceu.api.gui.IRenderContext;
+import com.gregtechceu.gtceu.api.gui.ISizeProvider;
+import com.gregtechceu.gtceu.api.gui.Widget;
+import com.gregtechceu.gtceu.api.gui.impl.ModularUIGui;
+import com.gregtechceu.gtceu.api.gui.resources.IGuiTexture;
+import com.gregtechceu.gtceu.api.util.LocalizationUtils;
+import com.gregtechceu.gtceu.api.util.Position;
+import com.gregtechceu.gtceu.api.util.Size;
 
 // slotwidget but OnTake actually calls changeListener
 public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
@@ -129,7 +129,7 @@ public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
         if (itemStack.isEmpty() && modularUIGui != null && modularUIGui.getDragSplitting() &&
                 modularUIGui.getDragSplittingSlots().contains(slotReference)) { // draw split
             int splitSize = modularUIGui.getDragSplittingSlots().size();
-            itemStack = gui.entityPlayer.inventory.getItemStack();
+            itemStack = gui.Player.inventory.getItemStack();
             if (!itemStack.isEmpty() && splitSize > 1 && Container.canAddItemToSlot(slotReference, itemStack, true)) {
                 itemStack = itemStack.copy();
                 Container.computeStackSize(
@@ -152,10 +152,10 @@ public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
             RenderHelper.enableStandardItemLighting();
             RenderHelper.enableGUIStandardItemLighting();
             GlStateManager.pushMatrix();
-            RenderItem itemRender = Minecraft.getMinecraft().getRenderItem();
+            RenderItem itemRender = Minecraft.getInstance().getRenderItem();
             itemRender.renderItemAndEffectIntoGUI(itemStack, pos.x + 1, pos.y + 1);
             itemRender.renderItemOverlayIntoGUI(
-                    Minecraft.getMinecraft().fontRenderer, itemStack, pos.x + 1, pos.y + 1, null);
+                    Minecraft.getInstance().fontRenderer, itemStack, pos.x + 1, pos.y + 1, null);
             GlStateManager.enableAlpha();
             GlStateManager.popMatrix();
             RenderHelper.disableStandardItemLighting();
@@ -193,7 +193,7 @@ public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
                     modularUIGui.dragSplittingLimit = 0;
                 } else if (button == 1) {
                     modularUIGui.dragSplittingLimit = 1;
-                } else if (Minecraft.getMinecraft().gameSettings.keyBindPickBlock
+                } else if (Minecraft.getInstance().gameSettings.keyBindPickBlock
                         .isActiveAndMatches(button - 100)) {
                             modularUIGui.dragSplittingLimit = 2;
                         }
@@ -277,7 +277,7 @@ public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
         return isEnabled() && canPutItems;
     }
 
-    public boolean canTakeStack(EntityPlayer player) {
+    public boolean canTakeStack(Player player) {
         return isEnabled() && canTakeItems;
     }
 
@@ -295,7 +295,7 @@ public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
     }
 
     @Override
-    public ItemStack slotClick(int dragType, ClickType clickTypeIn, EntityPlayer player) {
+    public ItemStack slotClick(int dragType, ClickType clickTypeIn, Player player) {
         return null;
     }
 
@@ -335,7 +335,7 @@ public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
         }
 
         @Override
-        public boolean canTakeStack(@NotNull EntityPlayer playerIn) {
+        public boolean canTakeStack(@NotNull Player playerIn) {
             return SlotWidgetMentallyStable.this.canTakeStack(playerIn) && super.canTakeStack(playerIn);
         }
 
@@ -349,7 +349,7 @@ public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
 
         @NotNull
         @Override
-        public final ItemStack onTake(@NotNull EntityPlayer thePlayer, @NotNull ItemStack stack) {
+        public final ItemStack onTake(@NotNull Player thePlayer, @NotNull ItemStack stack) {
             return onItemTake(thePlayer, super.onTake(thePlayer, stack), false);
         }
 
@@ -395,7 +395,7 @@ public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
         }
 
         @Override
-        public boolean canTakeStack(EntityPlayer playerIn) {
+        public boolean canTakeStack(Player playerIn) {
             return SlotWidgetMentallyStable.this.canTakeStack(playerIn) && super.canTakeStack(playerIn);
         }
 
@@ -409,7 +409,7 @@ public class SlotWidgetMentallyStable extends Widget implements INativeWidget {
 
         @NotNull
         @Override
-        public final ItemStack onTake(@NotNull EntityPlayer thePlayer, @NotNull ItemStack stack) {
+        public final ItemStack onTake(@NotNull Player thePlayer, @NotNull ItemStack stack) {
             if (changeListener != null) {
                 changeListener.run();
             }

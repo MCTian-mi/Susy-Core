@@ -1,4 +1,4 @@
-package supersymmetry.api.rocketry.rockets;
+package io.github.symmetricdevs.supersymmetry.api.rocketry.rockets;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,16 +11,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagIntArray;
-import net.minecraft.util.Tuple;
+import net.minecraft.nbt.CompoundTag;
+// TODO: IntTagArray is 1.12.2
+import org.apache.commons.lang3.tuple.Pair;
 import net.minecraftforge.common.util.Constants.NBT;
 
-import supersymmetry.api.SusyLog;
-import supersymmetry.api.rocketry.components.AbstractComponent;
-import supersymmetry.api.rocketry.fuels.RocketFuelEntry;
-import supersymmetry.common.rocketry.components.ComponentLavalEngine;
-import supersymmetry.common.rocketry.components.ComponentLiquidFuelTank;
+import io.github.symmetricdevs.supersymmetry.api.SusyLog;
+import io.github.symmetricdevs.supersymmetry.api.rocketry.components.AbstractComponent;
+import io.github.symmetricdevs.supersymmetry.api.rocketry.fuels.RocketFuelEntry;
+import io.github.symmetricdevs.supersymmetry.common.rocketry.components.ComponentLavalEngine;
+import io.github.symmetricdevs.supersymmetry.common.rocketry.components.ComponentLiquidFuelTank;
 
 public class RocketStage {
 
@@ -234,18 +234,18 @@ public class RocketStage {
         return "susy.rocketry.stages." + this.name + ".name";
     }
 
-    public NBTTagCompound writeToNBT() {
-        NBTTagCompound tag = new NBTTagCompound();
+    public CompoundTag writeToNBT() {
+        CompoundTag tag = new CompoundTag();
         tag.setString("name", this.getName());
-        NBTTagCompound componentsListCompound = new NBTTagCompound();
-        HashMap<NBTTagCompound, Integer> tags = new HashMap<>();
+        CompoundTag componentsListCompound = new CompoundTag();
+        HashMap<CompoundTag, Integer> tags = new HashMap<>();
         for (Map.Entry<String, List<AbstractComponent<?>>> component : this.getComponents().entrySet()) {
             List<Integer> pos = new ArrayList<>();
 
             component.getValue().stream()
                     .forEach(
                             x -> {
-                                NBTTagCompound innerTag = new NBTTagCompound();
+                                CompoundTag innerTag = new CompoundTag();
                                 x.writeToNBT(innerTag);
                                 // componentsArray.appendTag(innerTag);
                                 if (!tags.containsKey(innerTag)) {
@@ -256,12 +256,12 @@ public class RocketStage {
 
             componentsListCompound.setTag(component.getKey(), new NBTTagIntArray(pos));
         }
-        NBTTagCompound tagComponents = new NBTTagCompound();
-        for (Entry<NBTTagCompound, Integer> entry : tags.entrySet()) {
+        CompoundTag tagComponents = new CompoundTag();
+        for (Entry<CompoundTag, Integer> entry : tags.entrySet()) {
             tagComponents.setTag(entry.getValue().toString(), entry.getKey());
         }
 
-        NBTTagCompound allowedCountCompound = new NBTTagCompound();
+        CompoundTag allowedCountCompound = new CompoundTag();
         for (Entry<String, int[]> allowedCount : this.getComponentLimits().entrySet()) {
             NBTTagIntArray intArrayTag = new NBTTagIntArray(allowedCount.getValue());
             allowedCountCompound.setTag(allowedCount.getKey(), intArrayTag);
@@ -272,7 +272,7 @@ public class RocketStage {
         return tag;
     }
 
-    public boolean readFromNBT(NBTTagCompound tag) {
+    public boolean readFromNBT(CompoundTag tag) {
         if (!tag.hasKey("name", NBT.TAG_STRING)) return false;
         if (!tag.hasKey("components", NBT.TAG_COMPOUND)) return false;
         if (!tag.hasKey("allowedCounts", NBT.TAG_COMPOUND)) return false;
@@ -280,18 +280,18 @@ public class RocketStage {
 
         this.componentLimits.clear();
         this.components.clear();
-        NBTTagCompound allowedCounts = tag.getCompoundTag("allowedCounts");
+        CompoundTag allowedCounts = tag.getCompoundTag("allowedCounts");
         for (String key : allowedCounts.getKeySet()) {
             this.componentLimits.put(key, allowedCounts.getIntArray(key));
         }
-        NBTTagCompound lookup = (NBTTagCompound) tag.getTag("componentValues");
+        CompoundTag lookup = (CompoundTag) tag.getTag("componentValues");
 
-        NBTTagCompound components = tag.getCompoundTag("components");
+        CompoundTag components = tag.getCompoundTag("components");
         for (String key : components.getKeySet()) {
             int[] componentIndexes = components.getIntArray(key);
             List<AbstractComponent<?>> realComponents = new ArrayList<>();
             for (int i = 0; i < componentIndexes.length; i++) {
-                NBTTagCompound componentTag = (NBTTagCompound) lookup
+                CompoundTag componentTag = (CompoundTag) lookup
                         .getTag(Integer.valueOf(componentIndexes[i]).toString());
                 Optional<? extends AbstractComponent<?>> extractedComponent = AbstractComponent
                         .getComponentFromName(componentTag.getString("name"))

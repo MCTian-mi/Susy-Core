@@ -1,56 +1,16 @@
-package supersymmetry.asm;
+package io.github.symmetricdevs.supersymmetry.asm;
 
-import java.util.Collections;
+/**
+ * REMOVED: {@code IClassTransformer} / ASM class transformer is a 1.12.2-only concept.
+ * <p>
+ * In Modern Forge (1.20.1), class transformations are done via mixins
+ * declared in the mixin config JSON.
+ * <p>
+ * The old transformer modified ImmersiveRailroading classes (DefinitionManager,
+ * StockLoader) to add SuSy stock-loading. IR has no 1.20.1 port, and this
+ * transformation is deferred until IR is available or a replacement is designed.
+ */
+public final class SusyTransformer {
 
-import net.minecraft.launchwrapper.IClassTransformer;
-
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.*;
-
-import supersymmetry.api.SusyLog;
-import supersymmetry.asm.visitors.DefinitionManagerVisitor;
-
-public class SusyTransformer implements IClassTransformer, Opcodes {
-
-    @Override
-    public byte[] transform(String name, String transformedName, byte[] basicClass) {
-        if (name.equals("cam72cam.immersiverailroading.registry.DefinitionManager")) {
-            SusyLog.logger.info("Transforming {}", name);
-            return writeDefinitionManager(basicClass);
-        }
-        if (name.equals("cam72cam.immersiverailroading.registry.DefinitionManager$StockLoader")) {
-            SusyLog.logger.info("Transforming {}", name);
-            return writeStockLoader(basicClass);
-        }
-
-        return basicClass;
-    }
-
-    private byte[] writeDefinitionManager(byte[] basicClass) {
-        ClassNode cls = new DefinitionManagerVisitor();
-
-        ClassReader reader = new ClassReader(basicClass);
-        reader.accept(cls, 0);
-
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cls.accept(writer);
-
-        return writer.toByteArray();
-    }
-
-    private byte[] writeStockLoader(byte[] basicClass) {
-        ClassNode cls = new ClassNode();
-
-        ClassReader reader = new ClassReader(basicClass);
-        reader.accept(cls, 0);
-
-        cls.interfaces = Collections.singletonList("supersymmetry/loaders/SuSyIRLoader$StockLoader");
-
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cls.accept(writer);
-
-        return writer.toByteArray();
-    }
+    private SusyTransformer() {}
 }

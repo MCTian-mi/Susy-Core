@@ -1,24 +1,12 @@
-package supersymmetry.api.items;
+package io.github.symmetricdevs.supersymmetry.api.items;
 
-import static supersymmetry.api.util.SuSyUtility.susyId;
+/**
+ * Marker interface for GeckoLib armor.
+ * GeckoLib integration is a Phase 6 concern.
+ */
+public interface IGeoMetaArmor {
 
-import net.minecraft.util.ResourceLocation;
-
-import software.bernie.geckolib3.core.IAnimatable;
-
-public interface IGeoMetaArmor extends IAnimatable {
-
-    String getGeoName();
-
-    default ResourceLocation modelRL() {
-        return susyId("geo/" + getGeoName() + ".geo.json");
-    }
-
-    default ResourceLocation textureRL() {
-        return susyId("textures/geo/" + getGeoName() + "/all.png");
-    }
-
-    default ResourceLocation animationRL() {
-        return susyId("animations/" + getGeoName() + ".animation.json");
+    default String getArmorTexturePath() {
+        return "supersymmetry:textures/models/armor/";
     }
 }

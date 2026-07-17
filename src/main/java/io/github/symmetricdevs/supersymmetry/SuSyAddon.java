@@ -2,6 +2,7 @@ package io.github.symmetricdevs.supersymmetry;
 
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
 import io.github.symmetricdevs.supersymmetry.api.unification.ore.SusyTagPrefixes;
+import io.github.symmetricdevs.supersymmetry.common.cover.SusyCovers;
 import io.github.symmetricdevs.supersymmetry.data.recipe.SusyOreProcessingRecipes;
 
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -43,6 +44,11 @@ public class SuSyAddon implements IGTAddon {
     public void registerTagPrefixes() {
         // Touch the holder so its static TagPrefix fields initialize + self-register.
         SusyTagPrefixes.init();
+    }
+
+    @Override
+    public void registerCovers() {
+        SusyCovers.init();
     }
 
     @Override

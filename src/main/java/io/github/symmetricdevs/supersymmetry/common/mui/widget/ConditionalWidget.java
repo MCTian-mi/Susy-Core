@@ -1,7 +1,7 @@
-package supersymmetry.common.mui.widget;
+package io.github.symmetricdevs.supersymmetry.common.mui.widget;
 
-import static supersymmetry.api.capability.SuSyDataCodes.LATE_INIT_WIDGET;
-import static supersymmetry.api.capability.SuSyDataCodes.STATE_UPDATE;
+import static io.github.symmetricdevs.supersymmetry.api.capability.SuSyDataCodes.LATE_INIT_WIDGET;
+import static io.github.symmetricdevs.supersymmetry.api.capability.SuSyDataCodes.STATE_UPDATE;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,16 +9,16 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.Tuple;
+import com.mojang.blaze3d.platform.GlStateManager;
+import net.minecraft.network.FriendlyByteBuf;
+import org.apache.commons.lang3.tuple.Pair;
 
-import gregtech.api.gui.IRenderContext;
-import gregtech.api.gui.Widget;
-import gregtech.api.gui.widgets.AbstractWidgetGroup;
-import gregtech.api.util.Position;
-import gregtech.api.util.Size;
-import supersymmetry.api.SusyLog;
+import com.gregtechceu.gtceu.api.gui.IRenderContext;
+import com.gregtechceu.gtceu.api.gui.Widget;
+import com.gregtechceu.gtceu.api.gui.widgets.AbstractWidgetGroup;
+import com.gregtechceu.gtceu.api.util.Position;
+import com.gregtechceu.gtceu.api.util.Size;
+import io.github.symmetricdevs.supersymmetry.api.SusyLog;
 
 // very laggy i think..
 public class ConditionalWidget extends AbstractWidgetGroup {
@@ -82,7 +82,7 @@ public class ConditionalWidget extends AbstractWidgetGroup {
     }
 
     @Override
-    public void readUpdateInfo(int id, PacketBuffer buffer) {
+    public void readUpdateInfo(int id, FriendlyByteBuf buffer) {
         super.readUpdateInfo(id, buffer);
         if (id == STATE_UPDATE) {
             boolean state = buffer.readBoolean();

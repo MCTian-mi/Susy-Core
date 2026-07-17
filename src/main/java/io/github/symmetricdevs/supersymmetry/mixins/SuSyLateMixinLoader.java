@@ -1,4 +1,4 @@
-package supersymmetry.mixins;
+package io.github.symmetricdevs.supersymmetry.mixins;
 
 import java.util.List;
 import java.util.stream.Collectors;

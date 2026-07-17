@@ -1,9 +1,9 @@
-package supersymmetry.api.rocketry.rockets;
+package io.github.symmetricdevs.supersymmetry.api.rocketry.rockets;
 
-import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.world.phys.AABB;
 
 public interface AFSRendered {
 
     // aabb for the rendered model
-    AxisAlignedBB modelAABB();
+    AABB modelAABB();
 }

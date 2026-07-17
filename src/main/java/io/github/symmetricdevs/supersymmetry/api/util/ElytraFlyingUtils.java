@@ -1,29 +1,29 @@
-package supersymmetry.api.util;
+package io.github.symmetricdevs.supersymmetry.api.util;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 
 import org.jetbrains.annotations.NotNull;
 
-import gregtech.modules.ModuleManager;
-import supersymmetry.Supersymmetry;
-import supersymmetry.api.capability.SuSyCapabilities;
-import supersymmetry.integration.baubles.BaublesModule;
-import supersymmetry.modules.SuSyModules;
+import com.gregtechceu.gtceu.modules.ModuleManager;
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
+import io.github.symmetricdevs.supersymmetry.api.capability.SuSyCapabilities;
+import io.github.symmetricdevs.supersymmetry.integration.baubles.BaublesModule;
+import io.github.symmetricdevs.supersymmetry.modules.SuSyModules;
 
 public class ElytraFlyingUtils {
 
     @SuppressWarnings("DataFlowIssue")
-    public static boolean isElytraFlying(@NotNull EntityLivingBase entity) {
-        ItemStack itemstack = entity.getItemStackFromSlot(EntityEquipmentSlot.CHEST);
+    public static boolean isElytraFlying(@NotNull LivingEntity entity) {
+        ItemStack itemstack = entity.getItemStackFromSlot(EquipmentSlot.CHEST);
         if (!itemstack.isEmpty() && isFlying(entity, itemstack)) {
             return true;
         }
@@ -34,18 +34,18 @@ public class ElytraFlyingUtils {
         return false;
     }
 
-    public static boolean isFlying(@NotNull EntityLivingBase entity, ItemStack itemstack) {
+    public static boolean isFlying(@NotNull LivingEntity entity, ItemStack itemstack) {
         if (itemstack.hasCapability(SuSyCapabilities.ELYTRA_FLYING_PROVIDER, null)) {
             return itemstack.getCapability(SuSyCapabilities.ELYTRA_FLYING_PROVIDER, null).isElytraFlying(
                     entity, itemstack,
                     entity.onGround ||
-                            entity instanceof EntityPlayer && ((EntityPlayer) entity).capabilities.isFlying ||
+                            entity instanceof Player && ((Player) entity).capabilities.isFlying ||
                             entity.isRiding() || entity.isInWater() || isInLavaSafe(entity));
         }
         return false;
     }
 
-    public static boolean canTakeOff(EntityPlayer player, boolean ignoreOnGround) {
+    public static boolean canTakeOff(Player player, boolean ignoreOnGround) {
         return (ignoreOnGround || (!player.onGround && player.motionY < 0.0D)) && !player.isElytraFlying() &&
                 !player.isInWater() && !isInLavaSafe(player);
     }
@@ -58,7 +58,7 @@ public class ElytraFlyingUtils {
     }
 
     // non-chunkloading copy of World.isMaterialInBB()
-    private static boolean isMaterialInBBSafe(@NotNull World world, @NotNull AxisAlignedBB bb,
+    private static boolean isMaterialInBBSafe(@NotNull World world, @NotNull AABB bb,
                                               @NotNull Material materialIn) {
         int i = MathHelper.floor(bb.minX);
         int j = MathHelper.ceil(bb.maxX);

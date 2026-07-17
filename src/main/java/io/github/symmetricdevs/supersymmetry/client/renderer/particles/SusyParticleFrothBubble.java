@@ -1,111 +1,108 @@
-package supersymmetry.client.renderer.particles;
+package io.github.symmetricdevs.supersymmetry.client.renderer.particles;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.particle.Particle;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-import supersymmetry.Supersymmetry;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Froth bubble particle mostly copied from the standard minecraft bubble particle.
  * Allows for using custom colors and doesn't despawn outside of water allowing it to be used in the Froth Flotation
  * Tank
- * 
+ *
  * @author h3tR
  */
+@OnlyIn(Dist.CLIENT)
+public class SusyParticleFrothBubble extends TextureSheetParticle {
 
-@SideOnly(Side.CLIENT)
-public class SusyParticleFrothBubble extends Particle {
-
-    private static final ResourceLocation BUBBLE_TEXTURE = new ResourceLocation(Supersymmetry.MODID,
-            "textures/particle/bubble.png");
-    public final TextureManager renderer;
-
-    public SusyParticleFrothBubble(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn,
-                                   double ySpeedIn, double zSpeedIn, int color) {
-        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
-        this.renderer = Minecraft.getMinecraft().getTextureManager();
-        this.particleRed = ((color >> 16) & 0xFF) / 255f;
-        this.particleGreen = ((color >> 8) & 0xFF) / 255f;
-        this.particleBlue = (color & 0xFF) / 255f;
+    public SusyParticleFrothBubble(ClientLevel world, double x, double y, double z, double xSpeed,
+                                   double ySpeed, double zSpeed, int color) {
+        super(world, x, y, z, xSpeed, ySpeed, zSpeed);
+        this.rCol = ((color >> 16) & 0xFF) / 255f;
+        this.gCol = ((color >> 8) & 0xFF) / 255f;
+        this.bCol = (color & 0xFF) / 255f;
 
         this.setSize(0.02F, 0.02F);
-        this.particleScale *= this.rand.nextFloat() * 0.6F + 0.2F;
-        this.motionX = xSpeedIn * 0.20000000298023224D + (Math.random() * 2.0D - 1.0D) * 0.019999999552965164D;
-        this.motionY = ySpeedIn * 0.20000000298023224D + (Math.random() * 2.0D - 1.0D) * 0.019999999552965164D;
-        this.motionZ = zSpeedIn * 0.20000000298023224D + (Math.random() * 2.0D - 1.0D) * 0.019999999552965164D;
-        this.particleMaxAge = (int) (4.0D / (Math.random() * 0.8D + 0.2D));
+        this.quadSize *= this.random.nextFloat() * 0.6F + 0.2F;
+        this.xd = xSpeed * 0.20000000298023224D + (Math.random() * 2.0D - 1.0D) * 0.019999999552965164D;
+        this.yd = ySpeed * 0.20000000298023224D + (Math.random() * 2.0D - 1.0D) * 0.019999999552965164D;
+        this.zd = zSpeed * 0.20000000298023224D + (Math.random() * 2.0D - 1.0D) * 0.019999999552965164D;
+        this.setLifetime((int) (4.0D / (Math.random() * 0.8D + 0.2D)));
     }
 
-    public void onUpdate() {
-        this.prevPosX = this.posX;
-        this.prevPosY = this.posY;
-        this.prevPosZ = this.posZ;
-        this.motionY += 0.002D;
-        this.move(this.motionX, this.motionY, this.motionZ);
-        this.motionX *= 0.8500000238418579D;
-        this.motionY *= 0.8500000238418579D;
-        this.motionZ *= 0.8500000238418579D;
+    @Override
+    public void tick() {
+        this.xo = this.x;
+        this.yo = this.y;
+        this.zo = this.z;
+        this.yd += 0.002D;
+        this.move(this.xd, this.yd, this.zd);
+        this.xd *= 0.8500000238418579D;
+        this.yd *= 0.8500000238418579D;
+        this.zd *= 0.8500000238418579D;
 
-        if (this.particleMaxAge-- <= 0) {
-            this.setExpired();
+        if (this.age++ >= this.lifetime) {
+            this.remove();
         }
     }
 
     @Override
-    public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX,
-                               float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
-        // Ripped straight from the standard particle code, with some texture registration simplification.
+    public void render(@NotNull VertexConsumer buffer, @NotNull net.minecraft.client.Camera camera, float partialTick) {
+        // Ripped from standard vanilla particle render logic.
+        // This particle uses a custom texture via ParticleRenderType.CUSTOM.
+        // The render system will call this with the appropriate buffer.
 
-        renderer.bindTexture(BUBBLE_TEXTURE);
-        float f4 = 0.1F * this.particleScale;
+        Vec3[] corners = this.getCorners(camera, partialTick);
+        if (corners == null) return;
 
-        float f5 = (float) (this.prevPosX + (this.posX - this.prevPosX) * (double) partialTicks - interpPosX);
-        float f6 = (float) (this.prevPosY + (this.posY - this.prevPosY) * (double) partialTicks - interpPosY);
-        float f7 = (float) (this.prevPosZ + (this.posZ - this.prevPosZ) * (double) partialTicks - interpPosZ);
-        int i = this.getBrightnessForRender(partialTicks);
+        float f5 = (float) (Mth.lerp(partialTick, this.xo, this.x) - camera.getPosition().x());
+        float f6 = (float) (Mth.lerp(partialTick, this.yo, this.y) - camera.getPosition().y());
+        float f7 = (float) (Mth.lerp(partialTick, this.zo, this.z) - camera.getPosition().z());
+
+        int i = this.getLightColor(partialTick);
         int j = i >> 16 & 65535;
         int k = i & 65535;
-        Vec3d[] avec3d = new Vec3d[] {
-                new Vec3d(-rotationX * f4 - rotationXY * f4, -rotationZ * f4, -rotationYZ * f4 - rotationXZ * f4),
-                new Vec3d(-rotationX * f4 + rotationXY * f4, rotationZ * f4, -rotationYZ * f4 + rotationXZ * f4),
-                new Vec3d(rotationX * f4 + rotationXY * f4, rotationZ * f4, rotationYZ * f4 + rotationXZ * f4),
-                new Vec3d(rotationX * f4 - rotationXY * f4, -rotationZ * f4, rotationYZ * f4 - rotationXZ * f4) };
 
-        if (this.particleAngle != 0.0F) {
-            float f8 = this.particleAngle + (this.particleAngle - this.prevParticleAngle) * partialTicks;
-            float f9 = MathHelper.cos(f8 * 0.5F);
-            float f10 = MathHelper.sin(f8 * 0.5F) * (float) cameraViewDir.x;
-            float f11 = MathHelper.sin(f8 * 0.5F) * (float) cameraViewDir.y;
-            float f12 = MathHelper.sin(f8 * 0.5F) * (float) cameraViewDir.z;
-            Vec3d vec3d = new Vec3d(f10, f11, f12);
+        buffer.vertex(corners[0].x + f5, corners[0].y + f6, corners[0].z + f7)
+                .uv(1, 1).color(this.rCol, this.gCol, this.bCol, this.alpha)
+                .uv2(j | k << 16).endVertex();
+        buffer.vertex(corners[1].x + f5, corners[1].y + f6, corners[1].z + f7)
+                .uv(1, 0).color(this.rCol, this.gCol, this.bCol, this.alpha)
+                .uv2(j | k << 16).endVertex();
+        buffer.vertex(corners[2].x + f5, corners[2].y + f6, corners[2].z + f7)
+                .uv(0, 0).color(this.rCol, this.gCol, this.bCol, this.alpha)
+                .uv2(j | k << 16).endVertex();
+        buffer.vertex(corners[3].x + f5, corners[3].y + f6, corners[3].z + f7)
+                .uv(0, 1).color(this.rCol, this.gCol, this.bCol, this.alpha)
+                .uv2(j | k << 16).endVertex();
+    }
 
-            for (int l = 0; l < 4; ++l) {
-                avec3d[l] = vec3d.scale(2.0D * avec3d[l].dotProduct(vec3d))
-                        .add(avec3d[l].scale((double) (f9 * f9) - vec3d.dotProduct(vec3d)))
-                        .add(vec3d.crossProduct(avec3d[l]).scale(2.0F * f9));
-            }
-        }
+    @Override
+    public @NotNull ParticleRenderType getRenderType() {
+        return ParticleRenderType.TERRAIN_SHEET;
+    }
 
-        buffer.pos((double) f5 + avec3d[0].x, (double) f6 + avec3d[0].y, (double) f7 + avec3d[0].z).tex(1, 1)
-                .color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(j, k)
-                .endVertex();
-        buffer.pos((double) f5 + avec3d[1].x, (double) f6 + avec3d[1].y, (double) f7 + avec3d[1].z).tex(1, 0)
-                .color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(j, k)
-                .endVertex();
-        buffer.pos((double) f5 + avec3d[2].x, (double) f6 + avec3d[2].y, (double) f7 + avec3d[2].z).tex(0, 0)
-                .color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(j, k)
-                .endVertex();
-        buffer.pos((double) f5 + avec3d[3].x, (double) f6 + avec3d[3].y, (double) f7 + avec3d[3].z).tex(0, 1)
-                .color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(j, k)
-                .endVertex();
+    private Vec3[] getCorners(@NotNull net.minecraft.client.Camera camera, float partialTick) {
+        float size = this.getQuadSize(partialTick);
+        if (size <= 0) return null;
+
+        float f4 = size * 0.1F;
+        Vec3 viewDir = Vec3.directionFromRotation(0.0F, camera.getYRot());
+        Vec3 right = new Vec3(-viewDir.z, 0, viewDir.x).normalize();
+        Vec3 up = new Vec3(0, 1, 0);
+
+        return new Vec3[]{
+                new Vec3(-right.x * f4 - up.x * f4, -right.y * f4 - up.y * f4, -right.z * f4 - up.z * f4).multiply(-1, 1, 1),
+                new Vec3(-right.x * f4 + up.x * f4, -right.y * f4 + up.y * f4, -right.z * f4 + up.z * f4),
+                new Vec3(right.x * f4 + up.x * f4, right.y * f4 + up.y * f4, right.z * f4 + up.z * f4),
+                new Vec3(right.x * f4 - up.x * f4, right.y * f4 - up.y * f4, right.z * f4 - up.z * f4)
+        };
     }
 }

@@ -1,8 +1,8 @@
-package supersymmetry.modules;
+package io.github.symmetricdevs.supersymmetry.modules;
 
-import gregtech.api.modules.IModuleContainer;
-import gregtech.api.modules.ModuleContainer;
-import supersymmetry.Supersymmetry;
+import com.gregtechceu.gtceu.api.modules.IModuleContainer;
+import com.gregtechceu.gtceu.api.modules.ModuleContainer;
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
 
 @ModuleContainer
 public class SuSyModules implements IModuleContainer {

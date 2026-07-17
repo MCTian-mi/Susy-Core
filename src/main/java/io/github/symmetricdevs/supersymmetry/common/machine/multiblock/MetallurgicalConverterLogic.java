@@ -16,7 +16,7 @@ import io.github.symmetricdevs.supersymmetry.api.recipes.logic.SuSyParallelLogic
  *
  * <p>Behaviour inventory of the legacy inner class, and where each piece lives now:
  * <ul>
- * <li>{@code extends MultiblockRecipeLogic} with no overclocking override — the stock
+ * <li>{@code extends RecipeLogic} with no overclocking override — the stock
  * non-perfect overclock — is the definition's {@code GTRecipeModifiers.OC_NON_PERFECT}
  * layer, applied alongside {@link #pureParallel} via
  * {@code .recipeModifiers(true, OC_NON_PERFECT, MetallurgicalConverterLogic::pureParallel)}.</li>

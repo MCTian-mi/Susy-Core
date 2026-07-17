@@ -1,4 +1,4 @@
-package supersymmetry.loaders;
+package io.github.symmetricdevs.supersymmetry.loaders;
 
 public class SuSyMetaTileEntityLoader {
 

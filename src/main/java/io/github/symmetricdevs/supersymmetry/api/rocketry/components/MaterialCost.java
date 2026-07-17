@@ -1,4 +1,4 @@
-package supersymmetry.api.rocketry.components;
+package io.github.symmetricdevs.supersymmetry.api.rocketry.components;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -7,16 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 
-import gregtech.api.recipes.Recipe;
-import gregtech.api.recipes.RecipeMap;
-import gregtech.api.recipes.ingredients.GTRecipeInput;
-import gregtech.api.recipes.ingredients.GTRecipeItemInput;
+import com.gregtechceu.gtceu.api.recipe.GTRecipe;
+import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
+import com.gregtechceu.gtceu.api.recipe.ingredient.GTRecipeInput;
+import com.gregtechceu.gtceu.api.recipe.ingredient.GTRecipeItemInput;
 
 // only supports items so uhh just throw in 5000L of tin alloy during the recipe creation i guess
 public class MaterialCost {
@@ -46,8 +46,8 @@ public class MaterialCost {
         }
     }
 
-    public NBTTagCompound toNBT() {
-        NBTTagCompound tag = new NBTTagCompound();
+    public CompoundTag toNBT() {
+        CompoundTag tag = new CompoundTag();
         tag.setString("resource", this.resource);
         tag.setString("type", this.type);
         tag.setInteger("meta", this.meta);
@@ -55,7 +55,7 @@ public class MaterialCost {
         return tag;
     }
 
-    public List<GTRecipeInput> expandRecipe(RecipeMap<?> map, long maxEnergy) {
+    public List<GTRecipeInput> expandRecipe(GTRecipeType<?> map, long maxEnergy) {
         ItemStack selfStack = this.toStack();
         // this is used as a key for a hashmap and it wouldnt be nice to have a separate entry
         // for each amount of blocks
@@ -67,7 +67,7 @@ public class MaterialCost {
             Recipe recipe = itemCache.get(selfStack);
             if (recipe == null) return Arrays.asList(this.toIngredient());
             selected = recipe;
-            // set the recipe if it was already in cache, look into the recipemap if it wasnt
+            // set the recipe if it was already in cache, look into the GTRecipeType if it wasnt
             // please forgive the ugly
         } else {
             Collection<Recipe> mapRecipes = map.getRecipeList();
@@ -149,7 +149,7 @@ public class MaterialCost {
     }
 
     // not checked since you should probably only ever use the function above to make it
-    public static MaterialCost fromNBT(NBTTagCompound tag) {
+    public static MaterialCost fromNBT(CompoundTag tag) {
         return new MaterialCost(
                 tag.getString("resource"),
                 tag.getString("type"),

@@ -1,51 +1,36 @@
-package supersymmetry.common.item.armor;
+package io.github.symmetricdevs.supersymmetry.common.item.armor;
 
-import static net.minecraft.inventory.EntityEquipmentSlot.*;
-import static supersymmetry.api.util.SuSyUtility.susyId;
-import static supersymmetry.common.event.DimensionBreathabilityHandler.ABSORB_ALL;
+import com.gregtechceu.gtceu.api.item.armor.ArmorComponentItem;
 
-import java.util.Collections;
-import java.util.List;
-
-import net.minecraft.client.model.ModelBiped;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.ISpecialArmor;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import gregtech.api.damagesources.DamageSources;
-import software.bernie.geckolib3.core.manager.AnimationData;
-import software.bernie.geckolib3.core.manager.AnimationFactory;
-import supersymmetry.api.items.IGeoMetaArmor;
-import supersymmetry.client.renderer.handler.GeoMetaArmorRenderer;
-import supersymmetry.common.event.DimensionBreathabilityHandler;
-import supersymmetry.common.item.SuSyArmorItem;
+import java.util.List;
 
-public class AdvancedBreathingApparatus extends BreathingApparatus implements IGeoMetaArmor {
+import static io.github.symmetricdevs.supersymmetry.Supersymmetry.MOD_ID;
 
-    private static final double DEFAULT_ABSORPTION = 0;
-    private final double hoursOfLife;
+/**
+ * Advanced breathing apparatus with set-based armor (nominal 20 armor points =
+ * full reduction) and environmental damage handling. Extended by the tank
+ * variants and space-suit pieces.
+ */
+public class AdvancedBreathingApparatus extends BreathingApparatus {
+
+    protected final double hoursOfLife;
     protected final String name;
-    private final int tier;
-    private final double relativeAbsorption;
-    // We don't really use animations, but this can't be null
-    // Luckily this isn't instanced for every itemStack so we're fine here
-    private AnimationFactory factory;
+    protected final int tier;
+    protected final double relativeAbsorption;
 
-    public AdvancedBreathingApparatus(EntityEquipmentSlot slot, int maxDurability, double hoursOfLife, String name,
-                                      int tier,
-                                      double relativeAbsorption) {
+    public AdvancedBreathingApparatus(ArmorItem.Type slot, int maxDurability, double hoursOfLife,
+                                      String name, int tier, double relativeAbsorption) {
         super(slot, maxDurability);
         this.hoursOfLife = hoursOfLife;
         this.name = name;
@@ -54,198 +39,136 @@ public class AdvancedBreathingApparatus extends BreathingApparatus implements IG
     }
 
     @Override
-    public boolean mayBreatheWith(ItemStack stack, EntityPlayer player) {
-        return player.dimension == DimensionBreathabilityHandler.BENEATH_ID ||
-                player.dimension == DimensionBreathabilityHandler.NETHER_ID;
+    public boolean mayBreatheWith(@NotNull ItemStack stack, @NotNull Player player) {
+        String dim = player.level().dimension().location().toString();
+        return dim.equals("beneath") || dim.equals("minecraft:the_nether");
     }
 
     @Override
-    public double getDamageAbsorbed(ItemStack stack, EntityPlayer player) {
-        this.handleDamage(stack, player);
+    public double getDamageAbsorbed(@NotNull ItemStack stack, @NotNull Player player) {
+        handleDamage(stack, player);
 
-        ItemStack chest = player.getItemStackFromSlot(CHEST);
-        if (chest.getItem() instanceof SuSyArmorItem item) {
-            if (item.getItem(chest).getArmorLogic() instanceof AdvancedBreathingApparatus tank && tank.tier == tier) {
-                tank.handleDamage(chest, player);
+        ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (chest.getItem() instanceof ArmorComponentItem item &&
+                item.getArmorLogic() instanceof AdvancedBreathingApparatus tank && tank.tier == tier) {
+            tank.handleDamage(chest, player);
 
-                int piecesCount = 0;
-                ItemStack leggings = player.getItemStackFromSlot(LEGS);
-                if (leggings.getItem() instanceof SuSyArmorItem item2) {
-                    if (item2.getItem(leggings).getArmorLogic() instanceof AdvancedBreathingApparatus legLogic) {
-                        legLogic.handleDamage(leggings, player);
-                        piecesCount++;
-                    }
-                }
-
-                ItemStack boots = player.getItemStackFromSlot(FEET);
-                if (boots.getItem() instanceof SuSyArmorItem item2) {
-                    if (item2.getItem(boots).getArmorLogic() instanceof AdvancedBreathingApparatus bootLogic) {
-                        bootLogic.handleDamage(boots, player);
-                        piecesCount++;
-                    }
-                }
-
-                if (tank.getOxygen(chest) <= 0) {
-                    return DEFAULT_ABSORPTION;
-                } else {
-                    tank.changeOxygen(chest, -1.);
-                }
-                switch (piecesCount) {
-                    case 0:
-                        return 0.5;
-                    case 1:
-                        return 1;
-                    case 2:
-                        return ABSORB_ALL;
-                }
+            int piecesCount = 0;
+            ItemStack leggings = player.getItemBySlot(EquipmentSlot.LEGS);
+            if (leggings.getItem() instanceof ArmorComponentItem item2 &&
+                    item2.getArmorLogic() instanceof AdvancedBreathingApparatus legLogic) {
+                legLogic.handleDamage(leggings, player);
+                piecesCount++;
             }
+
+            ItemStack boots = player.getItemBySlot(EquipmentSlot.FEET);
+            if (boots.getItem() instanceof ArmorComponentItem item2 &&
+                    item2.getArmorLogic() instanceof AdvancedBreathingApparatus bootLogic) {
+                bootLogic.handleDamage(boots, player);
+                piecesCount++;
+            }
+
+            if (tank.getOxygen(chest) <= 0) {
+                return 0;
+            } else {
+                tank.changeOxygen(chest, -1.0);
+            }
+            return switch (piecesCount) {
+                case 0 -> 0.5;
+                case 1 -> 1.0;
+                case 2 -> BreathabilityHelper.ABSORB_ALL;
+                default -> 0;
+            };
         }
-        return DEFAULT_ABSORPTION;
+        return 0;
     }
 
     private double getDamage(ItemStack stack) {
-        if (stack.getTagCompound() == null) {
-            stack.setTagCompound(new NBTTagCompound());
+        var tag = stack.getOrCreateTag();
+        if (!tag.contains("damage")) {
+            tag.putDouble("damage", 0);
         }
-        if (!stack.getTagCompound().hasKey("damage")) {
-            stack.getTagCompound().setDouble("damage", 0);
-        }
-        return stack.getTagCompound().getDouble("damage");
+        return tag.getDouble("damage");
     }
 
     private void changeDamage(ItemStack stack, double damageChange) {
-        NBTTagCompound compound = stack.getTagCompound();
-        compound.setDouble("damage", getDamage(stack) + damageChange);
-        stack.setTagCompound(compound);
+        var tag = stack.getOrCreateTag();
+        tag.putDouble("damage", getDamage(stack) + damageChange);
     }
 
-    private void handleDamage(ItemStack stack, EntityPlayer player) {
-        if (hoursOfLife == 0 || player.dimension == DimensionBreathabilityHandler.BENEATH_ID) {
-            return; // No damage
+    protected void handleDamage(ItemStack stack, Player player) {
+        if (hoursOfLife == 0 || player.level().dimension().location().toString().equals("beneath")) {
+            return;
         }
-        double amount = (1. / (60. * 60. * hoursOfLife));
-        changeDamage(stack, amount); // It's actually ticked every overall second, not just every tick.
+        double amount = 1.0 / (60.0 * 60.0 * hoursOfLife);
+        changeDamage(stack, amount);
         if (getDamage(stack) >= 1) {
-            player.renderBrokenItemStack(stack);
             stack.shrink(1);
-            player.setItemStackToSlot(HEAD, ItemStack.EMPTY);
+            player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
         }
     }
 
     @Override
-    public double getDurabilityForDisplay(ItemStack itemStack) {
-        if (SLOT == CHEST && getMaxOxygen(itemStack) != -1) {
-            return getOxygen(itemStack) / getMaxOxygen(itemStack);
+    public double getDurabilityForDisplay(ItemStack stack) {
+        if (getArmorType() == ArmorItem.Type.CHESTPLATE && getMaxOxygen(stack) != -1) {
+            return getOxygen(stack) / getMaxOxygen(stack);
         } else {
             if (hoursOfLife > 0) {
-                return 1 - getDamage(itemStack);
+                return 1 - getDamage(stack);
             }
         }
         return 1;
     }
 
-    @Override
-    public float getHeatResistance() {
-        return 0.25F;
+    /**
+     * @return the fill level for the durability bar (0 = full, 1 = empty).
+     */
+    public double getDurabilityForDisplayInternal(ItemStack stack) {
+        return getDurabilityForDisplay(stack);
     }
 
     @Override
-    public ISpecialArmor.ArmorProperties getProperties(EntityLivingBase player, @NotNull ItemStack armor,
-                                                       DamageSource source,
-                                                       double damage, EntityEquipmentSlot equipmentSlot) {
-        ISpecialArmor.ArmorProperties prop = new ISpecialArmor.ArmorProperties(0, 0.0, 0);
-        if (source.isUnblockable())
-            return prop;
-
-        if (source == DamageSources.getHeatDamage())
-            return new ISpecialArmor.ArmorProperties(0, 0.25, 5);
-        if (source == DamageSources.getFrostDamage())
-            return new ISpecialArmor.ArmorProperties(0, 0.20, 2);
-        if (source == DamageSource.IN_FIRE)
-            return new ISpecialArmor.ArmorProperties(0, 0.10, 2);
-        if (source == DamageSource.ON_FIRE)
-            return new ISpecialArmor.ArmorProperties(0, 0.0750, 2);
-        if (source == DamageSource.LAVA)
-            return new ISpecialArmor.ArmorProperties(0, 0.0375, 2);
-
-        prop.Armor = getAbsorption(armor) * relativeAbsorption * 20;
-        return prop;
+    public int getArmorDisplay(@NotNull Player player, @NotNull ItemStack armor, @NotNull EquipmentSlot slot) {
+        return (int) Math.round(20.0F * getAbsorption(armor) * relativeAbsorption);
     }
 
-    protected float getAbsorption(ItemStack itemStack) {
-        return getAbsorption(getEquipmentSlot(itemStack));
+    public int getArmorDisplayInternal(Player player, ItemStack armor, EquipmentSlot slot) {
+        return getArmorDisplay(player, armor, slot);
     }
 
-    protected float getAbsorption(EntityEquipmentSlot slot) {
-        return switch (slot) {
-            case HEAD, FEET -> 0.15F;
-            case CHEST -> 0.4F;
-            case LEGS -> 0.3F;
-            default -> 0.0F;
-        };
+    @Override
+    public ResourceLocation getArmorTexture(@NotNull ItemStack stack, @Nullable Entity entity,
+                                            @NotNull EquipmentSlot slot, @Nullable String type) {
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/armor/" + name + "_" + slot.getName() + ".png");
     }
 
-    public void addInformation(ItemStack stack, List<String> strings) {
+    @Override
+    public void addInformation(ItemStack stack, List<Component> tooltips) {
         if (hoursOfLife > 0) {
             double lifetime = 60 * 60 * hoursOfLife;
             int secondsRemaining = (int) (lifetime - getDamage(stack) * lifetime);
-            strings.add(I18n.format("supersymmetry.seconds_left", secondsRemaining));
+            tooltips.add(Component.translatable("supersymmetry.seconds_left", secondsRemaining));
         } else {
-            strings.add(I18n.format("supersymmetry.unlimited"));
+            tooltips.add(Component.translatable("supersymmetry.unlimited"));
         }
 
-        int armor = (int) Math.round(20.0F * this.getAbsorption(this.SLOT) * this.relativeAbsorption);
-        if (armor > 0)
-            strings.add(I18n.format("attribute.modifier.plus.0", armor, I18n.format("attribute.name.generic.armor")));
-    }
-
-    @Override
-    public int getArmorDisplay(EntityPlayer player, ItemStack armor, int slot) {
-        return (int) Math.round(20.0F * this.getAbsorption(armor) * relativeAbsorption);
-    }
-
-    @Override
-    public String getArmorTexture(ItemStack stack, Entity entity, EntityEquipmentSlot slot, String type) {
-        return textureRL().toString();
-    }
-
-    @Nullable
-    @SideOnly(Side.CLIENT)
-    @Override
-    public ModelBiped getArmorModel(EntityLivingBase entityLiving, ItemStack itemStack,
-                                    EntityEquipmentSlot armorSlot, ModelBiped defaultModel) {
-        return GeoMetaArmorRenderer.INSTANCE
-                .setCurrentItem(entityLiving, itemStack, armorSlot)
-                .applyEntityStats(defaultModel)
-                .applySlot(armorSlot);
-    }
-
-    @Override
-    public List<ResourceLocation> getTextureLocations() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void registerControllers(AnimationData data) {
-        /* Do nothing */
-    }
-
-    @Override
-    public AnimationFactory getFactory() {
-        if (this.factory == null) {
-            this.factory = new AnimationFactory(this);
+        int armor = (int) Math.round(20.0F * getAbsorption(this.slot) * this.relativeAbsorption);
+        if (armor > 0) {
+            tooltips.add(Component.translatable("attribute.modifier.plus.0", armor,
+                    Component.translatable("attribute.name.generic.armor")));
         }
-        return this.factory;
     }
 
-    @Override
-    public String getGeoName() {
-        return name + "_armor";
+    protected float getAbsorption(ItemStack stack) {
+        return getAbsorption(getArmorType());
     }
 
-    // No animation needed
-    @Override
-    public ResourceLocation animationRL() {
-        return susyId("animations/dummy.animation.json");
+    protected float getAbsorption(ArmorItem.Type type) {
+        return switch (type) {
+            case HELMET, BOOTS -> 0.15F;
+            case CHESTPLATE -> 0.4F;
+            case LEGGINGS -> 0.3F;
+            default -> 0.0F;
+        };
     }
 }

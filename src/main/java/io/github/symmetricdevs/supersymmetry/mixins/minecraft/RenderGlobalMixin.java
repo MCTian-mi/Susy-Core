@@ -1,8 +1,8 @@
-package supersymmetry.mixins.minecraft;
+package io.github.symmetricdevs.supersymmetry.mixins.minecraft;
 
 import net.minecraft.client.renderer.culling.ICamera;
-import net.minecraft.client.renderer.entity.RenderManager;
-import net.minecraft.entity.Entity;
+import net.minecraft.client.renderer.entity.EntityRendererManager;
+import net.minecraft.world.entity.Entity;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,7 +11,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 
 import cam72cam.mod.entity.ModdedEntity;
-import supersymmetry.client.renderer.handler.IAlwaysRender;
+import io.github.symmetricdevs.supersymmetry.client.renderer.handler.IAlwaysRender;
 
 @Mixin(net.minecraft.client.renderer.RenderGlobal.class)
 public class RenderGlobalMixin {

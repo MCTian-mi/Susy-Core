@@ -1,26 +1,25 @@
-package supersymmetry.common.event;
+package io.github.symmetricdevs.supersymmetry.common.event;
 
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.entity.player.AdvancementEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-import supersymmetry.Supersymmetry;
-import supersymmetry.api.event.MobHordeEvent;
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
+import io.github.symmetricdevs.supersymmetry.api.event.MobHordeEvent;
 
 @Mod.EventBusSubscriber(modid = Supersymmetry.MODID)
 public class MobHordeAdvancementHandler {
 
     @SubscribeEvent
     public static void onAdvancement(AdvancementEvent event) {
-        if (!(event.getEntityPlayer() instanceof EntityPlayerMP)) return;
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
-        EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
         ResourceLocation advancementID = event.getAdvancement().getId();
 
-        MobHordeWorldData worldData = MobHordeWorldData.get(player.world);
-        MobHordePlayerData playerData = worldData.getPlayerData(player.getPersistentID());
+        MobHordeWorldData worldData = MobHordeWorldData.get(player.level());
+        MobHordePlayerData playerData = worldData.getPlayerData(player.getUUID());
 
         for (MobHordeEvent mobEvent : MobHordeEvent.EVENTS.values()) {
 

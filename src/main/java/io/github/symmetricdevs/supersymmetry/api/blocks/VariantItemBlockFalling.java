@@ -1,33 +1,16 @@
-package supersymmetry.api.blocks;
+package io.github.symmetricdevs.supersymmetry.api.blocks;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.IStringSerializable;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 
-import org.jetbrains.annotations.NotNull;
+/**
+ * Standard {@link BlockItem} for falling blocks. Retained as a distinct class to preserve the
+ * API hierarchy from the 1.12.2 codebase; no additional behaviour beyond the default {@code BlockItem}.
+ */
+public class VariantItemBlockFalling extends BlockItem {
 
-public class VariantItemBlockFalling<R extends Enum<R> & IStringSerializable, T extends VariantBlockFalling<R>>
-                                    extends ItemBlock {
-
-    private final T genericBlock;
-
-    public VariantItemBlockFalling(T block) {
-        super(block);
-        this.genericBlock = block;
-        this.setHasSubtypes(true);
-    }
-
-    public int getMetadata(int damage) {
-        return damage;
-    }
-
-    public IBlockState getBlockState(ItemStack stack) {
-        return this.block.getStateFromMeta(this.getMetadata(stack.getItemDamage()));
-    }
-
-    public @NotNull String getTranslationKey(@NotNull ItemStack stack) {
-        return super.getTranslationKey(stack) + '.' +
-                ((IStringSerializable) this.genericBlock.getState(this.getBlockState(stack))).getName();
+    public VariantItemBlockFalling(Block block, Item.Properties properties) {
+        super(block, properties);
     }
 }

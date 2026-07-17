@@ -1,4 +1,4 @@
-package supersymmetry.mixins.travelersbackpack;
+package io.github.symmetricdevs.supersymmetry.mixins.travelersbackpack;
 
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;

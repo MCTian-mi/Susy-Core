@@ -1,14 +1,14 @@
-package supersymmetry.common.item.behavior;
+package io.github.symmetricdevs.supersymmetry.common.item.behavior;
+
+import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
+
+import net.minecraft.core.Direction;
 
 import java.util.List;
 
-import net.minecraft.util.EnumFacing;
-
-import gregtech.api.pipenet.tile.IPipeTile;
-
 public interface ITraverseOption {
 
-    List<EnumFacing> findNext(EnumFacing from, IPipeTile<?, ?> pipe);
+    List<Direction> findNext(Direction from, IPipeNode<?, ?> pipe);
 
-    void operate(EnumFacing from, IPipeTile<?, ?> self, IPipeTile<?, ?> other, boolean reverse);
+    void operate(Direction from, IPipeNode<?, ?> self, IPipeNode<?, ?> other, boolean reverse);
 }

@@ -26,7 +26,7 @@ import java.util.List;
 
 /**
  * SuSy multiblock pattern predicates, ported from the 1.12.2
- * {@code supersymmetry.api.metatileentity.multiblock.SuSyPredicates}.
+ * {@code supersymmetry.api.MetaMachine.multiblock.SuSyPredicates}.
  *
  * <p>
  * <b>Modern predicates are pure</b> — they may not call {@code world.setBlockState}

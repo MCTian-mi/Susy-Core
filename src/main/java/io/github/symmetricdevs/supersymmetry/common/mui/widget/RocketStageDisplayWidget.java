@@ -1,4 +1,4 @@
-package supersymmetry.common.mui.widget;
+package io.github.symmetricdevs.supersymmetry.common.mui.widget;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,27 +9,27 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.Tuple;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import org.apache.commons.lang3.tuple.Pair;
 
 import org.jetbrains.annotations.NotNull;
 
-import gregtech.api.gui.GuiTextures;
-import gregtech.api.gui.widgets.AbstractWidgetGroup;
-import gregtech.api.gui.widgets.ClickButtonWidget;
-import gregtech.api.gui.widgets.DynamicLabelWidget;
-import gregtech.api.gui.widgets.SlotWidget;
-import gregtech.api.util.Position;
-import gregtech.api.util.Size;
-import supersymmetry.api.gui.SusyGuiTextures;
-import supersymmetry.api.rocketry.components.AbstractComponent;
-import supersymmetry.api.rocketry.rockets.AbstractRocketBlueprint;
-import supersymmetry.api.rocketry.rockets.RocketStage;
-import supersymmetry.api.rocketry.rockets.RocketStage.ComponentValidationResult;
-import supersymmetry.api.util.DataStorageLoader;
+import com.gregtechceu.gtceu.api.gui.GuiTextures;
+import com.gregtechceu.gtceu.api.gui.widgets.AbstractWidgetGroup;
+import com.gregtechceu.gtceu.api.gui.widgets.ClickButtonWidget;
+import com.gregtechceu.gtceu.api.gui.widgets.DynamicLabelWidget;
+import com.gregtechceu.gtceu.api.gui.widgets.SlotWidget;
+import com.gregtechceu.gtceu.api.util.Position;
+import com.gregtechceu.gtceu.api.util.Size;
+import io.github.symmetricdevs.supersymmetry.api.gui.SusyGuiTextures;
+import io.github.symmetricdevs.supersymmetry.api.rocketry.components.AbstractComponent;
+import io.github.symmetricdevs.supersymmetry.api.rocketry.rockets.AbstractRocketBlueprint;
+import io.github.symmetricdevs.supersymmetry.api.rocketry.rockets.RocketStage;
+import io.github.symmetricdevs.supersymmetry.api.rocketry.rockets.RocketStage.ComponentValidationResult;
+import io.github.symmetricdevs.supersymmetry.api.util.DataStorageLoader;
 
 public class RocketStageDisplayWidget extends AbstractWidgetGroup {
 
@@ -77,7 +77,7 @@ public class RocketStageDisplayWidget extends AbstractWidgetGroup {
                 10,
                 10,
                 "",
-                (_) -> {
+                (unused) -> {
                     this.selectedStageIndex++;
                     this.updateSelectedStageView();
                 })
@@ -238,7 +238,7 @@ public class RocketStageDisplayWidget extends AbstractWidgetGroup {
                             // return false;
                             continue;
                         }
-                        NBTTagCompound tag = cardStack.getTagCompound();
+                        CompoundTag tag = cardStack.getTagCompound();
                         Optional<? extends AbstractComponent<?>> component = AbstractComponent
                                 .getComponentFromName(tag.getString("name")).readFromNBT(tag);
                         if (!component.isPresent()) {
@@ -258,7 +258,7 @@ public class RocketStageDisplayWidget extends AbstractWidgetGroup {
                         this.error = ComponentValidationResult.INVALID_CARD;
                         return false;
                     }
-                    NBTTagCompound tag = cardStack.getTagCompound();
+                    CompoundTag tag = cardStack.getTagCompound();
                     Optional<? extends AbstractComponent<?>> component = AbstractComponent
                             .getComponentFromName(tag.getString("name")).readFromNBT(tag);
                     if (!component.isPresent()) {
@@ -294,7 +294,7 @@ public class RocketStageDisplayWidget extends AbstractWidgetGroup {
 
     // a very bad way to just call a function when the server needs it
     @Override
-    public void readUpdateInfo(int id, PacketBuffer buffer) {
+    public void readUpdateInfo(int id, FriendlyByteBuf buffer) {
         super.readUpdateInfo(id, buffer);
         if (id == 100) {
             this.insertionAction.accept(this);

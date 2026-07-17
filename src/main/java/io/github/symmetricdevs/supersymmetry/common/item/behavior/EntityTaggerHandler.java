@@ -1,184 +1,150 @@
-package supersymmetry.common.item.behavior;
+package io.github.symmetricdevs.supersymmetry.common.item.behavior;
+
+import com.gregtechceu.gtceu.api.item.component.IAddInformation;
+import com.gregtechceu.gtceu.api.item.component.IInteractionItem;
+import com.gregtechceu.gtceu.api.item.component.IItemLifeCycle;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-
-import supersymmetry.Supersymmetry;
-import supersymmetry.common.item.SuSyMetaItems;
-import supersymmetry.common.util.FactionHelper;
-
-@Mod.EventBusSubscriber(modid = Supersymmetry.MODID)
-public class EntityTaggerHandler {
+/**
+ * Entity tagger item behavior.
+ * Right-click on an entity to tag it with a faction, or shift-right-click to clear.
+ * Sneak + right-click air cycles the selected faction.
+ * Holding the item highlights tagged entities within range.
+ */
+public class EntityTaggerHandler implements IInteractionItem, IItemLifeCycle {
 
     private static final String TAG_ROOT = "susy";
     private static final String TAG_FACTION = "faction";
     private static final String TAG_HATE = "hate";
-    private static final double radius = 32;
+    private static final double RADIUS = 32;
 
-    // right click on entity to add to faction (sets nbt tag)
-    @SubscribeEvent
-    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        EntityPlayer player = event.getEntityPlayer();
-        ItemStack stack = event.getItemStack();
-        Entity target = event.getTarget();
+    private static final String[] FACTIONS = {"faction.blue", "faction.red", "faction.green"};
 
-        if (stack.isEmpty()) return;
-
-        if (SuSyMetaItems.isMetaItem(stack) != SuSyMetaItems.ENTITY_TAGGER.metaValue)
-            return;
-
-        if (!player.world.isRemote) {
-            NBTTagCompound entityTag = target.getEntityData();
-            NBTTagCompound susyTag = entityTag.getCompoundTag(TAG_ROOT);
-
-            // shift right click to clear faction
-            if (player.isSneaking()) {
-                susyTag.removeTag(TAG_FACTION);
-                entityTag.setTag(TAG_ROOT, susyTag);
-
-                player.sendMessage(new TextComponentString("Faction cleared"));
-            } else {
-                NBTTagCompound itemTag = stack.getOrCreateSubCompound(TAG_ROOT);
-
-                String faction = itemTag.getString(TAG_FACTION);
-
-                if (faction.isEmpty()) {
-                    faction = FactionHelper.FACTIONS[0];
-                    itemTag.setString(TAG_FACTION, faction);
-                }
-
-                susyTag.setString(TAG_FACTION, faction);
-                entityTag.setTag(TAG_ROOT, susyTag);
-
-                player.sendMessage(new TextComponentString("Set faction: " + faction));
-            }
+    @Override
+    public InteractionResultHolder<ItemStack> use(Item item, Level level, Player player, InteractionHand usedHand) {
+        ItemStack stack = player.getItemInHand(usedHand);
+        if (!player.isShiftKeyDown()) {
+            return InteractionResultHolder.pass(stack);
         }
-
-        event.setCancellationResult(EnumActionResult.SUCCESS);
-        event.setCanceled(true);
-    }
-
-    // chaing selected faction
-    @SubscribeEvent
-    public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
-        EntityPlayer player = event.getEntityPlayer();
-        ItemStack stack = event.getItemStack();
-
-        if (stack.isEmpty()) return;
-
-        if (SuSyMetaItems.isMetaItem(stack) != SuSyMetaItems.ENTITY_TAGGER.metaValue)
-            return;
-
-        if (!player.isSneaking()) return;
-
-        if (!player.world.isRemote) {
-            NBTTagCompound tag = stack.getOrCreateSubCompound(TAG_ROOT);
-
+        // Sneak + right-click air: cycle faction
+        if (!level.isClientSide) {
+            CompoundTag tag = stack.getOrCreateTagElement(TAG_ROOT);
             String current = tag.getString(TAG_FACTION);
-            String next = FactionHelper.getNextFaction(current);
-
-            tag.setString(TAG_FACTION, next);
-
-            player.sendMessage(new TextComponentString("Faction set to: " + next));
+            String next = getNextFaction(current);
+            tag.putString(TAG_FACTION, next);
+            player.displayClientMessage(Component.literal("Faction set to: " + next), false);
         }
-
-        event.setCancellationResult(EnumActionResult.SUCCESS);
-        event.setCanceled(true);
+        return InteractionResultHolder.success(stack);
     }
 
-    @SubscribeEvent
-    public static void onAttackEntity(net.minecraftforge.event.entity.player.AttackEntityEvent event) {
-        EntityPlayer player = event.getEntityPlayer();
-        ItemStack stack = player.getHeldItemMainhand();
-        Entity target = event.getTarget();
+    @Override
+    public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity interactionTarget,
+                                                   InteractionHand usedHand) {
+        Level level = player.level();
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
 
-        if (stack.isEmpty()) return;
+        if (player.isShiftKeyDown()) {
+            // Shift right-click on entity: clear faction
+            CompoundTag entityTag = interactionTarget.getPersistentData();
+            entityTag.getCompound(TAG_ROOT).remove(TAG_FACTION);
+            player.displayClientMessage(Component.literal("Faction cleared"), false);
+        } else {
+            // Right-click on entity: tag with current faction
+            CompoundTag itemTag = stack.getOrCreateTagElement(TAG_ROOT);
+            String faction = itemTag.getString(TAG_FACTION);
+            if (faction.isEmpty()) {
+                faction = FACTIONS[0];
+                itemTag.putString(TAG_FACTION, faction);
+            }
 
-        if (SuSyMetaItems.isMetaItem(stack) != SuSyMetaItems.ENTITY_TAGGER.metaValue)
-            return;
+            CompoundTag entityData = interactionTarget.getPersistentData();
+            CompoundTag susyTag = entityData.getCompound(TAG_ROOT);
+            susyTag.putString(TAG_FACTION, faction);
+            entityData.put(TAG_ROOT, susyTag);
 
-        if (!(target instanceof EntityLivingBase)) return;
+            player.displayClientMessage(Component.literal("Set faction: " + faction), false);
+        }
+        return InteractionResult.SUCCESS;
+    }
 
-        if (!player.world.isRemote) {
-
-            NBTTagCompound entityTag = target.getEntityData();
-
-            // Get or create susy compound
-            NBTTagCompound susyTag = entityTag.getCompoundTag(TAG_ROOT);
-
-            // Get current hate
-            int currentHate = susyTag.getInteger(TAG_HATE);
-
-            // Modify hate
-            int amount = player.isSneaking() ? -1 : 1;
+    @Override
+    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+        if (attacker instanceof Player player && !player.level().isClientSide) {
+            CompoundTag entityData = target.getPersistentData();
+            CompoundTag susyTag = entityData.getCompound(TAG_ROOT);
+            int currentHate = susyTag.getInt(TAG_HATE);
+            int amount = player.isShiftKeyDown() ? -1 : 1;
             int newHate = currentHate + amount;
-
-            susyTag.setInteger(TAG_HATE, newHate);
-            entityTag.setTag(TAG_ROOT, susyTag);
-
-            player.sendMessage(new TextComponentString(
-                    "Mob hate value: " + newHate));
+            susyTag.putInt(TAG_HATE, newHate);
+            entityData.put(TAG_ROOT, susyTag);
+            player.displayClientMessage(Component.literal("Mob hate value: " + newHate), false);
         }
-
-        // Prevent damage
-        event.setCanceled(true);
+        return false; // prevent damage to the target
     }
 
-    // glow for easier attaching, dev only, might make a config to unsubscribe this so it doesn't spam the ticks
-    @SubscribeEvent
-    public static void onPlayerTick(net.minecraftforge.fml.common.gameevent.TickEvent.PlayerTickEvent event) {
-        if (event.phase != net.minecraftforge.fml.common.gameevent.TickEvent.Phase.END) return;
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        if (isSelected && entity instanceof Player player && !level.isClientSide) {
+            tickHighlight(player, stack);
+        }
+    }
 
-        EntityPlayer player = event.player;
+    /**
+     * Highlights faction-tagged entities within range when holding the tagger.
+     */
+    private static void tickHighlight(Player player, ItemStack stack) {
+        Level level = player.level();
+        if (player.tickCount % 5 != 0) return;
 
-        if (player.world.isRemote) return; // SERVER ONLY
+        CompoundTag tag = stack.getTagElement(TAG_ROOT);
+        String selectedFaction = tag != null ? tag.getString(TAG_FACTION) : "";
 
-        // Only run every 5 ticks to not cook the server
-        if (player.ticksExisted % 5 != 0) return;
+        AABB area = player.getBoundingBox().inflate(RADIUS);
+        List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, area,
+                e -> e != player);
 
-        ItemStack stack = player.getHeldItemMainhand();
+        boolean holdingTag = !stack.isEmpty() && !selectedFaction.isEmpty();
 
-        // If not holding correct item exit
-        if (stack.isEmpty() ||
-                SuSyMetaItems.isMetaItem(stack) != SuSyMetaItems.ENTITY_TAGGER.metaValue) {
-
-            List<EntityLivingBase> entities = player.world.getEntitiesWithinAABB(
-                    EntityLivingBase.class,
-                    player.getEntityBoundingBox().grow(radius));
-
-            for (EntityLivingBase entity : entities) {
+        for (LivingEntity entity : entities) {
+            if (holdingTag) {
+                CompoundTag susy = entity.getPersistentData().getCompound(TAG_ROOT);
+                String faction = susy.getString(TAG_FACTION);
+                entity.setGlowingTag(selectedFaction.equals(faction));
+            } else {
                 if (entity.isGlowing()) {
-                    entity.setGlowing(false);
+                    entity.setGlowingTag(false);
                 }
             }
-            return;
         }
+    }
 
-        NBTTagCompound tag = stack.getSubCompound(TAG_ROOT);
-        if (tag == null) return;
-
-        String selectedFaction = tag.getString(TAG_FACTION);
-        if (selectedFaction.isEmpty()) return;
-
-        List<EntityLivingBase> entities = player.world.getEntitiesWithinAABB(
-                EntityLivingBase.class,
-                player.getEntityBoundingBox().grow(radius));
-
-        for (EntityLivingBase entity : entities) {
-            NBTTagCompound susy = entity.getEntityData().getCompoundTag(TAG_ROOT);
-            String faction = susy.getString(TAG_FACTION);
-
-            entity.setGlowing(selectedFaction.equals(faction));
+    private static String getNextFaction(String current) {
+        for (int i = 0; i < FACTIONS.length; i++) {
+            if (FACTIONS[i].equals(current)) {
+                return FACTIONS[(i + 1) % FACTIONS.length];
+            }
         }
+        return FACTIONS[0];
     }
 }

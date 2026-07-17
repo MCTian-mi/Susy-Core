@@ -430,14 +430,14 @@ public abstract class StrandShaperMachine extends MultiblockControllerMachine
     }
 
     @Override
-    public com.lowdragmc.lowdraglib.gui.modular.ModularUI createUI(net.minecraft.world.entity.player.Player entityPlayer) {
+    public com.lowdragmc.lowdraglib.gui.modular.ModularUI createUI(net.minecraft.world.entity.player.Player Player) {
         var group = new WidgetGroup(0, 0, 182 + 8, 117 + 8);
         group.addWidget(new LabelWidget(4, 5, self().getBlockState().getBlock().getDescriptionId()));
         group.addWidget(new ComponentPanelWidget(4, 17, this::addDisplayText)
                 .textSupplier(this.getLevel().isClientSide ? null : this::addDisplayText)
                 .setMaxWidthLimit(200));
         group.setBackground(com.gregtechceu.gtceu.api.gui.GuiTextures.BACKGROUND_INVERSE);
-        return new com.lowdragmc.lowdraglib.gui.modular.ModularUI(198, 208, this, entityPlayer).widget(group);
+        return new com.lowdragmc.lowdraglib.gui.modular.ModularUI(198, 208, this, Player).widget(group);
     }
 
     @Override

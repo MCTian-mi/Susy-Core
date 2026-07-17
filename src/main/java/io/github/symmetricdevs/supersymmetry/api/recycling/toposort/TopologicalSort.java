@@ -2,7 +2,7 @@
  * Copyright (c) Forge Development LLC and contributors
  * SPDX-License-Identifier: LGPL-2.1-only
  */
-package supersymmetry.api.recycling.toposort;
+package io.github.symmetricdevs.supersymmetry.api.recycling.toposort;
 
 import java.util.*;
 

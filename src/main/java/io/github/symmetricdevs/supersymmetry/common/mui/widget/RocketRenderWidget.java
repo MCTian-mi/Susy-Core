@@ -1,19 +1,19 @@
-package supersymmetry.common.mui.widget;
+package io.github.symmetricdevs.supersymmetry.common.mui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.entity.Render;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.AxisAlignedBB;
+import com.mojang.blaze3d.platform.GlStateManager;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
 
-import org.lwjgl.opengl.GL11;
+import com.mojang.blaze3d.platform.GlStateManager;
 
-import gregtech.api.gui.IRenderContext;
-import gregtech.api.gui.Widget;
-import gregtech.api.util.Position;
-import gregtech.api.util.Size;
-import gregtech.client.utils.RenderUtil;
-import supersymmetry.api.rocketry.rockets.AFSRendered;
+import com.gregtechceu.gtceu.api.gui.IRenderContext;
+import com.gregtechceu.gtceu.api.gui.Widget;
+import com.gregtechceu.gtceu.api.util.Position;
+import com.gregtechceu.gtceu.api.util.Size;
+import com.gregtechceu.gtceu.client.utils.RenderUtil;
+import io.github.symmetricdevs.supersymmetry.api.rocketry.rockets.AFSRendered;
 
 public class RocketRenderWidget extends Widget {
 
@@ -23,7 +23,7 @@ public class RocketRenderWidget extends Widget {
     public Entity entity;
     public Render<Entity> renderer;
     public float interpolation = 0f;
-    public AxisAlignedBB modelAABB;
+    public AABB modelAABB;
     public double scale;
     public double dvdZone;
     public boolean shouldGoSideToSide;
@@ -36,7 +36,7 @@ public class RocketRenderWidget extends Widget {
             throw new RuntimeException();
         }
         this.entity = entity;
-        this.renderer = Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(entity);
+        this.renderer = Minecraft.getInstance().getRenderManager().getEntityRenderObject(entity);
         double sideLen = Math.max(
                 Math.abs(modelAABB.minX) + Math.abs(modelAABB.maxX),
                 Math.abs(modelAABB.minZ) + Math.abs(modelAABB.maxZ));

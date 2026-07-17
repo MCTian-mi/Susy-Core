@@ -1,26 +1,26 @@
-package supersymmetry.api.util;
+package io.github.symmetricdevs.supersymmetry.api.util;
 
-import static supersymmetry.api.blocks.VariantDirectionalRotatableBlock.FACING;
-import static supersymmetry.api.util.Welzl.computeMinimalRadius;
+import static io.github.symmetricdevs.supersymmetry.api.blocks.VariantDirectionalRotatableBlock.FACING;
+import static io.github.symmetricdevs.supersymmetry.api.util.Welzl.computeMinimalRadius;
 
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.*;
 import java.util.stream.Collectors;
 
-import net.minecraft.block.Block;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.Level;
 
-import gregtech.api.pattern.BlockWorldState;
-import gregtech.api.pattern.PatternMatchContext;
-import supersymmetry.SuSyValues;
-import supersymmetry.api.SusyLog;
+import com.gregtechceu.gtceu.api.pattern.BlockWorldState;
+import com.gregtechceu.gtceu.api.pattern.PatternMatchContext;
+import io.github.symmetricdevs.supersymmetry.SuSyValues;
+import io.github.symmetricdevs.supersymmetry.api.SusyLog;
 
 public class StructAnalysis {
 
@@ -94,10 +94,10 @@ public class StructAnalysis {
             new Vec3i(-1, 1, 1), new Vec3i(1, -1, -1),
             new Vec3i(1, -1, 1), new Vec3i(-1, 1, -1)
     };
-    private static final AxisAlignedBB MAX_BB = new AxisAlignedBB(-3.0E7, 0, -3.0E7, 3.0E7, 255, 3.0E7);
+    private static final AABB MAX_BB = new AABB(-3.0E7, 0, -3.0E7, 3.0E7, 255, 3.0E7);
 
-    public ArrayList<BlockPos> getBlocks(World world, AxisAlignedBB faaBB, boolean checkAir) {
-        AxisAlignedBB aaBB = new AxisAlignedBB(Math.round(faaBB.minX), Math.round(faaBB.minY),
+    public ArrayList<BlockPos> getBlocks(World world, AABB faaBB, boolean checkAir) {
+        AABB aaBB = new AABB(Math.round(faaBB.minX), Math.round(faaBB.minY),
                 Math.round(faaBB.minZ), Math.round(faaBB.maxX),
                 Math.round(faaBB.maxY), Math.round(faaBB.maxZ));
         ArrayList<BlockPos> ret = new ArrayList<>();
@@ -118,7 +118,7 @@ public class StructAnalysis {
         return ret;
     }
 
-    public Set<BlockPos> getBlockConn(AxisAlignedBB aaBB, BlockPos beg) {
+    public Set<BlockPos> getBlockConn(AABB aaBB, BlockPos beg) {
         if (!blockCont(aaBB, beg)) {
             return new HashSet<>(); // wtf moment
         }
@@ -138,9 +138,9 @@ public class StructAnalysis {
 
     public record HullData(Set<BlockPos> exterior, Set<BlockPos> interior) {}
 
-    public HullData checkHull(AxisAlignedBB aaBB, Set<BlockPos> actualBlocks,
+    public HullData checkHull(AABB aaBB, Set<BlockPos> actualBlocks,
                               boolean testStrength) {
-        AxisAlignedBB floodBB = aaBB.grow(1);// initializes flood fill box
+        AABB floodBB = aaBB.grow(1);// initializes flood fill box
         BlockPos bottom = new BlockPos(floodBB.minX, floodBB.minY, floodBB.minZ); // initializes flood fill start
         Queue<BlockPos> uncheckedBlocks = new ArrayDeque<>();
         Set<BlockPos> airBlocks = new HashSet<>();
@@ -160,7 +160,7 @@ public class StructAnalysis {
             } else {
                 airBlocks.add(pos);
                 uncheckedBlocks.addAll(getBlockNeighbors(pos, floodBB, orthVecs).stream().filter(
-                        p -> floodBB.grow(1).contains(new Vec3d(p)) &&
+                        p -> floodBB.grow(1).contains(new Vec3(p)) &&
                                 !(airBlocks.contains(p) || uncheckedBlocks.contains(p)))
                         .collect(Collectors.toSet()));
             }
@@ -179,7 +179,7 @@ public class StructAnalysis {
         return new HullData(hullBlocks, air);
     }
 
-    public ArrayList<BlockPos> getBlockNeighbors(BlockPos beg, AxisAlignedBB aaBB) {
+    public ArrayList<BlockPos> getBlockNeighbors(BlockPos beg, AABB aaBB) {
         return getBlockNeighbors(beg, aaBB, neighborVecs);
     }
 
@@ -191,7 +191,7 @@ public class StructAnalysis {
         return getBlockNeighbors(beg, MAX_BB, neighborVecs);
     }
 
-    public ArrayList<BlockPos> getBlockNeighbors(BlockPos beg, AxisAlignedBB aaBB, Vec3i[] neighborVecs) {
+    public ArrayList<BlockPos> getBlockNeighbors(BlockPos beg, AABB aaBB, Vec3i[] neighborVecs) {
         ArrayList<BlockPos> neighbors = new ArrayList<>();
         for (Vec3i vec : neighborVecs) {
             for (int i = -1; i < 2; i += 2) {
@@ -210,7 +210,7 @@ public class StructAnalysis {
      * @param bp the block position
      * @return If the block is inside or not
      */
-    public static boolean blockCont(AxisAlignedBB bb, BlockPos bp) {
+    public static boolean blockCont(AABB bb, BlockPos bp) {
         return bb.minX <= bp.getX() && bb.minY <= bp.getY() && bb.minZ <= bp.getZ() &&
                 bb.maxX > bp.getX() && bb.maxY > bp.getY() && bb.maxZ > bp.getZ();
     }
@@ -221,7 +221,7 @@ public class StructAnalysis {
      * @param bb the AABB to find all blocks fitting inside
      * @return A hash set
      */
-    public HashSet<BlockPos> getBlocks(AxisAlignedBB bb) {
+    public HashSet<BlockPos> getBlocks(AABB bb) {
         HashSet<BlockPos> ret = new HashSet<>();
         for (int x = (int) bb.minX; x < bb.maxX; x++) {
             for (int y = (int) bb.minY; y < bb.maxY; y++) {
@@ -238,7 +238,7 @@ public class StructAnalysis {
      * @param sect
      * @return
      */
-    public List<HashSet<BlockPos>> getPartitions(AxisAlignedBB sect) {
+    public List<HashSet<BlockPos>> getPartitions(AABB sect) {
         Predicate<BlockPos> isNotObstacle = ((Predicate<BlockPos>) world::isAirBlock).or(bp -> !blockCont(sect, bp));
         Set<BlockPos> blocks = getBlocks(sect).stream().filter(isNotObstacle).collect(Collectors.toSet());
         // the one-argument getBlocks doesn't care about air blocks
@@ -268,8 +268,8 @@ public class StructAnalysis {
         return partitions;
     }
 
-    public Set<BlockPos> getLayerAir(AxisAlignedBB section, int y) {
-        AxisAlignedBB sect = new AxisAlignedBB(section.minX - 1, y, section.minZ - 1, section.maxX + 1, y + 1,
+    public Set<BlockPos> getLayerAir(AABB section, int y) {
+        AABB sect = new AABB(section.minX - 1, y, section.minZ - 1, section.maxX + 1, y + 1,
                 section.maxZ + 1);
         Predicate<BlockPos> isNotObstacle = ((Predicate<BlockPos>) world::isAirBlock).or(bp -> !blockCont(section, bp));
         Set<BlockPos> blocks = getBlocks(sect).stream().filter(isNotObstacle).collect(Collectors.toSet());
@@ -311,7 +311,7 @@ public class StructAnalysis {
     }
 
     // Obtains the bounding box of all blocks in the collection blocks
-    public AxisAlignedBB getBB(Collection<BlockPos> blocks) {
+    public AABB getBB(Collection<BlockPos> blocks) {
         int minX = (int) 3.0E7, minY = (int) 3.0E7, minZ = (int) 3.0E7, maxX = (int) -3.0E7, maxY = (int) -3.0E7,
                 maxZ = (int) -3.0E7;
         for (BlockPos block : blocks) {
@@ -322,7 +322,7 @@ public class StructAnalysis {
             minY = Math.min(block.getY(), minY);
             minZ = Math.min(block.getZ(), minZ);
         }
-        return new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ);
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     public double getRadius(Collection<BlockPos> blocks) {
@@ -376,7 +376,7 @@ public class StructAnalysis {
         if (!world.getBlockState(bp).getPropertyKeys().contains(FACING)) {
             return false;
         }
-        EnumFacing facing = world.getBlockState(bp).getValue(FACING);
+        Direction facing = world.getBlockState(bp).getValue(FACING);
         return world.isAirBlock(bp.add(facing.getDirectionVec()));
     }
 
@@ -398,8 +398,8 @@ public class StructAnalysis {
 
     public int getCoordRelevantToDirection(BlockPos bp) {
         if (world.getBlockState(bp).getPropertyKeys().contains(FACING)) {
-            EnumFacing dir = this.world.getBlockState(bp).getValue(FACING);
-            if (dir.equals(EnumFacing.UP) || dir.equals(EnumFacing.DOWN)) {
+            Direction dir = this.world.getBlockState(bp).getValue(FACING);
+            if (dir.equals(Direction.UP) || dir.equals(Direction.DOWN)) {
 
             }
         } else {
@@ -417,8 +417,8 @@ public class StructAnalysis {
         if (!world.getBlockState(bp).getPropertyKeys().contains(FACING)) {
             return 0;
         }
-        EnumFacing facing = world.getBlockState(bp).getValue(FACING);
-        EnumFacing.Axis axis = facing.getAxis();
+        Direction facing = world.getBlockState(bp).getValue(FACING);
+        Direction.Axis axis = facing.getAxis();
         return switch (axis) {
             case X -> bp.getX();
             case Y -> bp.getY();
@@ -434,8 +434,8 @@ public class StructAnalysis {
         return new Vec3i(one.getX() - two.getX(), one.getY() - two.getY(), one.getZ() - two.getZ());
     }
 
-    public Optional<NBTTagCompound> errorPos(BlockPos error) {
-        NBTTagCompound tag = new NBTTagCompound();
+    public Optional<CompoundTag> errorPos(BlockPos error) {
+        CompoundTag tag = new CompoundTag();
         tag.setLong("errorPos", error.toLong());
         return Optional.of(tag);
     }

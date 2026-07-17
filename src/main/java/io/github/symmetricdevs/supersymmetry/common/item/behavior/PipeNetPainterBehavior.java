@@ -1,92 +1,80 @@
-package supersymmetry.common.item.behavior;
+package io.github.symmetricdevs.supersymmetry.common.item.behavior;
+
+import com.gregtechceu.gtceu.api.capability.ICoverable;
+import com.gregtechceu.gtceu.api.item.component.IAddInformation;
+import com.gregtechceu.gtceu.api.item.component.IInteractionItem;
+import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
+import com.gregtechceu.gtceu.utils.input.SyncedKeyMappings;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.client.settings.GameSettings;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+/**
+ * Pipe net painter behavior.
+ * Right-click on a pipe while holding the TOOL_AOE_CHANGE key to paint the connected pipe network.
+ */
+public class PipeNetPainterBehavior implements IInteractionItem, IAddInformation {
 
-import org.jetbrains.annotations.NotNull;
-
-import codechicken.lib.raytracer.CuboidRayTraceResult;
-import gregtech.api.cover.CoverRayTracer;
-import gregtech.api.pipenet.tile.IPipeTile;
-import gregtech.api.util.input.KeyBind;
-import gregtech.common.items.behaviors.AbstractUsableBehaviour;
-
-public class PipeNetPainterBehavior extends AbstractUsableBehaviour {
-
-    private final ItemStack empty;
     private final int color;
 
-    public PipeNetPainterBehavior(int totalUses, ItemStack empty, int color) {
-        super(totalUses);
-        this.empty = empty;
+    public PipeNetPainterBehavior(int color) {
         this.color = color;
     }
 
-    private void onActionDone(ItemStack stack, EntityPlayer player, EnumHand hand, int walked) {
-        int usesLeft = getUsesLeft(stack);
-        usesLeft -= walked;
-        if (!player.capabilities.isCreativeMode) {
-            if (--usesLeft <= 0) {
-                player.setHeldItem(hand, empty.copy());
-
-                return;
-            }
-            setUsesLeft(stack, usesLeft);
-        }
-    }
-
     @Override
-    public EnumActionResult onItemUseFirst(@NotNull EntityPlayer player,
-                                           @NotNull World world,
-                                           @NotNull BlockPos pos,
-                                           @NotNull EnumFacing side,
-                                           float hitX, float hitY, float hitZ,
-                                           @NotNull EnumHand hand) {
-        if (KeyBind.TOOL_AOE_CHANGE.isKeyDown(player)) {
-            TileEntity te = world.getTileEntity(pos);
-            if (te instanceof IPipeTile<?, ?>pipe) {
+    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
+        Player player = context.getPlayer();
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
 
-                var block = pipe.getPipeBlock();
-                ItemStack toolStack = player.getHeldItem(hand);
+        if (player == null) return InteractionResult.PASS;
 
-                CuboidRayTraceResult rayTraceResult = block.getServerCollisionRayTrace(player, pos, world);
+        if (SyncedKeyMappings.TOOL_AOE_CHANGE.isKeyDown(player)) {
+            BlockEntity te = level.getBlockEntity(pos);
+            if (te instanceof IPipeNode<?, ?> pipe) {
+                ItemStack toolStack = context.getItemInHand();
 
-                if (rayTraceResult == null) return EnumActionResult.FAIL;
+                Direction gridSide = ICoverable.traceCoverSide(context.getHitResult());
+                if (gridSide == null) return InteractionResult.FAIL;
 
-                EnumFacing gridSide = CoverRayTracer.traceCoverSide(rayTraceResult);
+                int maxWalks = toolStack.getMaxDamage() - toolStack.getDamageValue();
+                if (maxWalks <= 0) return InteractionResult.FAIL;
 
-                if (gridSide == null) return EnumActionResult.FAIL;
-
-                int maxWalks = getUsesLeft(toolStack);
-                if (maxWalks <= 0) return EnumActionResult.FAIL;
-
-                int walkedBlocks = PipeOperationWalker.collectPipeNet(world, pos, pipe, gridSide,
+                int walkedBlocks = PipeOperationWalker.collectPipeNet(level, pos, pipe, gridSide,
                         TraverseOptions.COLORING.get(color), maxWalks);
 
-                onActionDone(toolStack, player, hand, walkedBlocks);
+                if (!player.getAbilities().instabuild) {
+                    int newDamage = toolStack.getDamageValue() + walkedBlocks;
+                    if (newDamage >= toolStack.getMaxDamage()) {
+                        toolStack.shrink(1);
+                    } else {
+                        toolStack.setDamageValue(newDamage);
+                    }
+                }
 
-                return EnumActionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
         }
-        return EnumActionResult.PASS;
+        return InteractionResult.PASS;
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
-    public void addInformation(ItemStack itemStack, List<String> lines) {
-        lines.add(I18n.format("item.susy.tool.tooltip.pipeliner",
-                GameSettings.getKeyDisplayString(KeyBind.TOOL_AOE_CHANGE.toMinecraft().getKeyCode())));
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents,
+                                TooltipFlag isAdvanced) {
+        tooltipComponents.add(Component.translatable("item.susy.tool.tooltip.pipeliner", "V")
+                .withStyle(ChatFormatting.GRAY));
     }
 }

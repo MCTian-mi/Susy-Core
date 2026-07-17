@@ -1,12 +1,12 @@
-package supersymmetry.api.rocketry.fuels;
+package io.github.symmetricdevs.supersymmetry.api.rocketry.fuels;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.minecraft.util.Tuple;
+import org.apache.commons.lang3.tuple.Pair;
 
-import gregtech.api.unification.material.Material;
+import com.gregtechceu.gtceu.api.unification.material.Material;
 
 public class RocketFuelEntry {
 

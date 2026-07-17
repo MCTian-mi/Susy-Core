@@ -1,3 +1,3 @@
-package supersymmetry.client.renderer.handler;
+package io.github.symmetricdevs.supersymmetry.client.renderer.handler;
 
 public interface IAlwaysRender {}

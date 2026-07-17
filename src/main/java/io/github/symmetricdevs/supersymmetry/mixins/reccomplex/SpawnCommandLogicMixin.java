@@ -1,4 +1,4 @@
-package supersymmetry.mixins.reccomplex;
+package io.github.symmetricdevs.supersymmetry.mixins.reccomplex;
 
 import net.minecraft.server.MinecraftServer;
 

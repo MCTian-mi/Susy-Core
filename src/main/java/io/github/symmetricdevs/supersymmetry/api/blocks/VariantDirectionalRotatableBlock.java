@@ -1,114 +1,42 @@
-package supersymmetry.api.blocks;
+package io.github.symmetricdevs.supersymmetry.api.blocks;
 
-import static gregtech.common.items.tool.rotation.CustomBlockRotations.BLOCK_DIRECTIONAL_BEHAVIOR;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DirectionalBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.Nullable;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.PropertyDirection;
-import net.minecraft.block.properties.PropertyEnum;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.IStringSerializable;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.world.World;
+/**
+ * A directional rotatable block extending {@link DirectionalBlock}.
+ * <p>
+ * Registers the inherited {@link DirectionalBlock#FACING} property and provides
+ * placement behaviour: sneaking places with the clicked face; normal placement uses
+ * the player's nearest looking direction.
+ */
+public class VariantDirectionalRotatableBlock extends DirectionalBlock {
 
-import org.jetbrains.annotations.NotNull;
-
-import gregtech.api.block.VariantBlock;
-import gregtech.common.items.tool.rotation.CustomBlockRotations;
-
-public class VariantDirectionalRotatableBlock<T extends Enum<T> & IStringSerializable> extends VariantBlock<T> {
-
-    public static final PropertyDirection FACING = PropertyDirection.create("facing");
-
-    public VariantDirectionalRotatableBlock(Material materialIn) {
-        super(materialIn);
-        this.setDefaultState(
-                blockState.getBaseState().withProperty(VARIANT, VALUES[0]).withProperty(FACING, EnumFacing.SOUTH));
-        CustomBlockRotations.registerCustomRotation(this, BLOCK_DIRECTIONAL_BEHAVIOR);
+    public VariantDirectionalRotatableBlock(Properties properties) {
+        super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
-    @Nonnull
     @Override
-    @SuppressWarnings("deprecation")
-    public IBlockState getStateForPlacement(@NotNull World worldIn, @NotNull BlockPos pos, @NotNull EnumFacing facing,
-                                            float hitX, float hitY, float hitZ, int meta,
-                                            @NotNull EntityLivingBase placer) {
-        if (placer.isSneaking()) {
-            return super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer).withProperty(FACING,
-                    facing);
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        Direction facing;
+        if (context.getPlayer() != null && context.getPlayer().isShiftKeyDown()) {
+            facing = context.getClickedFace();
+        } else {
+            facing = context.getNearestLookingDirection();
         }
-        return super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer).withProperty(FACING,
-                EnumFacing.getDirectionFromEntityLiving(pos, placer));
+        return this.defaultBlockState().setValue(FACING, facing);
     }
-
-    @Override
-    public ItemStack getItemVariant(T variant, int amount) {
-        return new ItemStack(this, amount, variant.ordinal() * 6);
-    }
-
-    @Nonnull
-    @Override
-    public BlockStateContainer createBlockState() {
-        Class<T> enumClass = getActualTypeParameter(getClass(), VariantDirectionalRotatableBlock.class);
-        this.VARIANT = PropertyEnum.create("variant", enumClass);
-        this.VALUES = enumClass.getEnumConstants();
-        return new BlockStateContainer(this, VARIANT, FACING);
-    }
-
-    @Override
-    public int damageDropped(@NotNull IBlockState state) {
-        return state.getValue(VARIANT).ordinal() * 6;
-    }
-
-    @Nonnull
-    @Override
-    public IBlockState getStateFromMeta(int meta) {
-        int i = meta / 6;
-        // Makes meta = 0 -> EAST(ord = 5)
-        int j = (meta + 5) % 6;
-
-        EnumFacing enumfacing = EnumFacing.byIndex(j);
-        return getDefaultState()
-                .withProperty(FACING, enumfacing)
-                .withProperty(VARIANT, VALUES[i % VALUES.length]);
-    }
-
-    @Override
-    public int getMetaFromState(IBlockState state) {
-        return state.getValue(VARIANT).ordinal() * 6 + (state.getValue(FACING).getIndex() + 1) % 6;
-    }
-
-    @Nonnull
-    @Override
-    public ItemStack getPickBlock(IBlockState state, @NotNull RayTraceResult target, @NotNull World world,
-                                  @NotNull BlockPos pos, @NotNull EntityPlayer player) {
-        return getItemVariant(state.getValue(VARIANT), 1);
-    }
-
-    // protected static <T, R> Class<T> getActualTypeParameter(Class<? extends R> thisClass, Class<R> declaringClass) {
-    // Type type = thisClass.getGenericSuperclass();
-    //
-    // while(!(type instanceof ParameterizedType) || ((ParameterizedType)type).getRawType() != declaringClass) {
-    // if (type instanceof ParameterizedType) {
-    // type = ((Class)((ParameterizedType)type).getRawType()).getGenericSuperclass();
-    // } else {
-    // type = ((Class)type).getGenericSuperclass();
-    // }
-    // }
-    //
-    // Object output = ((ParameterizedType)type).getActualTypeArguments()[0];
-    //
-    // if (output instanceof TypeVariable<?>){
-    // return (Class)((TypeVariable)output).getBounds()[0];
-    // }
-    // return (Class)output;
-
-    // }
 }

@@ -1,69 +1,120 @@
-package supersymmetry.api.fluids;
+package io.github.symmetricdevs.supersymmetry.api.fluids;
+
+import com.gregtechceu.gtceu.api.transfer.fluid.IFluidHandlerModifiable;
 
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidTankProperties;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import gregtech.api.capability.impl.NotifiableFilteredFluidHandler;
-import gregtech.api.metatileentity.MetaTileEntity;
+import org.jetbrains.annotations.NotNull;
 
-public class SuSyFluidTankHandler extends NotifiableFilteredFluidHandler {
+import java.util.function.Predicate;
 
-    public SuSyFluidTankHandler(int capacity, MetaTileEntity entityToNotify, boolean isExport) {
-        super(capacity, entityToNotify, isExport);
+/**
+ * A simple fluid tank handler implementing {@link IFluidHandler}
+ * with internal {@link FluidStack} storage and a fixed capacity.
+ * Optionally supports a filter predicate and notifiable changes.
+ */
+public class SuSyFluidTankHandler implements IFluidHandlerModifiable {
+
+    private FluidStack fluid;
+    private final long capacity;
+    private Predicate<FluidStack> filter;
+    private Runnable onContentsChanged;
+
+    public SuSyFluidTankHandler(long capacity) {
+        this.fluid = FluidStack.EMPTY;
+        this.capacity = capacity;
+        this.filter = stack -> true;
+        this.onContentsChanged = () -> {};
+    }
+
+    public SuSyFluidTankHandler setFilter(Predicate<FluidStack> filter) {
+        this.filter = filter;
+        return this;
+    }
+
+    public SuSyFluidTankHandler setOnContentsChanged(Runnable onContentsChanged) {
+        this.onContentsChanged = onContentsChanged;
+        return this;
+    }
+
+    public FluidStack getFluid() {
+        return fluid;
+    }
+
+    // --- IFluidHandler ---
+
+    @Override
+    public int getTanks() {
+        return 1;
+    }
+
+    @NotNull
+    @Override
+    public FluidStack getFluidInTank(int tank) {
+        return fluid.copy();
     }
 
     @Override
-    public int fill(FluidStack resource, boolean doFill) {
-        if (resource == null || !canFillFluidType(resource)) {
-            return 0;
+    public int getTankCapacity(int tank) {
+        return (int) Math.min(capacity, Integer.MAX_VALUE);
+    }
+
+    @Override
+    public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
+        return filter.test(stack);
+    }
+
+    @Override
+    public int fill(FluidStack resource, IFluidHandler.FluidAction action) {
+        if (resource == null || resource.isEmpty() || !filter.test(resource)) return 0;
+        if (!fluid.isEmpty() && !fluid.isFluidEqual(resource)) return 0;
+
+        int amount = (int) Math.min(resource.getAmount(), capacity - fluid.getAmount());
+        if (action.execute()) {
+            if (fluid.isEmpty()) {
+                fluid = resource.copy();
+                fluid.setAmount(amount);
+            } else {
+                fluid.grow(amount);
+            }
+            onContentsChanged.run();
         }
-        return super.fill(resource, doFill);
+        return amount;
     }
 
+    @NotNull
     @Override
-    public boolean canFillFluidType(FluidStack fluid) {
-        boolean result = super.canFillFluidType(fluid);
+    public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action) {
+        if (resource == null || resource.isEmpty() || !resource.isFluidEqual(fluid))
+            return FluidStack.EMPTY;
+        return drain(resource.getAmount(), action);
+    }
+
+    @NotNull
+    @Override
+    public FluidStack drain(int maxDrain, IFluidHandler.FluidAction action) {
+        if (fluid.isEmpty()) return FluidStack.EMPTY;
+
+        int drained = Math.min(maxDrain, fluid.getAmount());
+        FluidStack result = fluid.copy();
+        result.setAmount(drained);
+
+        if (action.execute()) {
+            fluid.shrink(drained);
+            if (fluid.isEmpty()) {
+                fluid = FluidStack.EMPTY;
+            }
+            onContentsChanged.run();
+        }
         return result;
     }
 
+    // --- IFluidHandlerModifiable ---
+
     @Override
-    public IFluidTankProperties[] getTankProperties() {
-        IFluidTankProperties[] properties = super.getTankProperties();
-        return new IFluidTankProperties[] {
-                new IFluidTankProperties() {
-
-                    @Override
-                    public FluidStack getContents() {
-                        return properties[0].getContents();
-                    }
-
-                    @Override
-                    public int getCapacity() {
-                        return properties[0].getCapacity();
-                    }
-
-                    @Override
-                    public boolean canFill() {
-                        return properties[0].canFill();
-                    }
-
-                    @Override
-                    public boolean canDrain() {
-                        return properties[0].canDrain();
-                    }
-
-                    @Override
-                    public boolean canFillFluidType(FluidStack fluidStack) {
-                        boolean result = fluidStack != null && SuSyFluidTankHandler.this.canFillFluidType(fluidStack);
-                        return result;
-                    }
-
-                    @Override
-                    public boolean canDrainFluidType(FluidStack fluidStack) {
-                        return properties[0].canDrainFluidType(fluidStack);
-                    }
-                }
-                // gross
-        };
+    public void setFluidInTank(int tank, FluidStack stack) {
+        this.fluid = stack.copy();
+        onContentsChanged.run();
     }
 }

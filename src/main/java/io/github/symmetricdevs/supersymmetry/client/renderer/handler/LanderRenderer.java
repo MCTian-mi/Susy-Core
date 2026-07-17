@@ -1,13 +1,9 @@
-package supersymmetry.client.renderer.handler;
+package io.github.symmetricdevs.supersymmetry.client.renderer.handler;
 
-import net.minecraft.client.renderer.entity.RenderManager;
-
-import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;
-import supersymmetry.common.entities.EntityLander;
-
-public class LanderRenderer extends GeoEntityRenderer<EntityLander> {
-
-    public LanderRenderer(RenderManager manager) {
-        super(manager, new LanderModel());
-    }
-}
+/**
+ * Stub — GeckoLib 3 entity renderer removed.
+ * <p>
+ * In 1.12.2 this was a GeckoLib {@code GeoEntityRenderer<EntityLander>}.
+ * Will be restored with GeckoLib 4.
+ */
+public class LanderRenderer {}

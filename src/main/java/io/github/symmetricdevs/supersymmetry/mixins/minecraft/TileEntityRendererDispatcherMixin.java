@@ -1,27 +1,27 @@
-package supersymmetry.mixins.minecraft;
+package io.github.symmetricdevs.supersymmetry.mixins.minecraft;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import supersymmetry.api.util.RenderMaskManager;
+import io.github.symmetricdevs.supersymmetry.api.util.RenderMaskManager;
 
 @Mixin(TileEntityRendererDispatcher.class)
 public class TileEntityRendererDispatcherMixin {
 
-    @Inject(method = "getRenderer(Lnet/minecraft/tileentity/TileEntity;)Lnet/minecraft/client/renderer/tileentity/TileEntitySpecialRenderer;",
+    @Inject(method = "getRenderer(Lnet/minecraft/BlockEntity/BlockEntity;)Lnet/minecraft/client/renderer/BlockEntity/TileEntitySpecialRenderer;",
             at = @At(value = "HEAD"),
             cancellable = true)
-    private <T extends TileEntity> void ignoreBlocked(TileEntity tileEntityIn,
+    private <T extends BlockEntity> void ignoreBlocked(BlockEntity tileEntityIn,
                                                       CallbackInfoReturnable<TileEntitySpecialRenderer<T>> cir) {
         if (tileEntityIn != null) {
-            if (tileEntityIn.getWorld() == Minecraft.getMinecraft().world &&
+            if (tileEntityIn.getWorld() == Minecraft.getInstance().world &&
                     RenderMaskManager.isModelDisabledRaw(tileEntityIn.getPos())) {
                 cir.setReturnValue(null);
             }

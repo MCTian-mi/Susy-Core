@@ -1,16 +1,17 @@
-package supersymmetry.common.item.behavior;
+package io.github.symmetricdevs.supersymmetry.common.item.behavior;
 
-import static supersymmetry.common.item.behavior.TraverseOptions.Lambdas.*;
+import static io.github.symmetricdevs.supersymmetry.common.item.behavior.TraverseOptions.Lambdas.*;
+
+import com.gregtechceu.gtceu.api.pipenet.IPipeNode;
+
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.block.entity.BlockEntity;
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-
-import gregtech.api.pipenet.tile.IPipeTile;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 
 public enum TraverseOptions implements ITraverseOption {
 
@@ -21,25 +22,22 @@ public enum TraverseOptions implements ITraverseOption {
     ;
 
     public static final Int2ObjectArrayMap<ITraverseOption> COLORING = new Int2ObjectArrayMap<>(
-            1 + EnumDyeColor.values().length);
+            1 + DyeColor.values().length);
 
     static {
-        /// -1 for default color
-        for (int i = -1; i <= EnumDyeColor.values().length; i++) {
+        for (int i = -1; i <= DyeColor.values().length; i++) {
             final int index = i;
 
             COLORING.put(i, new ITraverseOption() {
-
                 @Override
-                public List<EnumFacing> findNext(EnumFacing from, IPipeTile<?, ?> pipe) {
+                public List<Direction> findNext(Direction from, IPipeNode<?, ?> pipe) {
                     return FIND_ALL_CONNECTED.findNext(from, pipe);
                 }
 
                 @Override
-                public void operate(EnumFacing from, IPipeTile<?, ?> self, IPipeTile<?, ?> other, boolean reverse) {
-                    // This is a bit messy but yeah anyway...
+                public void operate(Direction from, IPipeNode<?, ?> self, IPipeNode<?, ?> other, boolean reverse) {
                     int colorValue = index == -1 ? self.getDefaultPaintingColor() :
-                            EnumDyeColor.values()[index].colorValue;
+                            DyeColor.byId(index).getTextColor();
                     if (self.getPaintingColor() != colorValue) {
                         self.setPaintingColor(colorValue);
                     }
@@ -58,83 +56,67 @@ public enum TraverseOptions implements ITraverseOption {
     }
 
     @Override
-    public List<EnumFacing> findNext(EnumFacing from, IPipeTile<?, ?> pipe) {
+    public List<Direction> findNext(Direction from, IPipeNode<?, ?> pipe) {
         return pathFinder.findNext(from, pipe);
     }
 
     @Override
-    public void operate(EnumFacing from, IPipeTile<?, ?> self, IPipeTile<?, ?> other, boolean reverse) {
+    public void operate(Direction from, IPipeNode<?, ?> self, IPipeNode<?, ?> other, boolean reverse) {
         pipeOperator.operate(from, self, other, reverse);
     }
 
     @FunctionalInterface
     private interface PathFinder {
-
-        List<EnumFacing> findNext(EnumFacing from, IPipeTile<?, ?> pipe);
+        List<Direction> findNext(Direction from, IPipeNode<?, ?> pipe);
     }
 
     @FunctionalInterface
     private interface PipeOperator {
-
-        void operate(EnumFacing facingToOther, IPipeTile<?, ?> self, IPipeTile<?, ?> other, boolean reverse);
+        void operate(Direction facingToOther, IPipeNode<?, ?> self, IPipeNode<?, ?> other, boolean reverse);
     }
 
     static class Lambdas {
 
-        /// Returns the other facing this pipe has a neighbouring pipe to connect to, for CONNECTING operation type
-        /// Returns null if:
-        /// 1) The pipe is cannot find any pipe to connect
-        /// 2) The pipe is connected to more than 1 side alr
         static final PathFinder FIND_TO_CONNECT = (from, pipe) -> {
-            List<EnumFacing> ret = new ArrayList<>(1);
+            List<Direction> ret = new ArrayList<>(1);
 
-            for (EnumFacing facing : EnumFacing.values()) {
+            for (Direction facing : Direction.values()) {
                 if (facing == from) continue;
-                TileEntity other = pipe.getNeighbor(facing);
-                if (other instanceof IPipeTile<?, ?>otherPipe && pipe.getClass().isAssignableFrom(other.getClass()) &&
-                        otherPipe.getConnections() == 0) {
+                BlockEntity other = pipe.getNeighbor(facing);
+                if (other instanceof IPipeNode<?, ?> otherPipe &&
+                        pipe.getClass().isAssignableFrom(other.getClass()) &&
+                        otherPipe.getNumConnections() == 0) {
                     if (ret.isEmpty()) {
-                        /// Adding the first candidate
                         ret.add(facing);
                     } else {
-                        /// More than one candidate found, returning empty
                         ret.clear();
                         return ret;
                     }
                 }
             }
-            // Only one candidate found, return it
             return ret;
         };
 
-        /// Returns the other facing this pipe is connected to, for DISCONNECTING operation type
-        /// Returns null if:
-        /// 1) The pipe is not connected to any other side
-        /// 2) The pipe is connected to more than 1 side among other sides
         static final PathFinder FIND_CONNECTED = (from, pipe) -> {
-            List<EnumFacing> ret = new ArrayList<>(1);
+            List<Direction> ret = new ArrayList<>(1);
 
-            for (EnumFacing facing : EnumFacing.values()) {
+            for (Direction facing : Direction.values()) {
                 if (facing == from) continue;
                 if (pipe.isConnected(facing)) {
                     if (ret.isEmpty()) {
-                        /// Adding the first candidate
                         ret.add(facing);
                     } else {
-                        /// More than one candidate found, returning empty
                         ret.clear();
                         return ret;
                     }
                 }
             }
-            // Only one candidate found, return it
             return ret;
         };
 
-        /// Returns *ALL* the other facings this pipe is connected to
         static final PathFinder FIND_ALL_CONNECTED = (from, pipe) -> {
-            List<EnumFacing> ret = new ArrayList<>(5);
-            for (EnumFacing facing : EnumFacing.values()) {
+            List<Direction> ret = new ArrayList<>(5);
+            for (Direction facing : Direction.values()) {
                 if (facing == from) continue;
                 if (pipe.isConnected(facing)) {
                     ret.add(facing);
@@ -143,29 +125,25 @@ public enum TraverseOptions implements ITraverseOption {
             return ret;
         };
 
-        /// Connects this pipe with the other
-        static final PipeOperator CONNECTOR = (facingToOther, self, other, reverse) -> self.setConnection(facingToOther,
-                true, false);
+        static final PipeOperator CONNECTOR = (facingToOther, self, other, reverse) ->
+                self.setConnection(facingToOther, true, false);
 
-        /// Disconnects this pipe with the other
-        static final PipeOperator DISCONNECTOR = (facingToOther, self, other, reverse) -> self
-                .setConnection(facingToOther, false, false);
+        static final PipeOperator DISCONNECTOR = (facingToOther, self, other, reverse) ->
+                self.setConnection(facingToOther, false, false);
 
-        /// Blocks this pipe with the other
         static final PipeOperator BLOCKER = (facingToOther, self, other, reverse) -> {
             if (reverse) {
-                other.setFaceBlocked(facingToOther.getOpposite(), true);
+                other.setBlocked(facingToOther.getOpposite(), true);
             } else {
-                self.setFaceBlocked(facingToOther, true);
+                self.setBlocked(facingToOther, true);
             }
         };
 
-        /// Blocks this pipe with the other
         static final PipeOperator UNBLOCKER = (facingToOther, self, other, reverse) -> {
             if (reverse) {
-                other.setFaceBlocked(facingToOther.getOpposite(), false);
+                other.setBlocked(facingToOther.getOpposite(), false);
             } else {
-                self.setFaceBlocked(facingToOther, false);
+                self.setBlocked(facingToOther, false);
             }
         };
     }

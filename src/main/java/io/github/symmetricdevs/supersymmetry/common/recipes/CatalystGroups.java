@@ -1,7 +1,11 @@
-package supersymmetry.common.recipes;
+package io.github.symmetricdevs.supersymmetry.common.recipes;
 
-import supersymmetry.api.recipes.catalysts.CatalystGroup;
+import io.github.symmetricdevs.supersymmetry.api.recipes.catalysts.CatalystGroup;
 
+/**
+ * Ported from the 1.12.2 {@code supersymmetry.common.recipes.CatalystGroups}.
+ * Package-renamed to {@code io.github.symmetricdevs.supersymmetry.common.recipes}.
+ */
 public final class CatalystGroups {
 
     public static final CatalystGroup OXIDATION_CATALYST_BEDS = new CatalystGroup("oxidation_catalyst_beds");

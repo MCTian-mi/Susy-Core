@@ -1,31 +1,16 @@
-package supersymmetry.api.metatileentity;
+package io.github.symmetricdevs.supersymmetry.api.MetaMachine;
 
-import java.util.function.Function;
+/**
+ * Interface for continuous-processing machines.
+ * Implementations return true from isContinuous() to signal that they
+ * should use continuous recipe logic.
+ */
+public interface ContinuousMachineMetaTileEntity {
 
-import net.minecraft.util.ResourceLocation;
-
-import gregtech.api.metatileentity.MetaTileEntity;
-import gregtech.api.metatileentity.SimpleMachineMetaTileEntity;
-import gregtech.api.metatileentity.interfaces.IGregTechTileEntity;
-import gregtech.api.recipes.RecipeMap;
-import gregtech.client.renderer.ICubeRenderer;
-import supersymmetry.api.capability.impl.ContinuousRecipeLogic;
-
-public class ContinuousMachineMetaTileEntity extends SimpleMachineMetaTileEntity {
-
-    public ContinuousMachineMetaTileEntity(ResourceLocation metaTileEntityId, RecipeMap<?> recipeMap,
-                                           ICubeRenderer renderer, int tier, boolean hasFrontFacing,
-                                           Function<Integer, Integer> tankScalingFunction) {
-        super(metaTileEntityId, recipeMap, renderer, tier, hasFrontFacing, tankScalingFunction);
-    }
-
-    public MetaTileEntity createMetaTileEntity(IGregTechTileEntity tileEntity) {
-        return new ContinuousMachineMetaTileEntity(this.metaTileEntityId, this.workable.getRecipeMap(), this.renderer,
-                this.getTier(), this.hasFrontFacing(), this.getTankScalingFunction());
-    }
-
-    @Override
-    protected ContinuousRecipeLogic createWorkable(RecipeMap<?> recipeMap) {
-        return new ContinuousRecipeLogic(this, recipeMap, () -> this.energyContainer);
+    /**
+     * @return true if this machine operates continuously
+     */
+    default boolean isContinuous() {
+        return true;
     }
 }

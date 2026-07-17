@@ -1,4 +1,16 @@
-package supersymmetry.api.util;
+package io.github.symmetricdevs.supersymmetry.api.util;
+
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
+import io.github.symmetricdevs.supersymmetry.config.SusyConfig;
+
+import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.data.chemical.material.Material;
+import com.gregtechceu.gtceu.GTCEu;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -7,15 +19,11 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-
-import gregtech.api.GTValues;
-import gregtech.api.unification.material.Material;
-import supersymmetry.Supersymmetry;
-import supersymmetry.SusyConfig;
-
+/**
+ * Ported from the 1.12.2 {@code supersymmetry.api.util.SuSyUtility}.
+ * Package-renamed to the new package; uses 1.20.1 APIs (ResourceLocation,
+ * DyeColor, ItemStack) and Modern GTCEu (Material, GTValues).
+ */
 public class SuSyUtility {
 
     /*
@@ -109,28 +117,28 @@ public class SuSyUtility {
     }
 
     public static ResourceLocation susyId(String path) {
-        return new ResourceLocation(Supersymmetry.MODID, path);
+        return ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, path);
     }
 
     public static String getRLPrefix(Material material) {
-        return material.getModid().equals(GTValues.MODID) ? "" : material.getModid() + ":";
+        return material.getModid().equals(GTCEu.MOD_ID) ? "" : material.getModid() + ":";
     }
 
     /// I hate this...
-    public static String getNameForColor(EnumDyeColor color) {
-        return color == EnumDyeColor.SILVER ? "light_gray" : color.getName();
+    public static String getNameForColor(DyeColor color) {
+        return color.getName();
     }
 
     private static Set<String> bannedSpaceItems;
 
     public static void loadBannedSpaceItems() {
-        bannedSpaceItems = Arrays.stream(SusyConfig.bannedSpaceItems).collect(Collectors.toSet());
+        bannedSpaceItems = Arrays.stream(SusyConfig.INSTANCE.space.bannedSpaceItems).collect(Collectors.toSet());
     }
 
     public static boolean isAllowedItemForSpace(ItemStack item) {
         if (bannedSpaceItems == null) {
             loadBannedSpaceItems();
         }
-        return !bannedSpaceItems.contains(item.getItem().getRegistryName().toString());
+        return !bannedSpaceItems.contains(BuiltInRegistries.ITEM.getKey(item.getItem()).toString());
     }
 }

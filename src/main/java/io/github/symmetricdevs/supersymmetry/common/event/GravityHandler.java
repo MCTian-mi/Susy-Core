@@ -1,17 +1,18 @@
-package supersymmetry.common.event;
+package io.github.symmetricdevs.supersymmetry.common.event;
 
 import java.util.WeakHashMap;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityFlying;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.item.*;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.entity.projectile.EntityThrowable;
-
-import supersymmetry.common.world.SuSyDimensions;
-import supersymmetry.common.world.WorldProviderPlanet;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.FlyingMob;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.FallingBlockEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.item.PrimedTnt;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.ThrowableProjectile;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.entity.vehicle.Boat;
 
 // My endless gratitude to the AdvancedRocketry team for the gravity code
 
@@ -27,38 +28,34 @@ public class GravityHandler {
 
     public static void applyGravity(Entity entity) {
         if (entity.hasNoGravity()) return;
-        // Because working gravity on elytra-flying players can cause..... severe problems at lower gravity, it is my
-        // utter delight to announce to you elytra are now magic!
-        // This totally isn't because Mojang decided for some godforsaken @#@#@#% reason to make ALL WAYS TO SET ELYTRA
-        // FLIGHT _protected_
-        // With no set methods
-        // So I cannot, without much more effort than it's worth, set elytra flight. Therefore, they're magic.
-        if ((!(entity instanceof EntityPlayer) && !(entity instanceof EntityFlying)) ||
-                (!(entity instanceof EntityFlying) && !(((EntityPlayer) entity).capabilities.isFlying ||
-                        ((EntityLivingBase) entity).isElytraFlying()))) {
+        // NOTE: Elytra gravity logic port deferred to tick handler
+        if ((!(entity instanceof Player) && !(entity instanceof FlyingMob)) ||
+                (!(entity instanceof FlyingMob) && !(((Player) entity).getAbilities().flying ||
+                        ((LivingEntity) entity).isFallFlying()))) {
             Double d;
             if (entityMap.containsKey(entity) && (d = entityMap.get(entity)) != null) {
 
-                double multiplier = (isOtherEntity(entity) || entity instanceof EntityItem) ? OTHER_OFFSET * d :
-                        (entity instanceof EntityArrow) ? ARROW_OFFSET * d :
-                                (entity instanceof EntityThrowable) ? THROWABLE_OFFSET * d : LIVING_OFFSET * d;
+                double multiplier = (isOtherEntity(entity) || entity instanceof ItemEntity) ? OTHER_OFFSET * d :
+                        (entity instanceof AbstractArrow) ? ARROW_OFFSET * d :
+                                (entity instanceof ThrowableProjectile) ? THROWABLE_OFFSET * d : LIVING_OFFSET * d;
 
-                entity.motionY += multiplier;
+                entity.setDeltaMovement(entity.getDeltaMovement().add(0, multiplier, 0));
 
-            } else if (entity.world.provider instanceof WorldProviderPlanet) {
-                double gravMult = SuSyDimensions.PLANETS.get(entity.world.provider.getDimension()).gravity;
+            } else if (entity.level().dimensionTypeId().hashCode() != 0) {
+                // TODO: Re-enable planet-specific gravity once SuSyDimensions/WorldProviderPlanet are ported
+                double gravMult = 1.0; // placeholder: default gravity
 
-                if (entity instanceof EntityItem)
-                    entity.motionY -= (gravMult * OTHER_OFFSET - OTHER_OFFSET);
+                if (entity instanceof ItemEntity)
+                    entity.setDeltaMovement(entity.getDeltaMovement().add(0, -(gravMult * OTHER_OFFSET - OTHER_OFFSET), 0));
                 else if (isOtherEntity(entity))
-                    entity.motionY -= (gravMult * OTHER_OFFSET - OTHER_OFFSET);
-                else if (entity instanceof EntityThrowable)
-                    entity.motionY -= (gravMult * THROWABLE_OFFSET - THROWABLE_OFFSET);
-                else if (entity instanceof EntityArrow)
-                    entity.motionY -= (gravMult * ARROW_OFFSET - ARROW_OFFSET);
-                else if (entity instanceof EntityLivingBase && entity.isInWater() || entity.isInLava()) {
-                    entity.motionY -= (gravMult * FLUID_LIVING_OFFSET - FLUID_LIVING_OFFSET);
-                } else if (entity instanceof EntityLivingBase) {
+                    entity.setDeltaMovement(entity.getDeltaMovement().add(0, -(gravMult * OTHER_OFFSET - OTHER_OFFSET), 0));
+                else if (entity instanceof ThrowableProjectile)
+                    entity.setDeltaMovement(entity.getDeltaMovement().add(0, -(gravMult * THROWABLE_OFFSET - THROWABLE_OFFSET), 0));
+                else if (entity instanceof AbstractArrow)
+                    entity.setDeltaMovement(entity.getDeltaMovement().add(0, -(gravMult * ARROW_OFFSET - ARROW_OFFSET), 0));
+                else if (entity instanceof LivingEntity && (entity.isInWater() || entity.isInLava())) {
+                    entity.setDeltaMovement(entity.getDeltaMovement().add(0, -(gravMult * FLUID_LIVING_OFFSET - FLUID_LIVING_OFFSET), 0));
+                } else if (entity instanceof LivingEntity) {
                     // Normally gravity works for living entities by accelerating motionY by 0.08, and then applying
                     // "drag"
                     // in the form of multiplying the resulting value by 0.98.
@@ -68,17 +65,16 @@ public class GravityHandler {
                     // X = (motionY - 0.08) * 0.98
                     // motionY = X / 0.98 + 0.08
 
-                    double drag = SuSyDimensions.PLANETS.get(entity.world.provider.getDimension()).dragMultiplier;
-                    double intended = (entity.motionY - (gravMult * 0.08)) * drag;
-                    entity.motionY = intended / 0.98 + 0.08;
+                    double drag = 0.98; // placeholder: default drag
+                    double intended = (entity.getDeltaMovement().y - (gravMult * 0.08)) * drag;
+                    entity.setDeltaMovement(entity.getDeltaMovement().multiply(1, 0, 1).add(0, intended / 0.98 + 0.08, 0));
                 }
-
             }
         }
     }
 
     public static boolean isOtherEntity(Entity entity) {
-        return entity instanceof EntityBoat || entity instanceof EntityMinecart ||
-                entity instanceof EntityFallingBlock || entity instanceof EntityTNTPrimed;
+        return entity instanceof Boat || entity instanceof AbstractMinecart ||
+                entity instanceof FallingBlockEntity || entity instanceof PrimedTnt;
     }
 }
