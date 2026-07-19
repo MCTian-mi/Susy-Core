@@ -17,6 +17,7 @@ import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
 import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
+import com.gregtechceu.gtceu.api.machine.steam.SimpleSteamMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import com.gregtechceu.gtceu.api.registry.registrate.MachineBuilder;
@@ -355,8 +356,8 @@ public final class SusyMachines {
     // ==================================================================
     // The bulk of 1.12.2's registerSimpleMTE / registerCatalystMTE /
     // registerContinuousMachineMTE calls. Each becomes a MachineDefinition[] across
-    // ELECTRIC_TIERS. Custom SusyTextures overlays are not yet ported (Phase 6) — a
-    // GTCEu machine model is used as the placeholder per type.
+    // ELECTRIC_TIERS. A migrated SuSy overlay is used when one exists; stock GTCEu
+    // overlays remain for legacy machines that intentionally used a GTCEu texture.
 
     // -- plain SimpleTieredMachine -------------------------------------------
     public static final MachineDefinition[] VACUUM_CHAMBER = registerSimpleMachines("vacuum_chamber",
@@ -423,21 +424,22 @@ public final class SusyMachines {
     // ==================================================================
     // 1.12.2 registerSimpleSteamMTE calls -> GTCEu registerSimpleSteamMachines
     // (SimpleSteamMachine). Each field is a Pair<low-pressure bronze, high-pressure
-    // steel> MachineDefinition.
+    // steel> MachineDefinition. Machines with SuSy overlay textures use
+    // registerSuSySimpleSteamMachines; mixer and distiller retain the GTCEu helper.
+    // Steam vacuum chambers used GTCEu's gas-collector overlay in 1.12.2, so they use
+    // the same explicit helper with that verified resource.
     public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_VULCANIZING_PRESS =
-            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "vulcanizing_press",
-                    SuSyRecipeTypes.VULCANIZATION_RECIPES);
+            registerSuSySimpleSteamMachines("vulcanizing_press", SuSyRecipeTypes.VULCANIZATION_RECIPES);
     public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_ROASTER =
-            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "roaster", SuSyRecipeTypes.ROASTER_RECIPES);
+            registerSuSySimpleSteamMachines("roaster", SuSyRecipeTypes.ROASTER_RECIPES);
     public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_MIXER =
             GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "mixer",
                     com.gregtechceu.gtceu.common.data.GTRecipeTypes.MIXER_RECIPES);
     public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_VACUUM_CHAMBER =
-            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "vacuum_chamber",
-                    SuSyRecipeTypes.VACUUM_CHAMBER_RECIPES);
+            registerSteamMachinesWithOverlay("vacuum_chamber", SuSyRecipeTypes.VACUUM_CHAMBER_RECIPES,
+                    GTCEu.id("block/machines/gas_collector"));
     public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_BATCH_REACTOR =
-            GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "batch_reactor",
-                    SuSyRecipeTypes.BATCH_REACTOR_RECIPES);
+            registerSuSySimpleSteamMachines("batch_reactor", SuSyRecipeTypes.BATCH_REACTOR_RECIPES);
     public static final it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> STEAM_DISTILLER =
             GTMachineUtils.registerSimpleSteamMachines(REGISTRATE, "distiller",
                     com.gregtechceu.gtceu.common.data.GTRecipeTypes.DISTILLERY_RECIPES);
@@ -458,8 +460,9 @@ public final class SusyMachines {
     // Phase 4c — Multiblock controllers (Bucket A1: GT-casing simple recipe multis)
     // Ported from 1.12.2 WorkableElectricMultiblockMachine.createStructurePattern onto the
     // GTCEu-Modern .multiblock/.pattern idiom. Plain WorkableElectricMultiblockMachine
-    // controllers (no bespoke class) — recipe behaviour via .recipeModifier. Front
-    // overlays are GTCEu placeholders pending the Phase 6 SusyTextures port.
+    // controllers (no bespoke class) — recipe behaviour via .recipeModifier. Migrated
+    // SuSy overlays are used wherever the original machine supplied one; valid stock
+    // GTCEu overlays are retained for the remaining legacy stock visuals.
     // ==================================================================
 
     // ---- coking_tower (perfect OC (1.12.2 RecipeLogic(this,true))) ----
@@ -520,7 +523,7 @@ public final class SusyMachines {
                     .where('#', Predicates.air())
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace")) // TODO)) Phase 6: SusyTextures.CATALYTIC_REFORMER_OVERLAY
+                    SuSyValues.susyId("block/multiblock/catalytic_reformer"))
             .register();
 
     // ---- electrolytic_cell (perfect OC) ----
@@ -541,7 +544,7 @@ public final class SusyMachines {
                             .or(Predicates.autoAbilities(definition.getRecipeTypes())))
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/electrolytic_cell"))
             .register();
 
     // ---- fermentation_vat (muffler) ----
@@ -610,8 +613,7 @@ public final class SusyMachines {
                         .build();
             })
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace")) // TODO Phase 6: real overlay is
-            // SusyTextures.LARGE_WEAPONS_FACTORY_OVERLAY
+                    SuSyValues.susyId("block/multiblock/large_weapons_factory"))
             .register();
 
     // ---- multi_stage_flash_distiller (perfect OC) ----
@@ -701,10 +703,8 @@ public final class SusyMachines {
                     .where(' ', Predicates.any())
                     .where('#', Predicates.air())
                     .build())
-            // TODO)) Phase 6: real front overlay is SusyTextures.ORE_SORTER_OVERLAY
-            // (1.12.2 ore_sorter overlay); blast_furnace is the placeholder.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/ore_sorter"))
             .register();
 
     // ---- polymerization_tank (perfect OC) ----
@@ -727,9 +727,7 @@ public final class SusyMachines {
                             .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, false, false, false, true).setMaxGlobalLimited(2))
                             .or(Predicates.autoAbilities(definition.getRecipeTypes(), false, false, true, true, false, false).setMaxGlobalLimited(1)))
                     .build())
-            // TODO)) Phase 6: replace blast_furnace placeholder overlay with the real
-            // polymerization_tank overlay (1.12.2 SusyTextures.POLYMERIZATION_TANK_OVERLAY).
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"), GTCEu.id("block/multiblock/blast_furnace"))
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"), SuSyValues.susyId("block/multiblock/polymerization_tank"))
             .register();
 
     // ---- pressure_swing_adsorber ----
@@ -750,9 +748,8 @@ public final class SusyMachines {
                             .or(Predicates.autoAbilities(true, false, false)))
                     .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
                     .build())
-            // TODO(Phase 6): swap placeholder overlay for SusyTextures.PRESSURE_SWING_ABSORBER_OVERLAY
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/pressure_swing_absorber"))
             .register();
 
     // ---- quencher (complex ability layout) ----
@@ -794,10 +791,8 @@ public final class SusyMachines {
                         .where(' ', Predicates.any())
                         .build();
             })
-            // TODO)) Phase 6: front overlay placeholder is blast_furnace; real 1.12.2 overlay is
-            // SusyTextures.QUENCHER_OVERLAY ("machines/multiblocks/quencher").
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/quencher"))
             .register();
 
     // ---- reaction_furnace (muffler) ----
@@ -826,11 +821,10 @@ public final class SusyMachines {
                     .where('#', Predicates.air())
                     .where(' ', Predicates.any())
                     .build())
-            // TODO)) Phase 6: swap the front overlay to the real SuSy 'pyrolyse_oven'
-            // overlay (1.12.2 getFrontOverlay() -> Textures.PYROLYSE_OVEN_OVERLAY);
-            // blast_furnace is the placeholder. Base = HEAT_PROOF_CASING.
+            // The legacy controller used GTCEu's pyrolyse-oven overlay; retain the
+            // matching Modern resource while the heat-proof casing texture is ported.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_heatproof"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    GTCEu.id("block/multiblock/pyrolyse_oven"))
             .register();
 
     // ---- rotary_kiln ----
@@ -868,7 +862,7 @@ public final class SusyMachines {
                         .build();
             })
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace")) // TODO Phase 6: real overlay is machines/multiblocks/rotary_kiln (SusyTextures.ROTARY_KILN_OVERLAY)
+                    SuSyValues.susyId("block/multiblock/rotary_kiln"))
             .register();
 
     // ---- rotary_kiln_v2 ----
@@ -912,9 +906,9 @@ public final class SusyMachines {
                         .build();
             })
             // TODO)) Phase 6: hide the rotating shell/gear blocks and restore the
-            // Gecko-equivalent drum/gear animation and real rotary-kiln overlay.
+            // Gecko-equivalent drum/gear animation.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/rotary_kiln"))
             .register();
 
     // ---- scrap_recycler (GT casings only; register even though in rocket pkg) ----
@@ -992,7 +986,7 @@ public final class SusyMachines {
             // base texture confirmed (frostproof casing, same as Vacuum Freezer); front overlay
             // is a PLACEHOLDER — 1.12.2 used SusyTextures.CONDENSER_OVERLAY (Phase 6 swap).
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/condenser"))
             .register();
 
     // ---- heat_exchanger (NoEnergy: recipes EUt(0); verify no INPUT_ENERGY ability) ----
@@ -1033,10 +1027,8 @@ public final class SusyMachines {
                                     .setMaxGlobalLimited(1)))
                     .where('D', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
                     .build())
-            // TODO)) Phase 6: swap the blast_furnace overlay placeholder for the real SuSy
-            // front overlay (1.12.2 SusyTextures.HEAT_EXCHANGER_OVERLAY, "machines/multiblocks/heat_exchanger").
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/heat_exchanger"))
             .register();
 
     // ---- fluidized_bed_reactor (Continuous: re-derive — OC_PERFECT + a custom RecipeModifier applying SuSyParallelLogic.pureParallel(machine, recipe, 256)) ----
@@ -1060,10 +1052,8 @@ public final class SusyMachines {
                             .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, true, true, true, true,
                                     true)))
                     .build())
-            // TODO)) Phase 6: real overlay is SusyTextures.FLUIDIZED_BED_OVERLAY
-            // (block/multiblock/fluidized_bed); blast_furnace is a placeholder.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_inert_ptfe"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/fluidized_bed"))
             .register();
 
     // ---- blender (perfect OC + FluidRender — register plain, add // TODO)) for the fluid-render client layer (Phase 6)) ----
@@ -1088,12 +1078,10 @@ public final class SusyMachines {
                     .where('C', Predicates.blocks(GTBlocks.CASING_STAINLESS_STEEL_GEARBOX.get()))
                     .where(' ', Predicates.any())
                     .build())
-            // TODO)) Phase 6: front overlay is the 1.12.2 LARGE_CHEMICAL_REACTOR_OVERLAY
-            // (block/multiblock/large_chemical_reactor); blast_furnace is the placeholder.
-            // Also port the FluidRenderRecipeMapMultiBlock fluid-render client layer
+            // TODO)) Phase 6: port the FluidRenderRecipeMapMultiBlock client layer
             // (renders the recipe's output fluid in the 3x3 interior) — dropped here.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_inert_ptfe"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    GTCEu.id("block/multiblock/large_chemical_reactor"))
             .register();
 
     // ---- injection_molder (SuSy pure-parallel x16: custom RecipeModifier -> SuSyParallelLogic.pureParallel(machine, recipe, 16)) ----
@@ -1128,10 +1116,8 @@ public final class SusyMachines {
                         .where('#', Predicates.air())
                         .build();
             })
-            // TODO)) Phase 6: front overlay is SusyTextures.INJECTION_MOLDER_OVERLAY in
-            // 1.12.2; blast_furnace is the placeholder.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/injection_molder"))
             .register();
 
     // ---- magnetohydrodynamic_generator (Generator: .generator(true), OUTPUT_ENERGY ability, GT fusion casing. Read GT LargeTurbineMachine pattern.) ----
@@ -1142,8 +1128,8 @@ public final class SusyMachines {
     // MAGNETOHYDRODYNAMIC_FUELS map (IO.OUT, 1 fluid in / 1 fluid out). Plain
     // WorkableElectricMultiblockMachine — the source overrode nothing behavioural
     // (no custom RecipeLogic / canVoidRecipeOutputs / getRealRecipe), so no
-    // controller class is needed. Front overlay texture is the 1.12.2
-    // Textures.BLAST_FURNACE_OVERLAY; a GTCEu placeholder is used until Phase 6.
+    // controller class is needed. The original used GTCEu's blast-furnace overlay,
+    // which is retained here.
     public static final MultiblockMachineDefinition MAGNETOHYDRODYNAMIC_GENERATOR = REGISTRATE
             .multiblock("magnetohydrodynamic_generator", WorkableElectricMultiblockMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
@@ -1213,8 +1199,9 @@ public final class SusyMachines {
                     .where('#', Predicates.air())
                     .build())
             .partSorter(Comparator.comparingInt(p -> p.self().getPos().getY()))
+            // TODO)) Phase 6: port the silicon-carbide casing base texture.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/distillation_tower")) // TODO)) Phase 6: real silicon-carbide casing tex + SusyTextures.HTDT_OVERLAY
+                    SuSyValues.susyId("block/multiblock/distillation_towers/high_temperature_distilation_tower"))
             .register();
 
     // ---- sieve_distillation_tower (has sieve-tray interior blocks (SusyBlocks.SIEVE_TRAY) inside the tower) ----
@@ -1243,8 +1230,10 @@ public final class SusyMachines {
                     .where('F', Predicates.frames(GTMaterials.StainlessSteel))
                     .build())
             .partSorter(java.util.Comparator.comparingInt(p -> p.self().getPos().getY()))
+            // The legacy controller used GTCEu's distillation-tower overlay; retain it
+            // rather than substituting a different SuSy tower visual.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/distillation_tower")) // TODO Phase 6: real casing tex + SusyTextures.SDT_OVERLAY
+                    GTCEu.id("block/multiblock/distillation_tower"))
             .register();
 
     // ---- vacuum_distillation_tower (ExtendedDTLogicHandler (3 fluid outputs per layer) — verify Modern DistillationTowerMachine output-per-layer and note if it differs) ----
@@ -1277,8 +1266,9 @@ public final class SusyMachines {
                     .where('#', Predicates.air())
                     .build())
             .partSorter(Comparator.comparingInt(p -> p.self().getPos().getY()))
+            // TODO)) Phase 6: port the silicon-carbide casing base texture.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/distillation_tower"))  // TODO)) Phase 6: real casing tex + SusyTextures.VDT_OVERLAY
+                    SuSyValues.susyId("block/multiblock/distillation_towers/vacuum_temperature_distilation_tower"))
             .register();
 
     // ---- high_pressure_cryogenic_distillation_plant (ExtendedDTLogicHandler; high pressure variant) ----
@@ -1309,8 +1299,9 @@ public final class SusyMachines {
                     .build())
             .allowExtendedFacing(false)
             .partSorter(java.util.Comparator.comparingInt(p -> p.self().getPos().getY()))
+            // TODO)) Phase 6: port the silicon-carbide casing base texture.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
-                    GTCEu.id("block/multiblock/distillation_tower"))  // TODO)) Phase 6: real casing tex + SusyTextures.HPCDT_OVERLAY
+                    SuSyValues.susyId("block/multiblock/distillation_towers/high_pressure_cryogenic_distilation_tower"))
             .register();
 
     // ---- low_pressure_cryogenic_distillation_plant ----
@@ -1344,8 +1335,9 @@ public final class SusyMachines {
                     .build())
             .allowExtendedFacing(false)
             .partSorter(java.util.Comparator.comparingInt(p -> p.self().getPos().getY()))
+            // TODO)) Phase 6: port the silicon-carbide casing base texture.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
-                    GTCEu.id("block/multiblock/distillation_tower")) // TODO)) Phase 6: real casing tex + SusyTextures.LPCDT_OVERLAY
+                    SuSyValues.susyId("block/multiblock/distillation_towers/low_pressure_cryogenic_distilation_tower"))
             .register();
 
     // ---- single_column_cryogenic_distillation_plant ----
@@ -1395,9 +1387,8 @@ public final class SusyMachines {
             // multiblockPartSorter UP.getSorter: parts sorted bottom-up so DistillationTowerMachine
             // walks the fluid export hatches in ascending Y.
             .partSorter(java.util.Comparator.comparingInt(p -> p.self().getPos().getY()))
-            // TODO)) Phase 6: real front overlay is the SuSy cryo-DT overlay (SusyTextures); 1.12.2
-            // used Textures.BLAST_FURNACE_OVERLAY, so blast_furnace is the placeholder. Base casing
-            // tex = frostproof (1.12.2 Textures.FROST_PROOF_CASING), confirmed.
+            // The original controller used GTCEu's blast-furnace overlay; retain it until
+            // a distinct single-column cryogenic overlay is authored.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
                     GTCEu.id("block/multiblock/blast_furnace"))
             .register();
@@ -1468,9 +1459,8 @@ public final class SusyMachines {
                         GTValues.VNF[1 + 2]));
                 tooltip.add(Component.translatable("susy.multiblock.rotation_generator.tooltip", 3600, 1, 1));
             })
-            // TODO)) Phase 6: real SuSy LARGE_STEAM_TURBINE_OVERLAY; GTCEu large_steam_turbine is the placeholder.
             .workableCasingModel(GTCEu.id("block/casings/mechanic/machine_casing_turbine_steel"),
-                    GTCEu.id("block/multiblock/generator/large_steam_turbine"))
+                    SuSyValues.susyId("block/multiblock/large_steam_turbine"))
             .register();
 
     public static final MultiblockMachineDefinition GAS_TURBINE = REGISTRATE
@@ -1519,9 +1509,8 @@ public final class SusyMachines {
             // progressively per second during the run (not all at completion). Port as a
             // per-tick fluid tickOutput on the recipe; for now the whole flue outputs at
             // recipe end via the standard EU/fluid tick-output handling.
-            // TODO)) Phase 6: real SuSy LARGE_GAS_TURBINE_OVERLAY.
             .workableCasingModel(GTCEu.id("block/casings/mechanic/machine_casing_turbine_titanium"),
-                    GTCEu.id("block/multiblock/generator/large_gas_turbine"))
+                    SuSyValues.susyId("block/multiblock/large_gas_turbine"))
             .register();
 
     public static final MultiblockMachineDefinition ADVANCED_STEAM_TURBINE = REGISTRATE
@@ -1570,9 +1559,8 @@ public final class SusyMachines {
                         GTValues.VNF[4 + 2]));
                 tooltip.add(Component.translatable("susy.multiblock.rotation_generator.tooltip", 3600, 2, 2));
             })
-            // TODO)) Phase 6: real SuSy ADVANCED_STEAM_TURBINE_OVERLAY.
             .workableCasingModel(GTCEu.id("block/casings/mechanic/machine_casing_turbine_titanium"),
-                    GTCEu.id("block/multiblock/generator/large_steam_turbine"))
+                    SuSyValues.susyId("block/multiblock/advanced_steam_turbine"))
             .register();
 
     public static final MultiblockMachineDefinition INTERNAL_COMBUSTION_GENERATOR = REGISTRATE
@@ -1622,16 +1610,15 @@ public final class SusyMachines {
                         GTValues.VNF[3 + 2]));
                 tooltip.add(Component.translatable("susy.multiblock.rotation_generator.tooltip", 3600, 18, 24));
             })
-            // TODO)) Phase 6: 1.12.2 front overlay was FLUID_COMPRESSOR_OVERLAY (solid steel casing base).
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/generator/large_combustion_engine"))
+                    SuSyValues.susyId("block/machines/fluid_compressor"))
             .register();
 
     // ==================================================================
     // Phase 4c Bucket D1: plain recipe multiblocks.
     // Plain 1.12.2 RecipeMapMultiblockControllers with no bespoke logic — standard
-    // WorkableElectricMultiblockMachine + an overclock RecipeModifier. Textures are
-    // GTCEu placeholders pending Phase 6 (real SuSy paths recorded per machine).
+    // WorkableElectricMultiblockMachine + an overclock RecipeModifier. Migrated SuSy
+    // overlay assets are used where available; true legacy stock overlays remain GTCEu.
     // ==================================================================
 
     // ---- advanced_arc_furnace (perfect OC: 1.12.2 RecipeLogic(this,true)) ----
@@ -1657,11 +1644,8 @@ public final class SusyMachines {
                     .where(' ', Predicates.any())
                     .where('#', Predicates.air())
                     .build())
-            // TODO)) Phase 6: swap the front overlay to the real SuSy 'arc_furnace'
-            // overlay (1.12.2 getFrontOverlay() -> SusyTextures.ARC_FURNACE_OVERLAY);
-            // blast_furnace is the placeholder. Base = SOLID_STEEL_CASING.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/blast_furnace"))
+                    SuSyValues.susyId("block/multiblock/arc_furnace"))
             .register();
 
     public static final MultiblockMachineDefinition ELECTRIC_DISCHARGE_MACHINE = REGISTRATE
@@ -1693,10 +1677,8 @@ public final class SusyMachines {
                     .where('E', Predicates.blocks(SusyBlocks.COPPER_TUNGSTEN_EDM_ELECTRODE.get()))
                     .where('G', Predicates.blocks(GTBlocks.CASING_LAMINATED_GLASS.get()))
                     .build())
-            // TODO)) Phase 6: real textures — base gregtech:blocks/casings/gcym/nonconducting_casing,
-            //  front overlay susy:blocks/multiblock/edm_overlay (SusyTextures.EDM_OVERLAY).
             .workableCasingModel(GTCEu.id("block/casings/gcym/nonconducting_casing"),
-                    GTCEu.id("block/multiblock/gcym/large_electrolyzer"))
+                    SuSyValues.susyId("block/multiblock/edm"))
             .register();
 
     public static final MultiblockMachineDefinition GAS_ATOMIZER = REGISTRATE
@@ -1728,11 +1710,9 @@ public final class SusyMachines {
                     .where('X', Predicates.air())
                     .where(' ', Predicates.any())
                     .build())
-            // TODO)) Phase 6: real textures — base .../solid/machine_casing_solid_steel,
-            //  front overlay SusyTextures.GAS_ATOMIZER_OVERLAY (susy:blocks/multiblock/gas_atomizer_overlay).
-            //  GTCEu has no gas_atomizer overlay; multiblock_workable is the placeholder.
+            // TODO)) Phase 6: port the solid-steel base casing texture.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/gas_atomizer"))
             .register();
 
     public static final MultiblockMachineDefinition PRECISE_MILLING_MACHINE = REGISTRATE
@@ -1762,11 +1742,9 @@ public final class SusyMachines {
                     .where('G', Predicates.blocks(GTBlocks.CASING_STAINLESS_STEEL_GEARBOX.get()))
                     .where('W', Predicates.blocks(GTBlocks.CASING_TEMPERED_GLASS.get()))
                     .build())
-            // TODO)) Phase 6: real base .../metal_casing/stainless_clean (+ drill-bit steel,
-            //  tempered glass); overlay SusyTextures.MILLING_OVERLAY (gregtech:blocks/multiblock/milling).
-            //  GTCEu has no milling overlay; multiblock_workable is the placeholder.
+            // TODO)) Phase 6: port the stainless-steel casing, drill-bit, and tempered-glass base textures.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/milling"))
             .register();
 
     // ==================================================================
@@ -1814,7 +1792,8 @@ public final class SusyMachines {
             // logic never implemented parallel processing, so the misleading tooltip
             // is intentionally not carried forward.
             // TODO)) Decide whether attrition recipes should gain explicit pure parallel.
-            // TODO)) Phase 6: real abrasion-resistant CTM + ATTRITION_SCRUBBER_OVERLAY.
+            // TODO)) Phase 6: port abrasion-resistant CTM. The legacy controller used
+            // no custom front overlay, so the valid stock maceration-tower overlay remains.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
             .register();
@@ -1866,7 +1845,7 @@ public final class SusyMachines {
             // box, and active collision damage. Phase 6: roll animation, selected-sheet
             // hatch appearance, and the dedicated controller overlay.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
+                    SuSyValues.susyId("block/multiblock/eccentric_roll_crusher"))
             .register();
 
     public static final MultiblockMachineDefinition BALL_MILL = REGISTRATE
@@ -1920,7 +1899,7 @@ public final class SusyMachines {
             // TODO)) Phase 6: hide the shell/head/diaphragm blocks while formed and
             // restore the dedicated Ball Mill drum animation and controller overlay.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
+                    SuSyValues.susyId("block/multiblock/ball_mill"))
             .register();
 
     public static final MultiblockMachineDefinition CURTAIN_COATER = REGISTRATE
@@ -1987,9 +1966,10 @@ public final class SusyMachines {
                     // TODO)) swap Invar to SuSy Incoloy 908 once that material is registered.
                     .where('F', Predicates.frames(GTMaterials.Invar))
                     .build())
-            // TODO)) Phase 6: real silicon-carbide casing + FORMING_PRESS_OVERLAY.
+            // The 1.12.2 controller used the stock forming-press overlay; retain the
+            // matching Modern single-block overlay until its silicon-carbide casing is ported.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    GTCEu.id("block/machines/forming_press"))
             .register();
 
     public static final MultiblockMachineDefinition MAGNETIC_REFRIGERATOR = REGISTRATE
@@ -2058,9 +2038,9 @@ public final class SusyMachines {
                         .where(' ', Predicates.any())
                         .build();
             })
-            // TODO)) Phase 6: real ULV structural CTM + SINTERING_OVERLAY.
+            // TODO)) Phase 6: port the ULV structural casing CTM.
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/sintering"))
             .register();
 
     public static final MultiblockMachineDefinition EVAPORATION_POOL = REGISTRATE
@@ -2219,7 +2199,7 @@ public final class SusyMachines {
                     .where(' ', Predicates.any())
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/metallurgical_converter"))
             .register();
 
     // ---- reverberatory_furnace (NoEnergy: recipes EUt(0); no INPUT_ENERGY ability) ----
@@ -2327,7 +2307,7 @@ public final class SusyMachines {
                         .build();
             })
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/railroad_engineering_station"))
             .register();
 
     // ---- heat_radiator (dynamic-size no-energy radiator) ----
@@ -2344,7 +2324,7 @@ public final class SusyMachines {
                     HeatRadiatorMachine.MIN_HEIGHT, HeatRadiatorMachine.MIN_RADIUS))
             .shapeInfos(HeatRadiatorMachine::buildShapeInfos)
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/radiator"))
             .register();
 
     // ---- large_fluid_pump (perfect OC + pure-parallel x256) ----
@@ -2379,7 +2359,7 @@ public final class SusyMachines {
                     .where('O', Predicates.abilities(PartAbility.EXPORT_FLUIDS))
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/fluid_drilling_rig"))
+                    SuSyValues.susyId("block/multiblock/large_fluid_pump"))
             .register();
 
     // ---- mixer_settler_v2 (dynamic-width cells 2..20; cell gate + pure-parallel x16) ----
@@ -2475,7 +2455,7 @@ public final class SusyMachines {
                     Component.translatable("susy.machine.mining_drill.tooltip.2"))
             .pattern(MiningDrillMachine::buildPattern)
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/mining_drill"))
             .register();
 
     // ---- greenhouse (variable-length cells; cell-count parallel) ----
@@ -2504,7 +2484,7 @@ public final class SusyMachines {
                     Component.translatable("susy.machine.dumper.tooltip.2"))
             .pattern(DumperMachine::buildPattern)
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/dumper"))
             .register();
 
     // ---- flare_stack (gas/liquid incinerator) ----
@@ -2522,7 +2502,7 @@ public final class SusyMachines {
                 return new MultiblockShapeInfo(pattern.getPreview(repetitions));
             })
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/flare_stack"))
             .register();
 
     // ---- smoke_stack (gas vent) ----
@@ -2540,7 +2520,7 @@ public final class SusyMachines {
                 return new MultiblockShapeInfo(pattern.getPreview(repetitions));
             })
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/smoke_stack"))
             .register();
 
     // ==================================================================
@@ -2616,7 +2596,7 @@ public final class SusyMachines {
                     .where('#', Predicates.any())
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/billet_mold"))
             .register();
 
     public static final MultiblockMachineDefinition SLAB_MOLD = REGISTRATE
@@ -2647,7 +2627,7 @@ public final class SusyMachines {
                     .where('#', Predicates.any())
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/slab_mold"))
             .register();
 
     public static final MultiblockMachineDefinition FLYING_SHEAR = REGISTRATE
@@ -2675,7 +2655,7 @@ public final class SusyMachines {
                     .where(' ', Predicates.any())
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/flying_shear"))
             .register();
 
     public static final MultiblockMachineDefinition ROLLING_MILL = REGISTRATE
@@ -2704,7 +2684,7 @@ public final class SusyMachines {
                     .where('A', Predicates.air())
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/rolling_mill"))
             .register();
 
     public static final MultiblockMachineDefinition CLUSTER_MILL = REGISTRATE
@@ -2738,7 +2718,7 @@ public final class SusyMachines {
                     .where('A', Predicates.air())
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/cluster_mill"))
             .register();
 
     public static final MultiblockMachineDefinition TURNING_ZONE = REGISTRATE
@@ -2769,7 +2749,7 @@ public final class SusyMachines {
                     .where(' ', Predicates.any())
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/turning_zone"))
             .register();
 
     public static final MultiblockMachineDefinition STRAND_COOLER = REGISTRATE
@@ -2804,7 +2784,7 @@ public final class SusyMachines {
                     .where(' ', Predicates.any())
                     .build())
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
-                    GTCEu.id("block/multiblock/multiblock_workable"))
+                    SuSyValues.susyId("block/multiblock/strand_cooler"))
             .register();
 
     // ---- component_redstone_controller (multiblock part) ----
@@ -2895,10 +2875,8 @@ public final class SusyMachines {
 
     /**
      * One {@link SimpleTieredMachine} per tier running {@code recipeType} with
-     * stock non-perfect overclocking. Mirrors {@code GTMachineUtils.registerSimpleMachines}.
-     * TODO)) Phase 6: point {@code workableTieredHullModel} at the SuSy machine
-     * overlay textures (1.12.2 {@code SusyTextures}); GTCEu's hull model is the
-     * placeholder.
+     * stock non-perfect overclocking. Mirrors {@code GTMachineUtils.registerSimpleMachines}
+     * while selecting migrated SuSy overlays and verified legacy GTCEu fallbacks.
      */
     public static MachineDefinition[] registerSimpleMachines(String name,
                                                              GTRecipeType recipeType, Int2IntFunction tankScalingFunction, int... tiers) {
@@ -2914,6 +2892,37 @@ public final class SusyMachines {
     public static MachineDefinition[] registerSimpleMachines(String name,
                                                              GTRecipeType recipeType, Int2IntFunction tankScalingFunction) {
         return registerSimpleMachines(name, recipeType, tankScalingFunction, ELECTRIC_TIERS);
+    }
+
+    /**
+     * Steam-machine equivalent of {@link GTMachineUtils#registerSimpleSteamMachines},
+     * with the overlay directory in the SuSy asset domain. The texture layout is the
+     * GTCEu-Modern {@code WorkableOverlays} convention:
+     * {@code <dir>/overlay_front[_active|_paused][_emissive].png}.
+     */
+    private static it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> registerSuSySimpleSteamMachines(
+                                                                                                                       String name,
+                                                                                                                       GTRecipeType recipeType) {
+        return registerSteamMachinesWithOverlay(name, recipeType,
+                SuSyValues.susyId("block/machines/" + name));
+    }
+
+    /**
+     * Registers a steam-machine pair with the given verified Modern overlay.
+     * This is used for legacy machines that intentionally used a stock GTCEu texture.
+     */
+    private static it.unimi.dsi.fastutil.Pair<MachineDefinition, MachineDefinition> registerSteamMachinesWithOverlay(
+                                                                                                                       String name,
+                                                                                                                       GTRecipeType recipeType,
+                                                                                                                       ResourceLocation overlay) {
+        return GTMachineUtils.registerSteamMachines(REGISTRATE, "steam_" + name, SimpleSteamMachine::new,
+                (pressure, builder) -> builder
+                        .rotationState(RotationState.ALL)
+                        .recipeType(recipeType)
+                        .recipeModifier(SimpleSteamMachine::recipeModifier)
+                        .modelProperty(GTMachineModelProperties.VENT_DIRECTION, RelativeDirection.BACK)
+                        .workableSteamHullModel(pressure, overlay)
+                        .register());
     }
 
     /**
@@ -2942,6 +2951,20 @@ public final class SusyMachines {
     }
 
     /**
+     * Resolves the front-overlay directory for a simple tiered machine. Most entries
+     * have a migrated SuSy overlay; the exceptions deliberately retain the GTCEu
+     * visual selected by their 1.12.2 registrations.
+     */
+    private static ResourceLocation simpleMachineOverlay(String name) {
+        return switch (name) {
+            case "vacuum_chamber" -> GTCEu.id("block/machines/gas_collector");
+            case "weapons_factory" -> GTCEu.id("block/machines/assembler");
+            case "resistance_furnace" -> GTCEu.id("block/machines/electric_furnace");
+            default -> SuSyValues.susyId("block/machines/" + name);
+        };
+    }
+
+    /**
      * Shared builder body for simple/catalyst/continuous tiered machines.
      */
     private static MachineDefinition simpleTieredBuilder(String name, GTRecipeType recipeType,
@@ -2953,7 +2976,7 @@ public final class SusyMachines {
                 .rotationState(RotationState.NON_Y_AXIS)
                 .recipeType(recipeType)
                 .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
-                .workableTieredHullModel(GTCEu.id("block/machines/" + name))
+                .workableTieredHullModel(simpleMachineOverlay(name))
                 .tooltips(GTMachineUtils.workableTiered(tier, GTValues.V[tier], GTValues.V[tier] * 64, recipeType,
                         tankScalingFunction.applyAsInt(tier), true))
                 .register();
