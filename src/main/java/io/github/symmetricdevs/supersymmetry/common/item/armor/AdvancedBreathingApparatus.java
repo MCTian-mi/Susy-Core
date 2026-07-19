@@ -2,13 +2,17 @@ package io.github.symmetricdevs.supersymmetry.common.item.armor;
 
 import com.gregtechceu.gtceu.api.item.armor.ArmorComponentItem;
 
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 import static io.github.symmetricdevs.supersymmetry.Supersymmetry.MOD_ID;
+
+import io.github.symmetricdevs.supersymmetry.client.renderer.handler.BreathingArmorModels;
 
 /**
  * Advanced breathing apparatus with set-based armor (nominal 20 armor points =
@@ -143,7 +149,18 @@ public class AdvancedBreathingApparatus extends BreathingApparatus {
     @Override
     public ResourceLocation getArmorTexture(@NotNull ItemStack stack, @Nullable Entity entity,
                                             @NotNull EquipmentSlot slot, @Nullable String type) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/armor/" + name + "_" + slot.getName() + ".png");
+        String layer = slot == EquipmentSlot.LEGS ? "layer_2" : "layer_1";
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/models/armor/" + name + "_" + layer + ".png");
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public HumanoidModel<?> getArmorModel(@NotNull LivingEntity entity, @NotNull ItemStack stack,
+                                          @NotNull EquipmentSlot slot, @NotNull HumanoidModel<?> defaultModel) {
+        return switch (slot) {
+            case HEAD, CHEST, LEGS, FEET -> BreathingArmorModels.protectiveSuit(defaultModel, slot);
+            default -> defaultModel;
+        };
     }
 
     @Override

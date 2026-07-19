@@ -11,8 +11,17 @@ import io.github.symmetricdevs.supersymmetry.SuSyValues;
 import io.github.symmetricdevs.supersymmetry.Supersymmetry;
 import io.github.symmetricdevs.supersymmetry.api.item.MillBallItem;
 import io.github.symmetricdevs.supersymmetry.api.unification.ore.SusyTagPrefixes;
+import com.gregtechceu.gtceu.api.item.armor.ArmorComponentItem;
+
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyRecipeTypes;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyMachines;
+import io.github.symmetricdevs.supersymmetry.common.item.armor.AdvancedBreathingApparatus;
+import io.github.symmetricdevs.supersymmetry.common.item.armor.AdvancedBreathingTank;
+import io.github.symmetricdevs.supersymmetry.common.item.armor.BreathingApparatus;
+import io.github.symmetricdevs.supersymmetry.common.item.armor.SimpleGasMask;
+import io.github.symmetricdevs.supersymmetry.common.item.armor.SpaceSuit;
+import io.github.symmetricdevs.supersymmetry.common.item.armor.SpaceSuitTank;
+import io.github.symmetricdevs.supersymmetry.common.item.armor.SuSyMetaArmor;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
@@ -130,6 +139,17 @@ public final class AddonRegistrationTest {
         helper.assertTrue(GTRegistries.MACHINES.get(STRAND_COOLER_ID) == SusyMachines.STRAND_COOLER,
                 "Strand Cooler machine definition was not registered");
 
+        assertArmorLogic(helper, "simple gas mask", SuSyMetaArmor.SIMPLE_GAS_MASK.get(), SimpleGasMask.class);
+        assertArmorLogic(helper, "gas mask", SuSyMetaArmor.GAS_MASK.get(), BreathingApparatus.class);
+        assertArmorLogic(helper, "gas tank", SuSyMetaArmor.GAS_TANK.get(), BreathingApparatus.class);
+        assertArmorLogic(helper, "asbestos mask", SuSyMetaArmor.ASBESTOS_MASK.get(),
+                AdvancedBreathingApparatus.class);
+        assertArmorLogic(helper, "asbestos chestplate", SuSyMetaArmor.ASBESTOS_CHESTPLATE.get(),
+                AdvancedBreathingTank.class);
+        assertArmorLogic(helper, "astronaut helmet", SuSyMetaArmor.ASTRONAUT_HELMET.get(), SpaceSuit.class);
+        assertArmorLogic(helper, "astronaut chestplate", SuSyMetaArmor.ASTRONAUT_CHESTPLATE.get(),
+                SpaceSuitTank.class);
+
         Item millBallItem = BuiltInRegistries.ITEM.get(STEEL_MILL_BALL_ID);
         helper.assertTrue(BuiltInRegistries.ITEM.containsKey(STEEL_MILL_BALL_ID),
                 "Steel mill ball item was not registered");
@@ -153,5 +173,16 @@ public final class AddonRegistrationTest {
         helper.succeed();
     }
 
-    private AddonRegistrationTest() {}
+    private static void assertArmorLogic(GameTestHelper helper, String name, Item item,
+                                         Class<?> expectedLogic) {
+        helper.assertTrue(item instanceof ArmorComponentItem,
+                name + " was not registered as an ArmorComponentItem");
+        if (item instanceof ArmorComponentItem armor) {
+            helper.assertTrue(expectedLogic.isInstance(armor.getArmorLogic()),
+                    name + " does not use " + expectedLogic.getSimpleName());
+        }
+    }
+
+    private AddonRegistrationTest() {
+    }
 }

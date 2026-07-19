@@ -8,6 +8,7 @@ import io.github.symmetricdevs.supersymmetry.common.data.SusyBlocks;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyCreativeModeTabs;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyMachines;
 import io.github.symmetricdevs.supersymmetry.common.item.SusyItems;
+import io.github.symmetricdevs.supersymmetry.common.item.armor.SuSyMetaArmor;
 import io.github.symmetricdevs.supersymmetry.common.materials.SusyMaterials;
 import io.github.symmetricdevs.supersymmetry.config.SusyConfig;
 import io.github.symmetricdevs.supersymmetry.data.SusyDatagen;
@@ -68,6 +69,7 @@ public class Supersymmetry {
         // reference.
         SusyBlocks.init();
         SusyItems.init();
+        SuSyMetaArmor.init();
         SusyDatagen.init();
 
         // Register deferred sound events on the mod event bus.
