@@ -1,0 +1,11 @@
+{
+  "parent": "gtceu:block/cube_2_layer/bottom_top",
+  "textures": {
+    "bot_bottom": "supersymmetry:block/base_structural_block",
+    "bot_side": "supersymmetry:block/structural_block_lowlight",
+    "bot_top": "supersymmetry:block/base_structural_block",
+    "top_bottom": "supersymmetry:block/structural_block_lowlight_top_bloom",
+    "top_side": "supersymmetry:block/structural_block_lowlight_bloom",
+    "top_top": "supersymmetry:block/structural_block_lowlight_top_bloom"
+  }
+}

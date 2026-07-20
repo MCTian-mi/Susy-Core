@@ -1,5 +1,6 @@
 package io.github.symmetricdevs.supersymmetry.common.data;
 
+import com.gregtechceu.gtceu.GTCEu;
 import com.gregtechceu.gtceu.api.block.ActiveBlock;
 import com.gregtechceu.gtceu.api.block.property.GTBlockStateProperties;
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
@@ -7,6 +8,7 @@ import com.gregtechceu.gtceu.common.data.models.GTModels;
 import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.tterrag.registrate.util.entry.BlockEntry;
 
+import io.github.symmetricdevs.supersymmetry.Supersymmetry;
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
 import io.github.symmetricdevs.supersymmetry.common.block.DirectionalOrientableBlock;
 import io.github.symmetricdevs.supersymmetry.common.block.HorizontalOrientableBlock;
@@ -32,12 +34,11 @@ import net.minecraft.world.level.block.RotatedPillarBlock;
  * Rocket-casing blocks (rocketry/) are noted but deferred — their scope is the rocket/launch
  * assembly in a later phase.
  * <p>
- * <b>Textures are placeholders.</b> The 1.12.2 art lives under the legacy
- * {@code assets/gregtech/textures/blocks/**} namespace with {@code assets/susy/}
- * forge_marker blockstates — both invalid in 1.20.1. Every block below points at a
- * GTCEu stock texture so it registers and renders sanely; the real SuSy texture
- * paths (1.12.2 {@code gregtech:blocks/...}) are recorded next to each entry as a
- * {@code // TODO} } for the Phase 6 texture/blockstate/CTM migration.
+ * <b>Texture migration is partial.</b> Decorative cube-all families use the migrated 1.12.2
+ * art in the active {@code supersymmetry:block/} domain. Casing and special-purpose blocks
+ * still point at GTCEu stock textures; their real SuSy paths (1.12.2
+ * {@code gregtech:blocks/...}) remain recorded next to each entry for the Phase 6
+ * texture/blockstate/CTM migration.
  * <p>
  * Several 1.12.2 variants were <em>rotatable</em> (conveyor, separator rotor,
  * alternator coil, turbine rotor, metallurgy rolls, engine casing 2, girth gear) or
@@ -313,13 +314,58 @@ public final class SusyBlocks {
     // Helpers for decorative blocks.
     // ==================================================================
 
+    private static ResourceLocation decorativeTexture(String name) {
+        return ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "block/" + name);
+    }
+
+    private static BlockEntry<Block> createBottomTopDecorativeBlock(String name, String side, String bottom,
+                                                                      String top) {
+        return REGISTRATE.block(name, Block::new)
+                .initialProperties(() -> Blocks.IRON_BLOCK)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::solid)
+                .blockstate((ctx, prov) -> prov.simpleBlock(ctx.getEntry(),
+                        prov.models().cubeBottomTop(ctx.getName(), decorativeTexture(side), decorativeTexture(bottom),
+                                decorativeTexture(top))))
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
+    private static BlockEntry<Block> createStructuralBottomTopDecorativeBlock(String name) {
+        return createBottomTopDecorativeBlock(name, name, "base_structural_block", "base_structural_block");
+    }
+
+    private static BlockEntry<Block> createEmissiveStructuralBlock(String name, String bloomSide, String bloomTop) {
+        return REGISTRATE.block(name, Block::new)
+                .initialProperties(() -> Blocks.IRON_BLOCK)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
+                .addLayer(() -> RenderType::cutoutMipped)
+                .blockstate((ctx, prov) -> {
+                    var baseStructural = decorativeTexture("base_structural_block");
+                    var model = prov.models().withExistingParent(ctx.getName(), GTCEu.id("block/cube_2_layer/bottom_top"))
+                            .texture("bot_side", decorativeTexture(name))
+                            .texture("bot_top", baseStructural)
+                            .texture("bot_bottom", baseStructural)
+                            .texture("top_side", decorativeTexture(bloomSide))
+                            .texture("top_top", decorativeTexture(bloomTop))
+                            .texture("top_bottom", decorativeTexture(bloomTop));
+                    prov.simpleBlock(ctx.getEntry(), model);
+                })
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
     /** Stone-like block (sound/hardness from {@link Blocks#STONE}). */
     private static BlockEntry<Block> createStoneDecorativeBlock(String name) {
         return REGISTRATE.block(name, Block::new)
                 .initialProperties(() -> Blocks.STONE)
                 .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
                 .addLayer(() -> RenderType::solid)
-                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .exBlockstate(GTModels.cubeAllModel(decorativeTexture(name)))
                 .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
                 .item(BlockItem::new)
                 .build()
@@ -332,7 +378,7 @@ public final class SusyBlocks {
                 .initialProperties(() -> Blocks.IRON_BLOCK)
                 .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
                 .addLayer(() -> RenderType::solid)
-                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .exBlockstate(GTModels.cubeAllModel(decorativeTexture(name)))
                 .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
                 .item(BlockItem::new)
                 .build()
@@ -345,7 +391,7 @@ public final class SusyBlocks {
                 .initialProperties(() -> Blocks.WHITE_WOOL)
                 .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
                 .addLayer(() -> RenderType::solid)
-                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .exBlockstate(GTModels.cubeAllModel(decorativeTexture(name)))
                 .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
                 .item(BlockItem::new)
                 .build()
@@ -358,7 +404,7 @@ public final class SusyBlocks {
                 .initialProperties(() -> Blocks.SAND)
                 .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
                 .addLayer(() -> RenderType::solid)
-                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .exBlockstate(GTModels.cubeAllModel(decorativeTexture(name)))
                 .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
                 .item(BlockItem::new)
                 .build()
@@ -371,7 +417,7 @@ public final class SusyBlocks {
                 .initialProperties(() -> Blocks.BEDROCK)
                 .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
                 .addLayer(() -> RenderType::solid)
-                .exBlockstate(GTModels.cubeAllModel(TEX_STEEL))
+                .exBlockstate(GTModels.cubeAllModel(decorativeTexture(name)))
                 .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
                 .item(BlockItem::new)
                 .build()
@@ -455,7 +501,7 @@ public final class SusyBlocks {
     public static final BlockEntry<Block> HYDROTHERMAL_DEPOSIT = createUnbreakableDecorativeBlock("hydrothermal_deposit"); // TODO)) tex hydrothermal
     public static final BlockEntry<Block> ALLUVIAL_DEPOSIT = createUnbreakableDecorativeBlock("alluvial_deposit"); // TODO)) tex alluvial
     public static final BlockEntry<Block> MAGMATIC_HYDROTHERMAL_DEPOSIT = createUnbreakableDecorativeBlock("magmatic_hydrothermal_deposit"); // TODO)) tex magmatic_hydrothermal
-    public static final BlockEntry<Block> ICE_CAP_DEPOSIT = createUnbreakableDecorativeBlock("ice_cap_deposit"); // TODO)) tex ice_cap
+    public static final BlockEntry<Block> ICE_CAP_DEPOSIT = createUnbreakableDecorativeBlock("ice_cap_deposit"); // TODO)) recover or recreate missing ice_cap texture (Phase 6)
     public static final BlockEntry<Block> EVAPORITE_DEPOSIT = createUnbreakableDecorativeBlock("evaporite_deposit"); // TODO)) tex evaporite
 
     // ==================================================================
@@ -516,21 +562,21 @@ public final class SusyBlocks {
     // tex gregtech:blocks/casings/structural_block/<variant>
     // ==================================================================
     public static final BlockEntry<Block> BASE_STRUCTURAL_BLOCK = createMetalDecorativeBlock("base_structural_block"); // TODO)) tex base_structural_block
-    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LOW = createMetalDecorativeBlock("structural_block_low"); // TODO)) tex structural_block_low
-    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LOWLIGHT = createMetalDecorativeBlock("structural_block_lowlight"); // TODO)) tex structural_block_lowlight
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LOW = createStructuralBottomTopDecorativeBlock("structural_block_low");
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LOWLIGHT = createEmissiveStructuralBlock("structural_block_lowlight", "structural_block_lowlight_bloom", "structural_block_lowlight_top_bloom");
     public static final BlockEntry<Block> STRUCTURAL_BLOCK_DANGER_A = createMetalDecorativeBlock("structural_block_danger_a"); // TODO)) tex structural_block_danger_a
     public static final BlockEntry<Block> STRUCTURAL_BLOCK_DANGER_B = createMetalDecorativeBlock("structural_block_danger_b"); // TODO)) tex structural_block_danger_b
     public static final BlockEntry<Block> STRUCTURAL_BLOCK_DANGER_C = createMetalDecorativeBlock("structural_block_danger_c"); // TODO)) tex structural_block_danger_c
     public static final BlockEntry<Block> STRUCTURAL_BLOCK_DANGER_D = createMetalDecorativeBlock("structural_block_danger_d"); // TODO)) tex structural_block_danger_d
     public static final BlockEntry<Block> STRUCTURAL_BLOCK_COLUMN = createMetalDecorativeBlock("structural_block_column"); // TODO)) tex structural_block_column
     public static final BlockEntry<Block> STRUCTURAL_BLOCK_COLUMN_OLD = createMetalDecorativeBlock("structural_block_column_old"); // TODO)) tex structural_block_column_old
-    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LIGHT = createMetalDecorativeBlock("structural_block_light"); // TODO)) tex structural_block_light
-    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LIGHT_BROKEN = createMetalDecorativeBlock("structural_block_light_broken"); // TODO)) tex structural_block_light_broken
-    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LIGHT_CABLE = createMetalDecorativeBlock("structural_block_light_cable"); // TODO)) tex structural_block_light_cable
-    public static final BlockEntry<Block> STRUCTURAL_BLOCK_INSTRUMENTS = createMetalDecorativeBlock("structural_block_instruments"); // TODO)) tex structural_block_instruments
-    public static final BlockEntry<Block> STRUCTURAL_BLOCK_SIGN_0 = createMetalDecorativeBlock("structural_block_sign_0"); // TODO)) tex structural_block_sign_0
-    public static final BlockEntry<Block> STRUCTURAL_BLOCK_SIGN_1 = createMetalDecorativeBlock("structural_block_sign_1"); // TODO)) tex structural_block_sign_1
-    public static final BlockEntry<Block> STRUCTURAL_BLOCK_SIGN_2 = createMetalDecorativeBlock("structural_block_sign_2"); // TODO)) tex structural_block_sign_2
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LIGHT = createEmissiveStructuralBlock("structural_block_light", "structural_block_light_bloom", "structural_block_lowlight_top_bloom");
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LIGHT_BROKEN = createStructuralBottomTopDecorativeBlock("structural_block_light_broken");
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_LIGHT_CABLE = createStructuralBottomTopDecorativeBlock("structural_block_light_cable");
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_INSTRUMENTS = createEmissiveStructuralBlock("structural_block_instruments", "structural_block_instruments_bloom", "structural_block_lowlight_top_bloom");
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_SIGN_0 = createStructuralBottomTopDecorativeBlock("structural_block_sign_0");
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_SIGN_1 = createStructuralBottomTopDecorativeBlock("structural_block_sign_1");
+    public static final BlockEntry<Block> STRUCTURAL_BLOCK_SIGN_2 = createStructuralBottomTopDecorativeBlock("structural_block_sign_2");
     public static final BlockEntry<Block> STRUCTURAL_BLOCK_EXPOSED = createMetalDecorativeBlock("structural_block_exposed"); // TODO)) tex structural_block_exposed
     public static final BlockEntry<Block> STRUCTURAL_BLOCK_EXPOSED_1 = createMetalDecorativeBlock("structural_block_exposed_1"); // TODO)) tex structural_block_exposed_1
     public static final BlockEntry<Block> STRUCTURAL_BLOCK_EXPOSED_2 = createMetalDecorativeBlock("structural_block_exposed_2"); // TODO)) tex structural_block_exposed_2
@@ -585,8 +631,8 @@ public final class SusyBlocks {
     // Has TileEntityFlare with faction-hate mechanics.
     // tex gregtech:blocks/casings/raid_flare/<variant>
     // ==================================================================
-    public static final BlockEntry<Block> BANDIT_FLARE = createMetalDecorativeBlock("bandit_flare"); // TODO)) tile entity + faction hate; tex bandit_flare
-    public static final BlockEntry<Block> FED_FLARE = createMetalDecorativeBlock("fed_flare"); // TODO)) tile entity + faction hate; tex fed_flare
+    public static final BlockEntry<Block> BANDIT_FLARE = createBottomTopDecorativeBlock("bandit_flare", "bandit_flare_side", "bandit_flare_bottom", "bandit_flare_top"); // TODO)) tile entity + faction hate
+    public static final BlockEntry<Block> FED_FLARE = createBottomTopDecorativeBlock("fed_flare", "fed_flare_side", "fed_flare_bottom", "fed_flare_top"); // TODO)) tile entity + faction hate
 
     // ==================================================================
     // Support Block (1.12.2 BlockSupport, 1 variant)
@@ -609,9 +655,10 @@ public final class SusyBlocks {
     //
     // tex gregtech:blocks/casings/stone_variant/<stoneVariant>/<stoneType>
     // ==================================================================
-    public static final BlockEntry<Block> SUSY_STONE_SMOOTH = createStoneDecorativeBlock("susy_stone_smooth"); // TODO)) 12 stone types; tex susy_stone_smooth
-    public static final BlockEntry<Block> SUSY_STONE_COBBLE = createStoneDecorativeBlock("susy_stone_cobble"); // TODO)) 12 stone types; tex susy_stone_cobble
-    public static final BlockEntry<Block> SUSY_STONE_BRICKS = createStoneDecorativeBlock("susy_stone_bricks"); // TODO)) 12 stone types; tex susy_stone_bricks
+    // Default representatives use legacy Gabbro art; the 12 per-StoneType registrations remain deferred.
+    public static final BlockEntry<Block> SUSY_STONE_SMOOTH = createStoneDecorativeBlock("susy_stone_smooth"); // TODO)) 12 stone types
+    public static final BlockEntry<Block> SUSY_STONE_COBBLE = createStoneDecorativeBlock("susy_stone_cobble"); // TODO)) 12 stone types
+    public static final BlockEntry<Block> SUSY_STONE_BRICKS = createStoneDecorativeBlock("susy_stone_bricks"); // TODO)) 12 stone types
 
     // ==================================================================
     // Rocket Casing Blocks (deferred -- rocket/launch scope)
