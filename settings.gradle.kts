@@ -1,4 +1,4 @@
-rootProject.name = "Supersymmetry"
+rootProject.name = "SuSy-Kore"
 
 dependencyResolutionManagement {
     versionCatalogs {
