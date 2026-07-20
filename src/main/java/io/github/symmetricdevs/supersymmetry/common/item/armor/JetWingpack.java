@@ -1,16 +1,20 @@
 package io.github.symmetricdevs.supersymmetry.common.item.armor;
 
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fluids.FluidStack;
 
 import com.gregtechceu.gtceu.api.GTValues;
@@ -22,6 +26,7 @@ import com.gregtechceu.gtceu.utils.input.SyncedKeyMappings;
 
 import io.github.symmetricdevs.supersymmetry.Supersymmetry;
 import io.github.symmetricdevs.supersymmetry.api.recipes.SuSyRecipeMaps;
+import io.github.symmetricdevs.supersymmetry.client.renderer.handler.BreathingArmorModels;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +56,15 @@ public class JetWingpack extends ArmorLogicSuite {
     @Override
     public ResourceLocation getArmorTexture(@NotNull ItemStack stack, @Nullable Entity entity,
                                             @NotNull EquipmentSlot slot, @Nullable String type) {
-        return ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "textures/armor/jet_wingpack.png");
+        return ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID,
+                "textures/models/armor/jet_wingpack_layer_1.png");
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public HumanoidModel<?> getArmorModel(@NotNull LivingEntity entity, @NotNull ItemStack stack,
+                                          @NotNull EquipmentSlot slot, @NotNull HumanoidModel<?> defaultModel) {
+        return slot == EquipmentSlot.CHEST ? BreathingArmorModels.jetWingpack(defaultModel, slot) : defaultModel;
     }
 
     @Override

@@ -36,6 +36,7 @@ public final class BreathingArmorModels {
     private static final ModelLayerLocation GAS_TANK = layer("gas_tank");
     private static final ModelLayerLocation PROTECTIVE_SUIT = layer("protective_suit");
     private static final ModelLayerLocation PROTECTIVE_SUIT_BOOTS = layer("protective_suit_boots");
+    private static final ModelLayerLocation JET_WINGPACK = layer("jet_wingpack");
 
     private BreathingArmorModels() {
     }
@@ -47,6 +48,7 @@ public final class BreathingArmorModels {
         event.registerLayerDefinition(GAS_TANK, BreathingArmorModels::createGasTankLayer);
         event.registerLayerDefinition(PROTECTIVE_SUIT, BreathingArmorModels::createProtectiveSuitLayer);
         event.registerLayerDefinition(PROTECTIVE_SUIT_BOOTS, BreathingArmorModels::createProtectiveSuitBootsLayer);
+        event.registerLayerDefinition(JET_WINGPACK, BreathingArmorModels::createJetWingpackLayer);
     }
 
     public static HumanoidModel<LivingEntity> simpleGasMask(HumanoidModel<?> source, EquipmentSlot slot) {
@@ -63,6 +65,10 @@ public final class BreathingArmorModels {
 
     public static HumanoidModel<LivingEntity> protectiveSuit(HumanoidModel<?> source, EquipmentSlot slot) {
         return prepare(slot == EquipmentSlot.FEET ? PROTECTIVE_SUIT_BOOTS : PROTECTIVE_SUIT, source, slot);
+    }
+
+    public static HumanoidModel<LivingEntity> jetWingpack(HumanoidModel<?> source, EquipmentSlot slot) {
+        return prepare(JET_WINGPACK, source, slot);
     }
 
     private static ModelLayerLocation layer(String name) {
@@ -183,6 +189,23 @@ public final class BreathingArmorModels {
                 .texOffs(56, 104).addBox(-2.2F, 8.0F, -2.4F, 4.4F, 4.0F, 4.8F, outer)
                 .texOffs(112, 23).addBox(-2.0F, 8.0F, -2.0F, 4.0F, 4.0F, 4.0F, shell), PartPose.ZERO);
         return LayerDefinition.create(parts.mesh, 128, 128);
+    }
+
+    private static LayerDefinition createJetWingpackLayer() {
+        var parts = humanoidParts();
+        var outer = new CubeDeformation(0.25F);
+
+        // Backpack thruster mounted on the torso back, with two folded wings sweeping down and out.
+        parts.body.addOrReplaceChild("wingpack", CubeListBuilder.create()
+                .texOffs(0, 0).addBox(-3.0F, 1.0F, 2.0F, 6.0F, 8.0F, 3.0F, outer)
+                .texOffs(0, 12).addBox(-1.5F, 9.0F, 2.5F, 3.0F, 3.0F, 2.0F, CubeDeformation.NONE), PartPose.ZERO);
+        parts.body.addOrReplaceChild("right_wing", CubeListBuilder.create()
+                .texOffs(18, 0).addBox(-1.0F, 0.0F, 0.0F, 1.0F, 11.0F, 16.0F, CubeDeformation.NONE),
+                PartPose.offsetAndRotation(-3.0F, 1.5F, 4.5F, 0.0F, 0.35F, 0.15F));
+        parts.body.addOrReplaceChild("left_wing", CubeListBuilder.create()
+                .texOffs(18, 0).mirror().addBox(0.0F, 0.0F, 0.0F, 1.0F, 11.0F, 16.0F, CubeDeformation.NONE),
+                PartPose.offsetAndRotation(3.0F, 1.5F, 4.5F, 0.0F, -0.35F, -0.15F));
+        return LayerDefinition.create(parts.mesh, 64, 64);
     }
 
     private static HumanoidParts humanoidParts() {
