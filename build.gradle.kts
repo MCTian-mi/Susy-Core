@@ -1,4 +1,4 @@
-@file:Suppress("AvoidDuplicateDependencies")
+@file:Suppress("AvoidDuplicateDependencies", "UnstableApiUsage")
 
 plugins {
     alias(conventions.plugins.repositories)
@@ -26,6 +26,7 @@ dependencies {
     modCompileOnlyApi(deps.ldlib)
     modCompileOnlyApi(deps.registrate)
     modCompileOnlyApi(deps.configuration)
+    modCompileOnlyApi(deps.geckolib)
     modCompileOnlyApi(variantOf(deps.gtceu) { classifier("slim") }) { isTransitive = false }
 
     modRuntimeOnly(deps.configuration) // Forces a newer version of ldlib that contains ConfigFormats#YAML
@@ -36,4 +37,5 @@ dependencies {
     modRuntimeOnly(deps.bundles.jade)
     modRuntimeOnly(deps.spark)
     modRuntimeOnly(deps.gtceu)
+    modRuntimeOnly(deps.geckolib)
 }
