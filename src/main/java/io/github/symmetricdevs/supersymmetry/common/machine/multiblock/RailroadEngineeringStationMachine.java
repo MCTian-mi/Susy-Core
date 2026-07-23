@@ -11,42 +11,30 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.simibubi.create.AllBlocks;
+import com.simibubi.create.content.trains.track.ITrackBlock;
+
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.integration.CreateTrainSpawner;
+
 /**
- * Modern port of the 1.12.2 Railroad Engineering Station controller
- * ({@code MetaTileEntityRailroadEngineeringStation}).
+ * Modern port of the 1.12.2 Railroad Engineering Station controller.
  *
- * <p>
- * <b>Deferred-scope:</b> every train behaviour — rolling-stock
- * detect/select/spawn/progressively-build/complete/kill, the train ghost item
- * slot, and the real IR rail blocks of the {@code 'R'} structure predicate — is
- * Immersive Railroading ({@code cam72cam.immersiverailroading.*}), which has no
- * 1.20.1 port and is excluded from this build (deferred with the
- * rocketry/transport scope). What IS ported now:
- * <ul>
- * <li>the structure AABB (used for the potion aura now, for entity scans later);</li>
- * <li>the mining-fatigue aura on players inside the structure while working;</li>
- * <li>the persisted spawned-stock UUID plumbing (1.12.2 {@code RollingStockEntityID};
- * the entity re-find itself is IR-bound);</li>
- * <li>{@link #beforeWorking}/{@link #afterWorking} hook points with {@code // TODO))}
- * gates at the exact call sites the legacy RecipeLogic used;</li>
- * <li>{@link #rails()}, an interim structure predicate matching vanilla rails.</li>
- * </ul>
- * Recipe item IO uses ordinary IMPORT/EXPORT_ITEMS buses; the 1.12.2 train
- * input/output slots (ghost display + spawn target) are dropped — see the
- * {@code // TODO))} gates below. The real recipes are also IR-bound (their item
- * outputs carry IR defID/gauge NBT and the loader is commented out in
- * {@code SuSyRecipeLoader}), so only dev/test recipes can run until an IR port lands.
+ * <p>Instead of the original Immersive Railroading integration (no 1.20.1 port),
+ * this implementation uses Create tracks as the rail bed and spawns a Create
+ * train when a recipe completes. The multiblock's front-facing direction
+ * determines the train's assembly direction.</p>
  */
 public class RailroadEngineeringStationMachine extends WorkableElectricMultiblockMachine {
 
@@ -79,16 +67,10 @@ public class RailroadEngineeringStationMachine extends WorkableElectricMultibloc
     }
 
     /**
-     * Interim rail predicate for the {@code 'R'} structure slots: matches vanilla
-     * rail blocks so the structure can form today.
-     * // TODO)) ImmersiveRailroading (deferred — no 1.20.1 IR port; rocketry/transport
-     * scope): match the IR {@code BLOCK_RAIL}/{@code BLOCK_RAIL_GAG} track blocks
-     * instead (1.12.2 {@code SuSyPredicates.rails()}), and move this back into
-     * {@code SuSyPredicates} at that point.
+     * Structure predicate for the {@code 'R'} rail slots: accepts Create track blocks.
      */
     public static TraceabilityPredicate rails() {
-        return Predicates.blocks(Blocks.RAIL, Blocks.POWERED_RAIL, Blocks.DETECTOR_RAIL,
-                Blocks.ACTIVATOR_RAIL);
+        return Predicates.blocks(AllBlocks.TRACK.get());
     }
 
     @Override
@@ -101,18 +83,12 @@ public class RailroadEngineeringStationMachine extends WorkableElectricMultibloc
     public void onStructureFormed() {
         super.onStructureFormed();
         computeStructureAABB();
-        // TODO)) ImmersiveRailroading: re-find the in-progress stock entity inside
-        // structureAABB by spawnedStockUuid and rebuild its sorted component list
-        // (1.12.2 readFromNBT + updateFormedValid isFirstTick re-find).
     }
 
     @Override
     public void onStructureInvalid() {
         super.onStructureInvalid();
         structureAABB = null;
-        // TODO)) ImmersiveRailroading: kill the spawned rolling stock, clear the
-        // selected stock and its ghost item (1.12.2 invalidateStructure / onRemoval /
-        // invalidate — a broken multi must never leak a ghost train).
     }
 
     @Override
@@ -123,7 +99,7 @@ public class RailroadEngineeringStationMachine extends WorkableElectricMultibloc
         super.onUnload();
     }
 
-    /** Per-tick station logic (1.12.2 updateFormedValid / update). */
+    /** Per-tick station logic (mining-fatigue aura while working). */
     private void stationUpdate() {
         if (!isFormed() || structureAABB == null) {
             return;
@@ -138,30 +114,69 @@ public class RailroadEngineeringStationMachine extends WorkableElectricMultibloc
                     }
                 }
             }
-            // TODO)) ImmersiveRailroading: scan structureAABB for EntityRollingStock,
-            // (re)select a train and fill the train ghost item (1.12.2 canFindTrain
-            // branch); while working, updateSpawnedStock(progress) so the buildable
-            // stock visibly assembles as the recipe progresses.
         }
     }
 
     @Override
     public boolean beforeWorking(@Nullable GTRecipe recipe) {
-        // TODO)) ImmersiveRailroading: on recipe start the 1.12.2 logic
-        // (setupAndConsumeRecipeInputs) killed the selected stock and spawned the
-        // recipe's first item output as an Entity(Buildable)RollingStock at the rail
-        // position, persisting its UUID into spawnedStockUuid.
         return super.beforeWorking(recipe);
     }
 
     @Override
     public void afterWorking() {
-        // TODO)) ImmersiveRailroading: the 1.12.2 completeRecipe() voided the item
-        // output and finalized the in-world stock (completeSpawnedStock). Interim:
-        // the item output ejects to the EXPORT_ITEMS bus normally — acceptable
-        // because real recipes cannot be registered until the IR-bound recipe
-        // loader is ported anyway.
+        spawnTrainOnCompletion();
         super.afterWorking();
+    }
+
+    /**
+     * Spawns a Create train on the rail bed when the recipe finishes. The train
+     * is assembled facing the multiblock's front direction.
+     */
+    private void spawnTrainOnCompletion() {
+        Level level = getLevel();
+        if (level == null || level.isClientSide) {
+            return;
+        }
+        BlockPos trackPos = findCentralTrackPos();
+        if (trackPos == null) {
+            return;
+        }
+        Direction assemblyDirection = getFrontFacing();
+        CreateTrainSpawner.TrainSpawnResult result = CreateTrainSpawner.trySpawnTrain(level, trackPos, assemblyDirection);
+        if (result.success()) {
+            this.spawnedStockUuid = result.trainId().toString();
+        }
+    }
+
+    /**
+     * Finds a Create track block along the central rail aisle of the structure.
+     * Returns the first track position from the controller's front-most rail row.
+     */
+    @Nullable
+    private BlockPos findCentralTrackPos() {
+        Level level = getLevel();
+        if (level == null) {
+            return null;
+        }
+        // The rail aisle is at the controller's Y level, two rows toward the front.
+        BlockPos.MutableBlockPos cursor = getPos().mutable();
+        for (int i = 0; i < 3; i++) {
+            cursor.move(getFrontFacing());
+        }
+        for (int z = -8; z <= 8; z++) {
+            BlockPos probe = relativePos(cursor, 0, 0, z);
+            BlockState state = level.getBlockState(probe);
+            if (state.getBlock() instanceof ITrackBlock) {
+                return probe;
+            }
+        }
+        return null;
+    }
+
+    private BlockPos relativePos(BlockPos origin, int right, int up, int forward) {
+        Direction front = getFrontFacing();
+        Direction rightDir = front.getCounterClockWise();
+        return origin.relative(rightDir, right).above(up).relative(front, forward);
     }
 
     /**
