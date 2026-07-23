@@ -14,8 +14,10 @@ import com.gregtechceu.gtceu.api.item.DrumMachineItem;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
+import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiPart;
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility;
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties;
+import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
 import com.gregtechceu.gtceu.api.machine.steam.SimpleSteamMachine;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
@@ -40,6 +42,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.fluids.FluidType;
@@ -88,12 +91,18 @@ import java.util.List;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.CASING_PTFE_INERT;
 import static com.gregtechceu.gtceu.common.data.GTBlocks.MACHINE_CASING_ULV;
 
+import static com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableCasingMachineModel;
+import static com.gregtechceu.gtceu.common.data.models.GTMachineModels.CUBE_ALL_SIDED_OVERLAY_MODEL;
+import static com.gregtechceu.gtceu.common.data.models.GTMachineModels.addWorkableOverlays;
+
 import io.github.symmetricdevs.supersymmetry.api.pattern.SuSyPredicates;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.BallMillMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.BlenderMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyRotationGeneratorMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.AttritionScrubberMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.CurtainCoaterMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.DumperMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.EccentricRollCrusherMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.FlareStackMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.HotIsostaticPressMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SmokeStackMachine;
@@ -621,6 +630,9 @@ public final class SusyMachines {
             .multiblock("multi_stage_flash_distiller", WorkableElectricMultiblockMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
             .appearanceBlock(GTBlocks.CASING_STEEL_SOLID)
+            .partAppearance((controller, part, side) -> hasAbility(part, PartAbility.MAINTENANCE, PartAbility.INPUT_ENERGY)
+                    ? GTBlocks.CASING_STAINLESS_CLEAN.get().defaultBlockState()
+                    : GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState())
             .recipeType(SuSyRecipeTypes.MULTI_STAGE_FLASH_DISTILLATION_RECIPES)
             .recipeModifier(GTRecipeModifiers.OC_PERFECT)
             .tooltipBuilder((stack, components) -> components.add(Component
@@ -670,8 +682,10 @@ public final class SusyMachines {
                         .where('#', Predicates.air())
                         .build();
             })
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            .model(createWorkableCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/blast_furnace"))
+                    .andThen(builder -> builder.addDynamicRenderer(
+                            io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)))
             .register();
 
     // ---- ore_sorter ----
@@ -882,11 +896,16 @@ public final class SusyMachines {
                         .aisle("F         F", "LD   B   DR", "LDCCCBCCCDR", "GD   B   DG")
                         .aisle("     F     ", "LDCCCBCCCDR", "L#########R", "LDCCCBCCCDR")
                         .aisle("F         F", "LD   B   DR", "LDCCCSCCCDR", "GD   B   DG")
-                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
-                        .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()))
-                        .where('C', Predicates.blocks(SusyBlocks.WEAR_RESISTANT_LINED_MILL_SHELL.get()))
+                        // Hide the controller's own casing under the Geo model via the render mask
+                        // (not a texture override, which would leak the blank onto formed hatches).
+                        .where('S', Predicates.controller(Predicates.blocks(definition.getBlock()))
+                                .disableRenderFormed())
+                        .where('B', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()).disableRenderFormed())
+                        .where('C', Predicates.blocks(SusyBlocks.WEAR_RESISTANT_LINED_MILL_SHELL.get())
+                                .disableRenderFormed())
                         .where('D', SuSyPredicates.axialOrientation(
-                                SusyBlocks.STEEL_GIRTH_GEAR_TOOTH.get(), RelativeDirection.LEFT))
+                                SusyBlocks.STEEL_GIRTH_GEAR_TOOTH.get(), RelativeDirection.LEFT)
+                                .disableRenderFormed())
                         .where('F', Predicates.frames(GTMaterials.Steel))
                         .where('G', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
                         .where('L', casing
@@ -905,10 +924,16 @@ public final class SusyMachines {
                         .where('#', Predicates.air())
                         .build();
             })
-            // TODO)) Phase 6: hide the rotating shell/gear blocks and restore the
-            // Gecko-equivalent drum/gear animation.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            // Geo-model render replaces the static kiln shell and gear blocks while formed.
+            .model(createWorkableCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     SuSyValues.susyId("block/multiblock/rotary_kiln"))
+                    // No addTextureOverride("all", BLANK) here: that would blank the controller's own
+                    // casing, but GTCEu's replacePartModelWhenFormed() (default true) makes every formed
+                    // hatch adopt the controller model and inherit the blank, wiping hatch base textures.
+                    // The controller block is hidden via disableRenderFormed() on its 'S' predicate instead.
+                    .andThen(b -> b
+                            .addDynamicRenderer(io.github.symmetricdevs.supersymmetry.client.renderer.handler.GeoMachineRender::new)))
+            .hasBER(true)
             .register();
 
     // ---- scrap_recycler (GT casings only; register even though in rocket pkg) ----
@@ -1056,9 +1081,9 @@ public final class SusyMachines {
                     SuSyValues.susyId("block/multiblock/fluidized_bed"))
             .register();
 
-    // ---- blender (perfect OC + FluidRender — register plain, add // TODO)) for the fluid-render client layer (Phase 6)) ----
+    // ---- blender (perfect OC + active first-output fluid surface) ----
     public static final MultiblockMachineDefinition BLENDER = REGISTRATE
-            .multiblock("blender", WorkableElectricMultiblockMachine::new)
+            .multiblock("blender", BlenderMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
             .appearanceBlock(GTBlocks.CASING_PTFE_INERT)
             .recipeType(SuSyRecipeTypes.BLENDER_RECIPES)
@@ -1078,10 +1103,11 @@ public final class SusyMachines {
                     .where('C', Predicates.blocks(GTBlocks.CASING_STAINLESS_STEEL_GEARBOX.get()))
                     .where(' ', Predicates.any())
                     .build())
-            // TODO)) Phase 6: port the FluidRenderRecipeMapMultiBlock client layer
-            // (renders the recipe's output fluid in the 3x3 interior) — dropped here.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_inert_ptfe"),
+            .model(createWorkableCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_inert_ptfe"),
                     GTCEu.id("block/multiblock/large_chemical_reactor"))
+                    .andThen(builder -> builder.addDynamicRenderer(
+                            io.github.symmetricdevs.supersymmetry.client.renderer.handler.BlenderFluidAreaRender::new)))
+            .hasBER(true)
             .register();
 
     // ---- injection_molder (SuSy pure-parallel x16: custom RecipeModifier -> SuSyParallelLogic.pureParallel(machine, recipe, 16)) ----
@@ -1208,7 +1234,7 @@ public final class SusyMachines {
     public static final MultiblockMachineDefinition SIEVE_DISTILLATION_TOWER = REGISTRATE
             .multiblock("sieve_distillation_tower", DistillationTowerMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
-            .appearanceBlock(() -> SusyBlocks.SIEVE_TRAY.get())
+            .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
             .recipeType(SuSyRecipeTypes.SIEVE_DISTILLATION_RECIPES)
             .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
             .allowExtendedFacing(false)
@@ -1232,8 +1258,10 @@ public final class SusyMachines {
             .partSorter(java.util.Comparator.comparingInt(p -> p.self().getPos().getY()))
             // The legacy controller used GTCEu's distillation-tower overlay; retain it
             // rather than substituting a different SuSy tower visual.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            .model(createWorkableCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/distillation_tower"))
+                    .andThen(builder -> builder.addDynamicRenderer(
+                            io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)))
             .register();
 
     // ---- vacuum_distillation_tower (ExtendedDTLogicHandler (3 fluid outputs per layer) — verify Modern DistillationTowerMachine output-per-layer and note if it differs) ----
@@ -1720,6 +1748,9 @@ public final class SusyMachines {
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
             .appearanceBlock(() -> GTBlocks.CASING_STAINLESS_CLEAN.get())
+            .partAppearance((controller, part, side) -> hasAbility(part, PartAbility.MAINTENANCE, PartAbility.INPUT_ENERGY)
+                    ? GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState()
+                    : GTBlocks.CASING_STAINLESS_CLEAN.get().defaultBlockState())
             .recipeType(SuSyRecipeTypes.MILLING_RECIPES)
             .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
             .pattern(definition -> FactoryBlockPattern.start()
@@ -1743,8 +1774,10 @@ public final class SusyMachines {
                     .where('W', Predicates.blocks(GTBlocks.CASING_TEMPERED_GLASS.get()))
                     .build())
             // TODO)) Phase 6: port the stainless-steel casing, drill-bit, and tempered-glass base textures.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
+            .model(createWorkableCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_clean_stainless_steel"),
                     SuSyValues.susyId("block/multiblock/milling"))
+                    .andThen(builder -> builder.addDynamicRenderer(
+                            io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)))
             .register();
 
     // ==================================================================
@@ -1798,10 +1831,14 @@ public final class SusyMachines {
             .register();
 
     public static final MultiblockMachineDefinition ECCENTRIC_ROLL_CRUSHER = REGISTRATE
-            .multiblock("eccentric_roll_crusher", WorkableElectricMultiblockMachine::new)
+            .multiblock("eccentric_roll_crusher", EccentricRollCrusherMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
             .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .partAppearance((controller, part, side) -> controller instanceof EccentricRollCrusherMachine crusher &&
+                    hasAbility(part, PartAbility.IMPORT_ITEMS)
+                    ? crusher.getSelectedSheetAppearance()
+                    : GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState())
             .recipeType(SuSyRecipeTypes.ECCENTRIC_ROLL_CRUSHER_RECIPES)
             .recipeModifier(GTRecipeModifiers.OC_NON_PERFECT)
             .pattern(definition -> {
@@ -1833,18 +1870,28 @@ public final class SusyMachines {
                         .where('H', Predicates.blocks(SusyBlocks.HYDRAULIC_MECHANICAL_GEARBOX.get()))
                         .where('J', Predicates.blocks(SusyBlocks.ABRASION_RESISTANT_CASING.get()))
                         .where('P', Predicates.blocks(GTBlocks.CASING_STEEL_PIPE.get()))
-                        .where('R', Predicates.blocks(SusyBlocks.STEEL_ECCENTRIC_ROLL.get()))
+                        .where('R', SuSyPredicates.eccentricRoll())
                         .where('X', Predicates.frames(GTMaterials.Steel))
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
                         .where('M', metalSheets)
                         .where('N', metalSheets.or(Predicates.abilities(PartAbility.IMPORT_ITEMS)))
                         .build();
             })
-            // TODO)) Phase 5: directional/active eccentric-roll block, reduced collision
-            // box, and active collision damage. Phase 6: roll animation, selected-sheet
-            // hatch appearance, and the dedicated controller overlay.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            .shapeInfos(definition -> {
+                List<MultiblockShapeInfo> shapes = new ArrayList<>();
+                for (DyeColor color : DyeColor.values()) {
+                    shapes.add(createEccentricRollCrusherShape(definition, GTBlocks.LARGE_METAL_SHEETS.get(color).get()));
+                    shapes.add(createEccentricRollCrusherShape(definition, GTBlocks.METAL_SHEETS.get(color).get()));
+                }
+                return shapes;
+            })
+            // Plain workable-casing machine: the animated crusher rolls are their own GeckoLib block
+            // entities (EccentricRollBlock), not a controller-drawn Geo model. The rolls are ActiveBlocks,
+            // so WorkableMultiblockMachine auto-collects them into vaBlocks and toggles ACTIVE while working.
+            .model(createWorkableCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     SuSyValues.susyId("block/multiblock/eccentric_roll_crusher"))
+                    .andThen(builder -> builder.addDynamicRenderer(
+                            io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)))
             .register();
 
     public static final MultiblockMachineDefinition BALL_MILL = REGISTRATE
@@ -1852,6 +1899,12 @@ public final class SusyMachines {
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
             .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .partAppearance((controller, part, side) -> hasAbility(part, PartAbility.MAINTENANCE, PartAbility.INPUT_ENERGY)
+                    ? GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState()
+                    : hasAbility(part, PartAbility.IMPORT_ITEMS, PartAbility.EXPORT_ITEMS,
+                            PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS)
+                            ? SusyBlocks.WEAR_RESISTANT_LINED_MILL_SHELL.get().defaultBlockState()
+                            : GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState())
             .recipeType(SuSyRecipeTypes.BALL_MILL_RECIPES)
             .recipeModifiers(BallMillMachine::fixedParallel32, GTRecipeModifiers.OC_NON_PERFECT)
             .tooltips(Component.translatable("gtceu.universal.tooltip.parallel", BallMillMachine.PARALLEL_LIMIT),
@@ -1859,6 +1912,10 @@ public final class SusyMachines {
                             BallMillMachine.MILL_BALL_REQUIREMENT))
             .pattern(definition -> {
                 TraceabilityPredicate shell = Predicates.blocks(SusyBlocks.WEAR_RESISTANT_LINED_MILL_SHELL.get());
+                // Distinct instance so hiding the shell interior (C) doesn't also hide the visible
+                // faces (A) or the hatch fallbacks, which share the plain `shell` predicate.
+                TraceabilityPredicate hiddenShell = Predicates
+                        .blocks(SusyBlocks.WEAR_RESISTANT_LINED_MILL_SHELL.get()).disableRenderFormed();
                 return FactoryBlockPattern.start()
                         .aisle(" XMMMXXXXXXXX", "  NMM        ", "             ", "  G          ", "  G          ",
                                 "  G          ", "             ", "             ")
@@ -1883,22 +1940,34 @@ public final class SusyMachines {
                         .where('I', Predicates.abilities(PartAbility.IMPORT_FLUIDS).or(shell))
                         .where('O', Predicates.abilities(PartAbility.EXPORT_ITEMS).or(shell))
                         .where('A', shell)
-                        .where('C', shell)
-                        .where('H', Predicates.blocks(SusyBlocks.WEAR_RESISTANT_LINED_SHELL_HEAD.get()))
-                        .where('D', Predicates.blocks(SusyBlocks.INTERMEDIATE_DIAPHRAGM.get()))
+                        .where('C', hiddenShell)
+                        .where('H', Predicates.blocks(SusyBlocks.WEAR_RESISTANT_LINED_SHELL_HEAD.get())
+                                .disableRenderFormed())
+                        .where('D', Predicates.blocks(SusyBlocks.INTERMEDIATE_DIAPHRAGM.get())
+                                .disableRenderFormed())
                         .where('G', SuSyPredicates.axialOrientation(
-                                SusyBlocks.STEEL_GIRTH_GEAR_TOOTH.get(), RelativeDirection.LEFT))
+                                SusyBlocks.STEEL_GIRTH_GEAR_TOOTH.get(), RelativeDirection.LEFT)
+                                .disableRenderFormed())
                         .where('N', Predicates.blocks(GTBlocks.CASING_STEEL_GEARBOX.get()))
                         .where('X', Predicates.frames(GTMaterials.Steel))
+                        // Legacy Ball Mill leaves its controller as a normal visible casing; only the
+                        // shell/head/diaphragm/gear structure blocks are replaced by the Geo model.
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
                         .where('#', Predicates.air())
                         .where(' ', Predicates.any())
                         .build();
             })
-            // TODO)) Phase 6: hide the shell/head/diaphragm blocks while formed and
-            // restore the dedicated Ball Mill drum animation and controller overlay.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            // Geo-model render replaces the static mill-shell/head/diaphragm blocks while formed.
+            .model(createWorkableCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     SuSyValues.susyId("block/multiblock/ball_mill"))
+                    // No addTextureOverride("all", BLANK) here: that would blank the controller's own
+                    // casing, but GTCEu's replacePartModelWhenFormed() (default true) makes every formed
+                    // hatch adopt the controller model and inherit the blank, wiping hatch base textures.
+                    // The controller block is hidden via disableRenderFormed() on its 'S' predicate instead.
+                    .andThen(b -> b
+                            .addDynamicRenderer(io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)
+                            .addDynamicRenderer(io.github.symmetricdevs.supersymmetry.client.renderer.handler.GeoMachineRender::new)))
+            .hasBER(true)
             .register();
 
     public static final MultiblockMachineDefinition CURTAIN_COATER = REGISTRATE
@@ -2045,7 +2114,7 @@ public final class SusyMachines {
             .multiblock("evaporation_pool", EvaporationPoolMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
-            .appearanceBlock(() -> GTBlocks.LIGHT_CONCRETE.get())
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
             .recipeType(SuSyRecipeTypes.EVAPORATION_POOL_RECIPES)
             // Gate only: reject malformed/missing energy metadata and tick IO. The pool is
             // solar/coil heated and deliberately has no EU/t overclock modifier.
@@ -2112,8 +2181,10 @@ public final class SusyMachines {
             })
             // TODO)) Legacy used SOLID_STEEL_CASING base + BLAST_FURNACE_OVERLAY with a "change
             // to concrete / custom overlay?" TODO; the structural casing is light concrete.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            .model(createWorkableCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     GTCEu.id("block/multiblock/electric_blast_furnace"))
+                    .andThen(builder -> builder.addDynamicRenderer(
+                            io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)))
             .register();
 
     // ==================================================================
@@ -2321,8 +2392,10 @@ public final class SusyMachines {
             .pattern(definition -> HeatRadiatorMachine.buildPattern(definition,
                     HeatRadiatorMachine.MIN_HEIGHT, HeatRadiatorMachine.MIN_RADIUS))
             .shapeInfos(HeatRadiatorMachine::buildShapeInfos)
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            .model(createWorkableCasingMachineModel(SuSyValues.susyId("block/casings/serpentine/serpentine"),
                     SuSyValues.susyId("block/multiblock/radiator"))
+                    .andThen(builder -> builder.addDynamicRenderer(
+                            io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)))
             .register();
 
     // ---- large_fluid_pump (perfect OC + pure-parallel x256) ----
@@ -2571,6 +2644,10 @@ public final class SusyMachines {
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
             .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .partAppearance((controller, part, side) -> hasAbility(part, PartAbility.IMPORT_FLUIDS,
+                    PartAbility.EXPORT_FLUIDS, SuSyMultiblockAbilities.STRAND_EXPORT)
+                    ? SusyBlocks.COPPER_PIPE.get().defaultBlockState()
+                    : GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState())
             .pattern(definition -> FactoryBlockPattern.start()
                     .aisle("#CCC#", "#CCC#", "#CCC#", "#CCC#", "#CCC#")
                     .aisle("COOOC", "CPPPC", "CPPPC", "CPPPC", "CIIIC")
@@ -2593,8 +2670,10 @@ public final class SusyMachines {
                     .where(' ', Predicates.air())
                     .where('#', Predicates.any())
                     .build())
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            .model(createStrandMoldCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     SuSyValues.susyId("block/multiblock/billet_mold"))
+                    .andThen(builder -> builder.addDynamicRenderer(
+                            io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)))
             .register();
 
     public static final MultiblockMachineDefinition SLAB_MOLD = REGISTRATE
@@ -2602,6 +2681,10 @@ public final class SusyMachines {
             .rotationState(RotationState.NON_Y_AXIS)
             .allowExtendedFacing(false)
             .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .partAppearance((controller, part, side) -> hasAbility(part, PartAbility.IMPORT_FLUIDS,
+                    PartAbility.EXPORT_FLUIDS, SuSyMultiblockAbilities.STRAND_EXPORT)
+                    ? SusyBlocks.COPPER_PIPE.get().defaultBlockState()
+                    : GTBlocks.CASING_STEEL_SOLID.get().defaultBlockState())
             .pattern(definition -> FactoryBlockPattern.start()
                     .aisle("#CCCCC#", "#CCCCC#", "#CCCCC#", "#CCCCC#", "#CCCCC#")
                     .aisle("COOOOOC", "CPPPPPC", "CPPPPPC", "CPPPPPC", "CIIIIIC")
@@ -2624,8 +2707,10 @@ public final class SusyMachines {
                     .where(' ', Predicates.air())
                     .where('#', Predicates.any())
                     .build())
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            .model(createStrandMoldCasingMachineModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     SuSyValues.susyId("block/multiblock/slab_mold"))
+                    .andThen(builder -> builder.addDynamicRenderer(
+                            io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)))
             .register();
 
     public static final MultiblockMachineDefinition FLYING_SHEAR = REGISTRATE
@@ -2805,6 +2890,59 @@ public final class SusyMachines {
     // Registration helpers (shared with Phases 4b/4c)
     // ==================================================================
 
+    private static MultiblockShapeInfo createEccentricRollCrusherShape(MultiblockMachineDefinition definition,
+                                                                         Block sheet) {
+        return MultiblockShapeInfo.builder()
+                .aisle("  CCCC  ", "  CCGC  ", "  CCMX  ", "    MMX ", "     MMX")
+                .aisle("JJJJ CC ", "JHJ R C ", "  J  M  ", "   J  M ", "       M")
+                .aisle("  BJ CO ", " BJ R C ", " PJ  M  ", " P J  M ", "       I")
+                .aisle("JJJJ CC ", "JHJ R C ", "  J  M  ", "   J  M ", "       M")
+                .aisle("  CECK  ", "  CSGC  ", "  CCMX  ", "    MMX ", "     MMX")
+                .where(' ', Blocks.AIR.defaultBlockState())
+                .where('B', GTBlocks.CASING_STEEL_SOLID.get())
+                .where('C', GTBlocks.CASING_STEEL_SOLID.get())
+                .where('D', GTBlocks.CASING_STEEL_SOLID.get())
+                .where('E', GTMachines.ENERGY_INPUT_HATCH[GTValues.LV], Direction.SOUTH)
+                .where('G', GTBlocks.CASING_STEEL_GEARBOX.get())
+                .where('H', SusyBlocks.HYDRAULIC_MECHANICAL_GEARBOX.get())
+                .where('I', GTMachines.ITEM_IMPORT_BUS[GTValues.LV], Direction.EAST)
+                .where('J', SusyBlocks.ABRASION_RESISTANT_CASING.get())
+                .where('K', GTMachines.MAINTENANCE_HATCH, Direction.SOUTH)
+                .where('M', sheet)
+                .where('O', GTMachines.ITEM_EXPORT_BUS[GTValues.LV], Direction.EAST)
+                .where('P', GTBlocks.CASING_STEEL_PIPE.get())
+                .where('R', SusyBlocks.STEEL_ECCENTRIC_ROLL.get().defaultBlockState()
+                        .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING,
+                                Direction.SOUTH))
+                .where('S', definition, Direction.SOUTH)
+                .where('X', GTMaterialBlocks.MATERIAL_BLOCKS.get(TagPrefix.frameGt, GTMaterials.Steel).get())
+                .build();
+    }
+
+    private static MachineBuilder.ModelInitializer createStrandMoldCasingMachineModel(
+            ResourceLocation baseCasingTexture, ResourceLocation overlayDir) {
+        return (ctx, provider, builder) -> {
+            var overlays = com.gregtechceu.gtceu.client.model.machine.overlays.WorkableOverlays.get(
+                    overlayDir, provider.getExistingFileHelper());
+            var model = provider.models().nested()
+                    .parent(provider.models().getExistingFile(CUBE_ALL_SIDED_OVERLAY_MODEL))
+                    .texture("all", baseCasingTexture);
+            addWorkableOverlays(overlays, RecipeLogic.Status.IDLE, model);
+            builder.partialState().setModel(model);
+            builder.addTextureOverride("all", baseCasingTexture);
+        };
+    }
+
+    private static boolean hasAbility(IMultiPart part, PartAbility... abilities) {
+        Block block = part.self().getDefinition().getBlock();
+        for (PartAbility ability : abilities) {
+            if (ability.isApplicable(block)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Registers a SuSy large-boiler multiblock for the given {@link SuSyBoilerType}.
      * The controller uses a custom {@link SuSyLargeBoilerMachine} and
@@ -2843,7 +2981,9 @@ public final class SusyMachines {
                                             .setPreviewCount(0)))
                             .build();
                 })
-                .workableCasingModel(type.casingTexture, type.frontOverlay)
+                .model(createWorkableCasingMachineModel(type.casingTexture, type.frontOverlay)
+                        .andThen(builder -> builder.addDynamicRenderer(
+                                io.github.symmetricdevs.supersymmetry.client.renderer.handler.FormedPartAppearanceRender::new)))
                 .tooltips(
                         Component.translatable("gtceu.multiblock.large_boiler.heat_time_tooltip",
                                 type.getTicksToBoiling() / 20),

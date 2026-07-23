@@ -2,10 +2,17 @@
   "required": true,
   "minVersion": "0.8",
   "package": "${mod_group}.${mixin_package}",
+  "plugin": "${mod_group}.${mixin_package}.SusyMixinPlugin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "${mixin_refmap}",
   "mixins": [],
-  "client": [],
+  "client": [
+    "minecraft.ChunkRebuildTaskMixin",
+    "minecraft.ModelBlockRendererMixin",
+    "embeddium.BlockRendererMixin",
+    "embeddium.BlockRendererFaceMixin",
+    "gtceu.PatternPreviewWidgetMixin"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1

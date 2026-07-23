@@ -9,14 +9,18 @@ import com.gregtechceu.gtceu.data.recipe.CustomTags;
 import com.tterrag.registrate.util.entry.BlockEntry;
 
 import io.github.symmetricdevs.supersymmetry.Supersymmetry;
+import io.github.symmetricdevs.supersymmetry.SuSyValues;
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
 import io.github.symmetricdevs.supersymmetry.common.block.DirectionalOrientableBlock;
+import io.github.symmetricdevs.supersymmetry.common.block.EccentricRollBlock;
 import io.github.symmetricdevs.supersymmetry.common.block.HorizontalOrientableBlock;
 import io.github.symmetricdevs.supersymmetry.common.block.InnerCasingBlock;
 
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DirectionalBlock;
@@ -198,6 +202,91 @@ public final class SusyBlocks {
                 .register();
     }
 
+    /**
+     * Eccentric crusher roll: a directional {@link ActiveBlock} carrying an animated GeckoLib
+     * block entity (see {@code EccentricRollBlock}). Its inactive state uses the legacy two-roll
+     * baked model; only an active roll selects the block-entity renderer. The block-entity type is
+     * registered in {@code SusyBlockEntities}.
+     */
+    private static BlockEntry<EccentricRollBlock> createEccentricRollBlock(String name, ResourceLocation texture) {
+        return REGISTRATE.block(name, EccentricRollBlock::new)
+                .initialProperties(() -> Blocks.IRON_BLOCK)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false).noOcclusion())
+                .addLayer(() -> RenderType::cutout)
+                .blockstate((ctx, prov) -> {
+                    var model = prov.models().getBuilder(ctx.getName())
+                            .texture("all", SuSyValues.susyId("block/eccentric_roll/all"))
+                            .texture("particle", texture)
+                            .element()
+                            .from(-3.99F, -3.99F, 0.01F)
+                            .to(19.99F, 19.99F, 15.99F)
+                            .face(Direction.NORTH).uvs(0, 3, 3, 6).texture("#all").end()
+                            .face(Direction.EAST).uvs(2, 9, 0, 6).texture("#all").end()
+                            .face(Direction.SOUTH).uvs(0, 0, 3, 3).texture("#all").end()
+                            .face(Direction.WEST).uvs(6, 0, 8, 3).texture("#all").end()
+                            .face(Direction.UP).uvs(2, 6, 4, 9).rotation(
+                                    net.minecraftforge.client.model.generators.ModelBuilder.FaceRotation.CLOCKWISE_90)
+                            .texture("#all").end()
+                            .face(Direction.DOWN).uvs(6, 3, 8, 6).rotation(
+                                    net.minecraftforge.client.model.generators.ModelBuilder.FaceRotation.COUNTERCLOCKWISE_90)
+                            .texture("#all").end()
+                            .end()
+                            .element()
+                            .from(-3.98F, -3.98F, 0.02F)
+                            .to(19.98F, 19.98F, 15.98F)
+                            .rotation().origin(8, 8, 8).axis(Direction.Axis.Z).angle(-45).end()
+                            .face(Direction.NORTH).uvs(3, 3, 6, 6).texture("#all").end()
+                            .face(Direction.EAST).uvs(6, 9, 4, 6).texture("#all").end()
+                            .face(Direction.SOUTH).uvs(3, 0, 6, 3).texture("#all").end()
+                            .face(Direction.WEST).uvs(6, 6, 8, 9).texture("#all").end()
+                            .face(Direction.UP).uvs(8, 0, 10, 3).rotation(
+                                    net.minecraftforge.client.model.generators.ModelBuilder.FaceRotation.CLOCKWISE_90)
+                            .texture("#all").end()
+                            .face(Direction.DOWN).uvs(8, 3, 10, 6).rotation(
+                                    net.minecraftforge.client.model.generators.ModelBuilder.FaceRotation.COUNTERCLOCKWISE_90)
+                            .texture("#all").end()
+                            .end()
+                            // The 1.12.2 block model supplied these transforms; the generated item
+                            // model inherits them through its block-model parent. TODO)) Phase 6:
+                            // reconcile their longitudinal-axis orientation with the formed roll.
+                            .transforms()
+                            .transform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                            .rotation(75, 45, 0).translation(0, 2.5F, 0).scale(0.375F).end()
+                            .transform(ItemDisplayContext.THIRD_PERSON_LEFT_HAND)
+                            .rotation(75, 45, 0).translation(0, 2.5F, 0).scale(0.375F).end()
+                            .transform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND)
+                            .rotation(0, 45, 0).scale(0.4F).end()
+                            .transform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND)
+                            .rotation(0, -135, 0).scale(0.4F).end()
+                            .transform(ItemDisplayContext.GROUND)
+                            .translation(0, 3, 0).scale(0.25F).end()
+                            .transform(ItemDisplayContext.GUI)
+                            .rotation(30, -135, 0).scale(0.625F).end()
+                            .transform(ItemDisplayContext.FIXED)
+                            .scale(0.5F).end()
+                            .end();
+                    prov.getVariantBuilder(ctx.getEntry())
+                            .forAllStates(state -> {
+                                Direction direction = state.getValue(DirectionalBlock.FACING);
+                                // TODO)) Phase 6: reconcile the baked roll's longitudinal axis with
+                                // the active GeckoLib model using a formed in-game reference.
+                                int xRot = direction == Direction.DOWN ? 90 :
+                                        direction == Direction.UP ? 270 : 0;
+                                int yRot = direction.getAxis().isVertical() ? 0 :
+                                        ((int) direction.toYRot() + 180) % 360;
+                                return net.minecraftforge.client.model.generators.ConfiguredModel.builder()
+                                        .modelFile(model)
+                                        .rotationX(xRot)
+                                        .rotationY(yRot)
+                                        .build();
+                            });
+                })
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
     private static ResourceLocation casingTexture(String family, String name) {
         return ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "block/casings/" + family + "/" + name);
     }
@@ -277,14 +366,17 @@ public final class SusyBlocks {
     // BlockMultiblockTank (active; "multiblock_tank", clarifier + flotation walls)
     // tex gregtech:blocks/casings/multiblock_tank/<name>[ / _on]
     // ==================================================================
-    public static final BlockEntry<ActiveBlock> CLARIFIER_MULTIBLOCK_TANK = createActiveCasingBlock("clarifier_multiblock_tank", TEX_STEEL, TEX_STEEL); // TODO)) tex .../multiblock_tank/clarifier + clarifier_on (CTM)
-    public static final BlockEntry<ActiveBlock> FLOTATION_MULTIBLOCK_TANK = createActiveCasingBlock("flotation_multiblock_tank", TEX_STEEL, TEX_STEEL); // TODO)) tex .../multiblock_tank/flotation + flotation_on (CTM)
+    public static final BlockEntry<ActiveBlock> CLARIFIER_MULTIBLOCK_TANK = createActiveCasingBlock("clarifier_multiblock_tank",
+            casingTexture("multiblock_tank", "clarifier"), casingTexture("multiblock_tank", "clarifier_on"));
+    public static final BlockEntry<ActiveBlock> FLOTATION_MULTIBLOCK_TANK = createActiveCasingBlock("flotation_multiblock_tank",
+            casingTexture("multiblock_tank", "flotation"), casingTexture("multiblock_tank", "flotation_on"));
 
     // ==================================================================
     // Electrodes / coils. tex gregtech:blocks/casings/<dir>/<name>
     // ==================================================================
     public static final BlockEntry<ActiveBlock> CARBON_ELECTRODE_ASSEMBLY = createActiveCasingBlock("carbon_electrode_assembly", TEX_ASSEMBLY, TEX_ASSEMBLY); // TODO)) tex .../electrode_assembly/carbon (+active)
-    public static final BlockEntry<Block> COPPER_INDUCTION_COIL_ASSEMBLY = createCasingBlock("copper_induction_coil_assembly", TEX_STEEL); // TODO)) tex .../casings/coils/induction_coil_assembly (CTM)
+    public static final BlockEntry<Block> COPPER_INDUCTION_COIL_ASSEMBLY = createCasingBlock("copper_induction_coil_assembly",
+            casingTexture("coils", "induction_coil_assembly")); // TODO)) CTM follow-up
     public static final BlockEntry<Block> COPPER_TUNGSTEN_EDM_ELECTRODE = createCasingBlock("copper_tungsten_edm_electrode", TEX_STEEL); // TODO)) tex .../edm_electrode/copper_tungsten
 
     // Cooling coils (MagneticRefrigerator). 1.12.2 BlockCoolingCoil is ACTIVE and carries
@@ -298,13 +390,15 @@ public final class SusyBlocks {
     // Serpentine (HeatRadiator, InternalCombustionEngine). Active.
     // tex gregtech:blocks/casings/serpentine/serpentine (+_bloom)
     // ==================================================================
-    public static final BlockEntry<ActiveBlock> BASIC_SERPENTINE = createActiveCasingBlock("basic_serpentine", TEX_STEEL, TEX_STEEL); // TODO)) tex .../serpentine/serpentine + serpentine_bloom (CTM)
+    public static final BlockEntry<ActiveBlock> BASIC_SERPENTINE = createActiveCasingBlock("basic_serpentine",
+            casingTexture("serpentine", "serpentine"), casingTexture("serpentine", "serpentine_bloom"));
 
     // ==================================================================
     // Conveyor belt (CurtainCoater). 1.12.2 horizontal-rotatable + custom flat
     // rotation behaviour. tex gregtech:blocks/casings/conveyor_belt/lv
     // ==================================================================
-    public static final BlockEntry<HorizontalOrientableBlock> LV_CONVEYOR_BELT = createHorizontalOrientableCasingBlock("lv_conveyor_belt", TEX_STEEL); // TODO)) Phase 5: quarter-height collision/outline shape and flat wrench rotation; Phase 6: directional belt texture at gregtech:blocks/casings/conveyor_belt/lv
+    public static final BlockEntry<HorizontalOrientableBlock> LV_CONVEYOR_BELT = createHorizontalOrientableCasingBlock("lv_conveyor_belt",
+            casingTexture("conveyor_belt/lv", "top")); // TODO)) Phase 5: quarter-height collision/outline shape and flat wrench rotation; Phase 6: directional belt texture at gregtech:blocks/casings/conveyor_belt/lv
 
     // ==================================================================
     // Rotors / coils for generators (Bucket C). 1.12.2 horizontal-rotatable
@@ -329,11 +423,14 @@ public final class SusyBlocks {
     // ==================================================================
     // Misc single-variant casings. tex gregtech:blocks/casings/<dir>/<name>
     // ==================================================================
-    public static final BlockEntry<Block> WOODEN_COAGULATION_TANK_WALL = createCasingBlock("wooden_coagulation_tank_wall", TEX_STEEL); // TODO)) tex .../coagulation_tank_wall/wooden_coagulation_tank_wall
+    public static final BlockEntry<Block> WOODEN_COAGULATION_TANK_WALL = createBottomTopDecorativeBlock("wooden_coagulation_tank_wall",
+            "casings/wooden_coagulation_tank_wall/side",
+            "casings/wooden_coagulation_tank_wall/bottom",
+            "casings/wooden_coagulation_tank_wall/top");
     public static final BlockEntry<Block> DIRT_EVAPORATION_BED = createCasingBlock("dirt_evaporation_bed", TEX_STEEL); // TODO)) shovel harvest; tex .../evaporation_bed/dirt
     public static final BlockEntry<Block> STEEL_DRILL_BIT = createCasingBlock("steel_drill_bit", TEX_STEEL); // TODO)) tex .../drill_bit/steel
     public static final BlockEntry<Block> STEEL_DRILL_HEAD = createCasingBlock("steel_drill_head", TEX_STEEL); // TODO)) tex .../drill_head/steel
-    public static final BlockEntry<Block> STEEL_ECCENTRIC_ROLL = createCasingBlock("steel_eccentric_roll", TEX_STEEL); // TODO)) custom collision box + animated part (BlockEccentricRoll, IAnimatablePartBlock); tex .../eccentric_roll/steel
+    public static final BlockEntry<EccentricRollBlock> STEEL_ECCENTRIC_ROLL = createEccentricRollBlock("steel_eccentric_roll", TEX_STEEL); // animated crusher roll (GeckoLib block entity); static fallback tex .../eccentric_roll/steel
     public static final BlockEntry<RotatedPillarBlock> STEEL_GIRTH_GEAR_TOOTH = createAxialOrientableCasingBlock("steel_girth_gear_tooth", TEX_STEEL); // TODO)) Phase 6: real translucent axial model; tex .../girth_gear_tooth/steel
     public static final BlockEntry<Block> LAUNCH_PAD = createCasingBlock("launch_pad", TEX_STEEL); // TODO)) rocket scope (BlockSupport); tex .../support/lv
 

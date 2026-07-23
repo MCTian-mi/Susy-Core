@@ -2,8 +2,10 @@ package io.github.symmetricdevs.supersymmetry;
 
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
 import io.github.symmetricdevs.supersymmetry.api.sound.SusySounds;
+import io.github.symmetricdevs.supersymmetry.client.SuSyClientProxy;
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyRecipeTypes;
 import io.github.symmetricdevs.supersymmetry.common.data.SuSyWorldgenRecipeTypes;
+import io.github.symmetricdevs.supersymmetry.common.data.SusyBlockEntities;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyBlocks;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyCreativeModeTabs;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyMachines;
@@ -22,7 +24,9 @@ import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
@@ -56,6 +60,9 @@ public class Supersymmetry {
     public static MaterialRegistry MATERIAL_REGISTRY;
 
     public Supersymmetry() {
+        // Client-only renderer registrations must be available before machine models are loaded.
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> SuSyClientProxy::init);
+
         // Config first — later registration may read it.
         SusyConfig.init();
 
@@ -68,6 +75,7 @@ public class Supersymmetry {
         // here (before registerRegistrate) — the 4c casing foundation the multiblocks
         // reference.
         SusyBlocks.init();
+        SusyBlockEntities.init();
         SusyItems.init();
         SuSyMetaArmor.init();
         SusyDatagen.init();

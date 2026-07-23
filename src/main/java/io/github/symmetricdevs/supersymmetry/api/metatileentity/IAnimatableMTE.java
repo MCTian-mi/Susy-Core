@@ -1,5 +1,7 @@
 package io.github.symmetricdevs.supersymmetry.api.metatileentity;
 
+import io.github.symmetricdevs.supersymmetry.SuSyValues;
+
 import java.util.Collection;
 
 import net.minecraft.core.BlockPos;
@@ -29,14 +31,14 @@ public interface IAnimatableMTE {
     }
 
     default ResourceLocation modelRL() {
-        return ResourceLocation.tryBuild("susy", "geo/" + getGeoName() + ".geo.json");
+        return SuSyValues.susyId("geo/" + getGeoName() + ".geo.json");
     }
 
     default ResourceLocation textureRL() {
-        return ResourceLocation.tryBuild("susy", "textures/geo/" + getGeoName() + "/all.png");
+        return SuSyValues.susyId("textures/geo/" + getGeoName() + "/all.png");
     }
 
     default ResourceLocation animationRL() {
-        return ResourceLocation.tryBuild("susy", "animations/" + getGeoName() + ".animation.json");
+        return SuSyValues.susyId("animations/" + getGeoName() + ".animation.json");
     }
 }

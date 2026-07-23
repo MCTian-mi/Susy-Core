@@ -185,7 +185,30 @@ public final class SuSyPredicates {
     /** Every patterned H slot; these are the legacy pool's sunlight-collection positions. */
     public static final String EVAPORATION_COLLECTION_POSITIONS_KEY = "EvaporationPoolCollectionPositions";
     public static final String EVAPORATION_COIL_POSITIONS_KEY = "EvaporationPoolCoilPositions";
+    public static final String ECCENTRIC_ROLL_POSITIONS_KEY = "EccentricRollPositions";
     public static final Object EVAPORATION_BED_HEAT_TYPE = new Object();
+
+    /** Matches an eccentric crusher roll and records its location for its controller's post-form facing fixup. */
+    public static TraceabilityPredicate eccentricRoll() {
+        return new TraceabilityPredicate(
+                state -> {
+                    if (!state.getBlockState().is(SusyBlocks.STEEL_ECCENTRIC_ROLL.get())) {
+                        return false;
+                    }
+                    state.getMatchContext()
+                            .getOrCreate(ECCENTRIC_ROLL_POSITIONS_KEY, LongOpenHashSet::new)
+                            .add(state.getPos().asLong());
+                    return true;
+                },
+                () -> new BlockInfo[] {
+                        BlockInfo.fromBlockState(SusyBlocks.STEEL_ECCENTRIC_ROLL.get().defaultBlockState())
+                });
+    }
+
+    /** Snapshot the eccentric-roll positions retained by {@link #eccentricRoll()}. */
+    public static LongOpenHashSet getEccentricRollPositions(IMultiController controller) {
+        return getEvaporationPositions(controller, ECCENTRIC_ROLL_POSITIONS_KEY);
+    }
 
     /** Matches a mandatory evaporation bed. */
     public static TraceabilityPredicate evaporationBed() {
@@ -257,7 +280,7 @@ public final class SuSyPredicates {
         return stored instanceof ICoilType coil ? coil : null;
     }
 
-    /** Snapshot a set of block positions recorded by an evaporation predicate. */
+    /** Snapshot a set of packed block positions retained in the formed-pattern match context. */
     public static LongOpenHashSet getEvaporationPositions(IMultiController controller, String key) {
         Object stored = controller.self().getMultiblockState().getMatchContext().get(key);
         return stored instanceof LongOpenHashSet positions ? new LongOpenHashSet(positions) : new LongOpenHashSet();

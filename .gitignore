@@ -69,4 +69,4 @@ thumbs.db
 .superpowers/
 
 ### generated resources ###
-/src/generated/
+/src/generated/*
