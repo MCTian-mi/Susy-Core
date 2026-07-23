@@ -1199,8 +1199,8 @@ public final class SusyMachines {
                     .where('#', Predicates.air())
                     .build())
             .partSorter(Comparator.comparingInt(p -> p.self().getPos().getY()))
-            // TODO)) Phase 6: port the silicon-carbide casing base texture.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            // Static silicon-carbide casing art is migrated; CTM remains deferred.
+            .workableCasingModel(SuSyValues.susyId("block/casings/multiblock/silicon_carbide_casing"),
                     SuSyValues.susyId("block/multiblock/distillation_towers/high_temperature_distilation_tower"))
             .register();
 
@@ -1792,9 +1792,8 @@ public final class SusyMachines {
             // logic never implemented parallel processing, so the misleading tooltip
             // is intentionally not carried forward.
             // TODO)) Decide whether attrition recipes should gain explicit pure parallel.
-            // TODO)) Phase 6: port abrasion-resistant CTM. The legacy controller used
-            // no custom front overlay, so the valid stock maceration-tower overlay remains.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            // CTM remains deferred; the restored base casing carries the stock maceration overlay.
+            .workableCasingModel(SuSyValues.susyId("block/casings/grinder_casing/abrasion_resistant_casing"),
                     GTCEu.id("block/multiblock/gcym/large_maceration_tower"))
             .register();
 
@@ -1966,9 +1965,8 @@ public final class SusyMachines {
                     // TODO)) swap Invar to SuSy Incoloy 908 once that material is registered.
                     .where('F', Predicates.frames(GTMaterials.Invar))
                     .build())
-            // The 1.12.2 controller used the stock forming-press overlay; retain the
-            // matching Modern single-block overlay until its silicon-carbide casing is ported.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            // The stock forming-press overlay remains correct over the restored silicon-carbide base.
+            .workableCasingModel(SuSyValues.susyId("block/casings/multiblock/silicon_carbide_casing"),
                     GTCEu.id("block/machines/forming_press"))
             .register();
 
@@ -2038,8 +2036,8 @@ public final class SusyMachines {
                         .where(' ', Predicates.any())
                         .build();
             })
-            // TODO)) Phase 6: port the ULV structural casing CTM.
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            // Static ULV structural casing art is migrated; connected texture behavior remains deferred.
+            .workableCasingModel(SuSyValues.susyId("block/casings/multiblock/ulv_structural_casing"),
                     SuSyValues.susyId("block/multiblock/sintering"))
             .register();
 
@@ -2783,7 +2781,7 @@ public final class SusyMachines {
                     .where('R', RollingMillMachine.rollOrientation(RelativeDirection.RIGHT))
                     .where(' ', Predicates.any())
                     .build())
-            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+            .workableCasingModel(SuSyValues.susyId("block/casings/multiblock/monel_casing"),
                     SuSyValues.susyId("block/multiblock/strand_cooler"))
             .register();
 

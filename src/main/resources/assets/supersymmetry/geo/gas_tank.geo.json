@@ -1,0 +1,28 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.gas_tank",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 3,
+				"visible_bounds_height": 3,
+				"visible_bounds_offset": [0, 1, 0]
+			},
+			"bones": [
+				{
+					"name": "body",
+					"pivot": [0, 24, 0],
+					"cubes": [
+						{"origin": [-3.5, 15, 2], "size": [3, 9, 2], "inflate": 0.2, "uv": [0, 0]},
+						{"origin": [0.5, 15, 2], "size": [3, 9, 2], "inflate": 0.2, "uv": [10, 0]},
+						{"origin": [-4.5, 14, -2.5], "size": [1, 10, 5], "uv": [0, 12]},
+						{"origin": [3.5, 14, -2.5], "size": [1, 10, 5], "uv": [12, 12]},
+						{"origin": [-2.5, 13, 3.5], "size": [5, 2, 1], "uv": [24, 0]}
+					]
+				}
+			]
+		}
+	]
+}

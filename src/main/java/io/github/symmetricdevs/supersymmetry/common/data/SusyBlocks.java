@@ -12,6 +12,7 @@ import io.github.symmetricdevs.supersymmetry.Supersymmetry;
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
 import io.github.symmetricdevs.supersymmetry.common.block.DirectionalOrientableBlock;
 import io.github.symmetricdevs.supersymmetry.common.block.HorizontalOrientableBlock;
+import io.github.symmetricdevs.supersymmetry.common.block.InnerCasingBlock;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
@@ -34,11 +35,10 @@ import net.minecraft.world.level.block.RotatedPillarBlock;
  * Rocket-casing blocks (rocketry/) are noted but deferred — their scope is the rocket/launch
  * assembly in a later phase.
  * <p>
- * <b>Texture migration is partial.</b> Decorative cube-all families use the migrated 1.12.2
- * art in the active {@code supersymmetry:block/} domain. Casing and special-purpose blocks
- * still point at GTCEu stock textures; their real SuSy paths (1.12.2
- * {@code gregtech:blocks/...}) remain recorded next to each entry for the Phase 6
- * texture/blockstate/CTM migration.
+ * <b>Texture migration is partial.</b> Decorative families and core multiblock/grinder
+ * casings use migrated 1.12.2 art in the active {@code supersymmetry:block/} domain.
+ * Connected textures, active casing state, directional geometry, and the remaining
+ * special-purpose blocks retain their Phase 6 TODOs.
  * <p>
  * Several 1.12.2 variants were <em>rotatable</em> (conveyor, separator rotor,
  * alternator coil, turbine rotor, metallurgy rolls, engine casing 2, girth gear) or
@@ -65,6 +65,27 @@ public final class SusyBlocks {
                 .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false))
                 .addLayer(() -> RenderType::solid)
                 .exBlockstate(GTModels.cubeAllModel(texture))
+                .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
+                .item(BlockItem::new)
+                .build()
+                .register();
+    }
+
+    /**
+     * Full-collision casing with non-occluding inner faces. The two legacy users chose
+     * reduced light blocking (3), supplied by {@link InnerCasingBlock#getLightBlock}.
+     */
+    private static BlockEntry<InnerCasingBlock> createInnerCasingBlock(String name, ResourceLocation texture) {
+        return REGISTRATE.block(name, InnerCasingBlock::new)
+                .initialProperties(() -> Blocks.IRON_BLOCK)
+                .properties(p -> p.isValidSpawn((state, level, pos, ent) -> false).noOcclusion())
+                .addLayer(() -> RenderType::cutout)
+                .blockstate((ctx, prov) -> {
+                    var model = prov.models().withExistingParent(ctx.getName(),
+                                    ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "block/cube_with_inner"))
+                            .texture("all", texture);
+                    prov.simpleBlock(ctx.getEntry(), model);
+                })
                 .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
                 .item(BlockItem::new)
                 .build()
@@ -177,6 +198,10 @@ public final class SusyBlocks {
                 .register();
     }
 
+    private static ResourceLocation casingTexture(String family, String name) {
+        return ResourceLocation.fromNamespaceAndPath(Supersymmetry.MOD_ID, "block/casings/" + family + "/" + name);
+    }
+
     // Placeholder textures (guaranteed to exist in GTCEu). The real SuSy texture for
     // each block is recorded in a trailing TODO) comment with its 1.12.2 path.
     private static final ResourceLocation TEX_STEEL = com.gregtechceu.gtceu.GTCEu
@@ -194,32 +219,50 @@ public final class SusyBlocks {
 
     // ==================================================================
     // BlockSuSyMultiblockCasing (1.12.2 "susy_multiblock_casing", 14 variants)
-    // 1.12.2 textures: gregtech:blocks/multiblock_casing/<name>
+    // Static base art is migrated below. CTM for the indicated legacy casings remains a
+    // Phase 6 follow-up; drone/heavy-duty pads remain in their dedicated scope.
     // ==================================================================
-    public static final BlockEntry<Block> SILICON_CARBIDE_CASING = createCasingBlock("silicon_carbide_casing", TEX_STEEL); // TODO)) tex gregtech:blocks/multiblock_casing/silicon_carbide_casing
-    public static final BlockEntry<Block> SIEVE_TRAY = createCasingBlock("sieve_tray", TEX_STEEL); // TODO)) tex .../multiblock_casing/sieve_tray
-    public static final BlockEntry<Block> STRUCTURAL_PACKING = createCasingBlock("structural_packing", TEX_STEEL); // TODO)) tex .../multiblock_casing/structural_packing
-    public static final BlockEntry<Block> ULV_STRUCTURAL_CASING = createCasingBlock("ulv_structural_casing", TEX_STEEL); // TODO)) tex .../multiblock_casing/ulv_structural_casing
+    public static final BlockEntry<Block> SILICON_CARBIDE_CASING = createCasingBlock("silicon_carbide_casing",
+            casingTexture("multiblock", "silicon_carbide_casing")); // TODO)) CTM follow-up
+    public static final BlockEntry<Block> SIEVE_TRAY = createCasingBlock("sieve_tray",
+            casingTexture("multiblock", "sieve_tray"));
+    public static final BlockEntry<Block> STRUCTURAL_PACKING = createCasingBlock("structural_packing",
+            casingTexture("multiblock", "structural_packing"));
+    public static final BlockEntry<Block> ULV_STRUCTURAL_CASING = createCasingBlock("ulv_structural_casing",
+            casingTexture("multiblock", "ulv_structural_casing")); // TODO)) CTM follow-up
     public static final BlockEntry<Block> DRONE_PAD = createCasingBlock("drone_pad", TEX_STEEL); // TODO)) tex .../multiblock_casing/drone_pad
-    public static final BlockEntry<Block> MONEL_500_CASING = createCasingBlock("monel_casing", TEX_STEEL); // TODO)) tex .../multiblock_casing/monel_500_casing
-    public static final BlockEntry<Block> MONEL_500_PIPE = createCasingBlock("monel_casing_pipe", TEX_STEEL_PIPE); // TODO)) tex .../multiblock_casing/monel_500_casing_pipe
-    public static final BlockEntry<Block> COPPER_PIPE = createCasingBlock("copper_casing_pipe", TEX_STEEL_PIPE); // TODO)) tex .../multiblock_casing/copper_casing_pipe
+    public static final BlockEntry<Block> MONEL_500_CASING = createCasingBlock("monel_casing",
+            casingTexture("multiblock", "monel_casing")); // TODO)) CTM follow-up
+    public static final BlockEntry<Block> MONEL_500_PIPE = createCasingBlock("monel_casing_pipe",
+            casingTexture("multiblock", "monel_casing_pipe"));
+    public static final BlockEntry<Block> COPPER_PIPE = createCasingBlock("copper_casing_pipe",
+            casingTexture("multiblock", "copper_casing_pipe")); // TODO)) CTM follow-up
     public static final BlockEntry<Block> HEAVY_DUTY_PAD = createCasingBlock("heavy_duty_pad", TEX_STEEL); // TODO)) tex .../multiblock_casing/heavy_duty_pad (rocket/launch scope)
-    public static final BlockEntry<Block> TABULAR_ALUMINA_REFRACTORY = createCasingBlock("tabular_alumina_refractory", TEX_STEEL); // TODO)) tex .../multiblock_casing/tabular_alumina_refractory
-    public static final BlockEntry<Block> COALESCENCE_PLATE = createCasingBlock("coalescence_plate", TEX_STEEL); // TODO)) tex .../multiblock_casing/coalescence_plate
-    public static final BlockEntry<Block> SYNTHETIC_MULLITE_REFRACTORY = createCasingBlock("synthetic_mullite_refractory", TEX_STEEL); // TODO)) tex .../multiblock_casing/synthetic_mullite_refractory
-    public static final BlockEntry<Block> HYDROSTATIC_CASING = createCasingBlock("hydrostatic_casing", TEX_STEEL); // TODO)) tex .../multiblock_casing/hydrostatic_casing
-    public static final BlockEntry<Block> ALUMINIUM_GEARBOX = createCasingBlock("aluminium_gearbox", TEX_GEARBOX); // TODO)) tex .../multiblock_casing/aluminium_gearbox
+    public static final BlockEntry<Block> TABULAR_ALUMINA_REFRACTORY = createCasingBlock("tabular_alumina_refractory",
+            casingTexture("multiblock", "tabular_alumina_refractory"));
+    public static final BlockEntry<InnerCasingBlock> COALESCENCE_PLATE = createInnerCasingBlock("coalescence_plate",
+            casingTexture("multiblock", "coalescence_plate"));
+    public static final BlockEntry<Block> SYNTHETIC_MULLITE_REFRACTORY = createCasingBlock("synthetic_mullite_refractory",
+            casingTexture("multiblock", "synthetic_mullite_refractory"));
+    public static final BlockEntry<Block> HYDROSTATIC_CASING = createCasingBlock("hydrostatic_casing",
+            casingTexture("multiblock", "hydrostatic_casing"));
+    public static final BlockEntry<Block> ALUMINIUM_GEARBOX = createCasingBlock("aluminium_gearbox",
+            casingTexture("multiblock", "aluminium_gearbox")); // TODO)) CTM follow-up
 
     // ==================================================================
     // BlockGrinderCasing ("grinder_casing", 5 variants) — BallMill/AttritionScrubber/
-    // EccentricRollCrusher/RotaryKilnV2. tex gregtech:blocks/casings/grinder_casing/<name>
+    // EccentricRollCrusher/RotaryKilnV2. Flat base art is restored; CTM remains deferred.
     // ==================================================================
-    public static final BlockEntry<Block> ABRASION_RESISTANT_CASING = createCasingBlock("abrasion_resistant_casing", TEX_STEEL); // TODO)) tex .../grinder_casing/abrasion_resistant_casing
-    public static final BlockEntry<Block> HYDRAULIC_MECHANICAL_GEARBOX = createCasingBlock("hydraulic_mechanical_gearbox", TEX_GEARBOX); // TODO)) tex .../grinder_casing/hydraulic_mechanical_gearbox
-    public static final BlockEntry<Block> WEAR_RESISTANT_LINED_MILL_SHELL = createCasingBlock("wear_resistant_lined_mill_shell", TEX_STEEL); // TODO)) tex .../grinder_casing/wear_resistant_lined_mill_shell
-    public static final BlockEntry<Block> WEAR_RESISTANT_LINED_SHELL_HEAD = createCasingBlock("wear_resistant_lined_shell_head", TEX_STEEL); // TODO)) tex .../grinder_casing/wear_resistant_lined_shell_head
-    public static final BlockEntry<Block> INTERMEDIATE_DIAPHRAGM = createCasingBlock("intermediate_diaphragm", TEX_STEEL); // TODO)) tex .../grinder_casing/intermediate_diaphragm
+    public static final BlockEntry<Block> ABRASION_RESISTANT_CASING = createCasingBlock("abrasion_resistant_casing",
+            casingTexture("grinder_casing", "abrasion_resistant_casing")); // TODO)) CTM follow-up
+    public static final BlockEntry<Block> HYDRAULIC_MECHANICAL_GEARBOX = createCasingBlock("hydraulic_mechanical_gearbox",
+            casingTexture("grinder_casing", "hydraulic_mechanical_gearbox"));
+    public static final BlockEntry<Block> WEAR_RESISTANT_LINED_MILL_SHELL = createCasingBlock("wear_resistant_lined_mill_shell",
+            casingTexture("grinder_casing", "wear_resistant_lined_mill_shell"));
+    public static final BlockEntry<Block> WEAR_RESISTANT_LINED_SHELL_HEAD = createCasingBlock("wear_resistant_lined_shell_head",
+            casingTexture("grinder_casing", "wear_resistant_lined_shell_head"));
+    public static final BlockEntry<InnerCasingBlock> INTERMEDIATE_DIAPHRAGM = createInnerCasingBlock("intermediate_diaphragm",
+            casingTexture("grinder_casing", "intermediate_diaphragm"));
 
     // ==================================================================
     // Metallurgy family (strand line). 1.12.2 rotatable -> plain here; rotation is a

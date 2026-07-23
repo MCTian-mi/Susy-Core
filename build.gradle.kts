@@ -20,6 +20,7 @@ dependencies {
     compileOnlyApi(deps.jspecify)
     compileOnlyApi(deps.annotations)
 
+    modCompileOnlyApi(deps.embeddium)
     modCompileOnlyApi(deps.bundles.jei)
     modCompileOnlyApi(deps.bundles.rei)
     modCompileOnlyApi(deps.emi)
@@ -27,10 +28,14 @@ dependencies {
     modCompileOnlyApi(deps.registrate)
     modCompileOnlyApi(deps.configuration)
     modCompileOnlyApi(deps.geckolib)
-    modCompileOnlyApi(variantOf(deps.gtceu) { classifier("slim") }) { isTransitive = false }
+    modCompileOnlyApi(deps.flywheel.forge.api)
+    modCompileOnlyApi(deps.ponder)
+    modCompileOnlyApi(variantOf(deps.gtceu) { classifier("slim") })
+    modCompileOnlyApi(variantOf(deps.create) { classifier("slim") })
 
     modRuntimeOnly(deps.configuration) // Forces a newer version of ldlib that contains ConfigFormats#YAML
     modRuntimeOnly(deps.ldlib) // Forces a newer version of ldlib that contains SliderWidget
+    modRuntimeOnly(deps.embeddium)
     modRuntimeOnly(deps.jei.forge.impl)
 //    modRuntimeOnly(deps.bundles.rei.runtime)
 //    modRuntimeOnly(deps.emi)
@@ -38,4 +43,7 @@ dependencies {
     modRuntimeOnly(deps.spark)
     modRuntimeOnly(deps.gtceu)
     modRuntimeOnly(deps.geckolib)
+    modRuntimeOnly(deps.ponder)
+    modRuntimeOnly(variantOf(deps.create) { classifier("slim") })
+    modRuntimeOnly(deps.flywheel.forge)
 }
