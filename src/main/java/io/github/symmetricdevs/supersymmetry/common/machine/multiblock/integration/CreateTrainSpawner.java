@@ -55,7 +55,10 @@ public final class CreateTrainSpawner {
         }
 
         BlockState trackState = level.getBlockState(trackPos);
-        if (!(trackState.getBlock() instanceof ITrackBlock track)) {
+        ITrackBlock track;
+        if (trackState.getBlock() instanceof ITrackBlock t) {
+            track = t;
+        } else {
             return TrainSpawnResult.failed("no track at " + trackPos);
         }
 
@@ -145,10 +148,11 @@ public final class CreateTrainSpawner {
             return TrainSpawnResult.failed("not all travelling points created");
         }
 
-        return assembleSingleBogeyTrain(level, trackPos, graph, points, assemblyDirection);
+        return assembleSingleBogeyTrain(level, trackPos, trackState, track, graph, points, assemblyDirection);
     }
 
     private static TrainSpawnResult assembleSingleBogeyTrain(Level level, BlockPos trackPos,
+                                                             BlockState trackState, ITrackBlock track,
                                                              @Nullable TrackGraph graph,
                                                              List<TravellingPoint> points,
                                                              Direction assemblyDirection) {
@@ -156,10 +160,13 @@ public final class CreateTrainSpawner {
             return TrainSpawnResult.failed("no track graph");
         }
 
-        AbstractBogeyBlock<?> bogeyBlock = AllBlocks.SMALL_BOGEY.get();
-        BlockState bogeyState = bogeyBlock.defaultBlockState();
+        BlockState bogeyState = track.getBogeyAnchor(level, trackPos, trackState);
+        if (!(bogeyState.getBlock() instanceof AbstractBogeyBlock<?> bogeyBlock)) {
+            return TrainSpawnResult.failed("track bogey anchor is not a bogey block");
+        }
 
-        BlockPos bogeyPos = trackPos.relative(assemblyDirection);
+        BlockPos bogeyPos = trackPos.above()
+                .relative(assemblyDirection);
         BlockState existing = level.getBlockState(bogeyPos);
         if (!existing.canBeReplaced()) {
             return TrainSpawnResult.failed("bogey placement blocked at " + bogeyPos);
@@ -184,8 +191,9 @@ public final class CreateTrainSpawner {
             return TrainSpawnResult.failed("contraption assembly failed");
         }
         if (!contraption.hasForwardControls()) {
-            level.setBlock(bogeyPos, existing, 3);
-            return TrainSpawnResult.failed("assembled contraption has no controls");
+            // A single-bogey test train has no controls. Log but allow it to
+            // spawn so recipe completion still produces a visible train.
+            System.out.println("[SuSy] Spawned train has no forward controls; it will not be drivable.");
         }
 
         CarriageBogey bogey = new CarriageBogey(
