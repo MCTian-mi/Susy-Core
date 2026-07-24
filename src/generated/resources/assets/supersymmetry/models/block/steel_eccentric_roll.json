@@ -1,6 +1,248 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "display": {
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        -135,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    },
+    "fixed": {
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "ground": {
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ]
+    },
+    "gui": {
+      "rotation": [
+        30,
+        -135,
+        0
+      ],
+      "scale": [
+        0.625,
+        0.625,
+        0.625
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "scale": [
+        0.375,
+        0.375,
+        0.375
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "scale": [
+        0.375,
+        0.375,
+        0.375
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ]
+    }
+  },
+  "elements": [
+    {
+      "faces": {
+        "down": {
+          "rotation": 270,
+          "texture": "#all",
+          "uv": [
+            6.0,
+            3.0,
+            8.0,
+            6.0
+          ]
+        },
+        "east": {
+          "texture": "#all",
+          "uv": [
+            2.0,
+            9.0,
+            0.0,
+            6.0
+          ]
+        },
+        "north": {
+          "texture": "#all",
+          "uv": [
+            0.0,
+            3.0,
+            3.0,
+            6.0
+          ]
+        },
+        "south": {
+          "texture": "#all",
+          "uv": [
+            0.0,
+            0.0,
+            3.0,
+            3.0
+          ]
+        },
+        "up": {
+          "rotation": 90,
+          "texture": "#all",
+          "uv": [
+            2.0,
+            6.0,
+            4.0,
+            9.0
+          ]
+        },
+        "west": {
+          "texture": "#all",
+          "uv": [
+            6.0,
+            0.0,
+            8.0,
+            3.0
+          ]
+        }
+      },
+      "from": [
+        -3.99,
+        -3.99,
+        0.01
+      ],
+      "to": [
+        19.99,
+        19.99,
+        15.99
+      ]
+    },
+    {
+      "faces": {
+        "down": {
+          "rotation": 270,
+          "texture": "#all",
+          "uv": [
+            8.0,
+            3.0,
+            10.0,
+            6.0
+          ]
+        },
+        "east": {
+          "texture": "#all",
+          "uv": [
+            6.0,
+            9.0,
+            4.0,
+            6.0
+          ]
+        },
+        "north": {
+          "texture": "#all",
+          "uv": [
+            3.0,
+            3.0,
+            6.0,
+            6.0
+          ]
+        },
+        "south": {
+          "texture": "#all",
+          "uv": [
+            3.0,
+            0.0,
+            6.0,
+            3.0
+          ]
+        },
+        "up": {
+          "rotation": 90,
+          "texture": "#all",
+          "uv": [
+            8.0,
+            0.0,
+            10.0,
+            3.0
+          ]
+        },
+        "west": {
+          "texture": "#all",
+          "uv": [
+            6.0,
+            6.0,
+            8.0,
+            9.0
+          ]
+        }
+      },
+      "from": [
+        -3.98,
+        -3.98,
+        0.02
+      ],
+      "rotation": {
+        "angle": -45.0,
+        "axis": "z",
+        "origin": [
+          8,
+          8,
+          8
+        ]
+      },
+      "to": [
+        19.98,
+        19.98,
+        15.98
+      ]
+    }
+  ],
   "textures": {
-    "all": "gtceu:block/casings/solid/machine_casing_solid_steel"
+    "all": "supersymmetry:block/eccentric_roll/all",
+    "particle": "gtceu:block/casings/solid/machine_casing_solid_steel"
   }
 }

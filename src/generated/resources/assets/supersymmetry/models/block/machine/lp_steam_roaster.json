@@ -6,7 +6,14 @@
     {
       "apply": {
         "model": {
-          "parent": "gtceu:block/casings/steam/bricked_bronze"
+          "parent": "gtceu:block/casings/steam/bricked_bronze",
+          "textures": {
+            "overlay_back": "supersymmetry:block/machines/roaster/overlay_back",
+            "overlay_bottom": "supersymmetry:block/machines/roaster/overlay_bottom",
+            "overlay_front": "supersymmetry:block/machines/roaster/overlay_front",
+            "overlay_side": "supersymmetry:block/machines/roaster/overlay_side",
+            "overlay_top": "supersymmetry:block/machines/roaster/overlay_top"
+          }
         }
       },
       "when": {
@@ -16,7 +23,18 @@
     {
       "apply": {
         "model": {
-          "parent": "gtceu:block/casings/steam/bricked_bronze"
+          "parent": "gtceu:block/casings/steam/bricked_bronze",
+          "textures": {
+            "overlay_back": "supersymmetry:block/machines/roaster/overlay_back_active",
+            "overlay_bottom": "supersymmetry:block/machines/roaster/overlay_bottom_active",
+            "overlay_bottom_emissive": "supersymmetry:block/machines/roaster/overlay_bottom_active_emissive",
+            "overlay_front": "supersymmetry:block/machines/roaster/overlay_front_active",
+            "overlay_front_emissive": "supersymmetry:block/machines/roaster/overlay_front_active_emissive",
+            "overlay_side": "supersymmetry:block/machines/roaster/overlay_side_active",
+            "overlay_side_emissive": "supersymmetry:block/machines/roaster/overlay_side_active_emissive",
+            "overlay_top": "supersymmetry:block/machines/roaster/overlay_top_active",
+            "overlay_top_emissive": "supersymmetry:block/machines/roaster/overlay_top_active_emissive"
+          }
         }
       },
       "when": {
@@ -26,7 +44,18 @@
     {
       "apply": {
         "model": {
-          "parent": "gtceu:block/casings/steam/bricked_bronze"
+          "parent": "gtceu:block/casings/steam/bricked_bronze",
+          "textures": {
+            "overlay_back": "supersymmetry:block/machines/roaster/overlay_back_active",
+            "overlay_bottom": "supersymmetry:block/machines/roaster/overlay_bottom_active",
+            "overlay_bottom_emissive": "supersymmetry:block/machines/roaster/overlay_bottom_active_emissive",
+            "overlay_front": "supersymmetry:block/machines/roaster/overlay_front_active",
+            "overlay_front_emissive": "supersymmetry:block/machines/roaster/overlay_front_active_emissive",
+            "overlay_side": "supersymmetry:block/machines/roaster/overlay_side_active",
+            "overlay_side_emissive": "supersymmetry:block/machines/roaster/overlay_side_active_emissive",
+            "overlay_top": "supersymmetry:block/machines/roaster/overlay_top_active",
+            "overlay_top_emissive": "supersymmetry:block/machines/roaster/overlay_top_active_emissive"
+          }
         }
       },
       "when": {
@@ -36,7 +65,14 @@
     {
       "apply": {
         "model": {
-          "parent": "gtceu:block/casings/steam/bricked_bronze"
+          "parent": "gtceu:block/casings/steam/bricked_bronze",
+          "textures": {
+            "overlay_back": "supersymmetry:block/machines/roaster/overlay_back",
+            "overlay_bottom": "supersymmetry:block/machines/roaster/overlay_bottom",
+            "overlay_front": "supersymmetry:block/machines/roaster/overlay_front",
+            "overlay_side": "supersymmetry:block/machines/roaster/overlay_side",
+            "overlay_top": "supersymmetry:block/machines/roaster/overlay_top"
+          }
         }
       },
       "when": {

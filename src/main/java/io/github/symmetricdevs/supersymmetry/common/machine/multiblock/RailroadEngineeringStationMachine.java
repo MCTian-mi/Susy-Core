@@ -149,8 +149,9 @@ public class RailroadEngineeringStationMachine extends WorkableElectricMultibloc
     }
 
     /**
-     * Finds a Create track block along the central rail aisle of the structure.
-     * Returns the first track position from the controller's front-most rail row.
+     * Finds a Create track block along the single central rail aisle of the structure.
+     * The legacy rail bed ran left-to-right relative to the controller front; the
+     * returned position is the left-most track in the central rail row.
      */
     @Nullable
     private BlockPos findCentralTrackPos() {
@@ -158,13 +159,16 @@ public class RailroadEngineeringStationMachine extends WorkableElectricMultibloc
         if (level == null) {
             return null;
         }
-        // The rail aisle is at the controller's Y level, two rows toward the front.
+        // Move to the central rail row (the 17-wide aisle is roughly 5 blocks in
+        // front of the controller). Then scan left-to-right so the train can be
+        // assembled facing right along the rail.
         BlockPos.MutableBlockPos cursor = getPos().mutable();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             cursor.move(getFrontFacing());
         }
-        for (int z = -8; z <= 8; z++) {
-            BlockPos probe = relativePos(cursor, 0, 0, z);
+        // right is positive toward the controller's left; start at the left edge.
+        for (int right = 8; right >= -8; right--) {
+            BlockPos probe = relativePos(cursor, right, 0, 0);
             BlockState state = level.getBlockState(probe);
             if (state.getBlock() instanceof ITrackBlock) {
                 return probe;

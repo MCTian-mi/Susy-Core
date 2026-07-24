@@ -5,22 +5,42 @@
   "variants": {
     "recipe_logic_status=idle": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/lv"
+        "parent": "gtceu:block/casings/voltage/lv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/textile_spinner/overlay_front",
+          "overlay_front_emissive": "supersymmetry:block/machines/textile_spinner/overlay_front_emissive",
+          "overlay_top": "supersymmetry:block/machines/textile_spinner/overlay_top"
+        }
       }
     },
     "recipe_logic_status=suspend": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/lv"
+        "parent": "gtceu:block/casings/voltage/lv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/textile_spinner/overlay_front",
+          "overlay_front_emissive": "supersymmetry:block/machines/textile_spinner/overlay_front_emissive",
+          "overlay_top": "supersymmetry:block/machines/textile_spinner/overlay_top"
+        }
       }
     },
     "recipe_logic_status=waiting": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/lv"
+        "parent": "gtceu:block/casings/voltage/lv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/textile_spinner/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/machines/textile_spinner/overlay_front_active_emissive",
+          "overlay_top": "supersymmetry:block/machines/textile_spinner/overlay_top_active"
+        }
       }
     },
     "recipe_logic_status=working": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/lv"
+        "parent": "gtceu:block/casings/voltage/lv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/textile_spinner/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/machines/textile_spinner/overlay_front_active_emissive",
+          "overlay_top": "supersymmetry:block/machines/textile_spinner/overlay_top_active"
+        }
       }
     }
   }

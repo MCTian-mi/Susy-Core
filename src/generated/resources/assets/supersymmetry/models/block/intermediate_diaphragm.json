@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "supersymmetry:block/cube_with_inner",
   "textures": {
-    "all": "gtceu:block/casings/solid/machine_casing_solid_steel"
+    "all": "supersymmetry:block/casings/grinder_casing/intermediate_diaphragm"
   }
 }

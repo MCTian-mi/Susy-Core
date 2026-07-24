@@ -6,7 +6,10 @@
     {
       "apply": {
         "model": {
-          "parent": "gtceu:block/casings/steam/bricked_bronze"
+          "parent": "gtceu:block/casings/steam/bricked_bronze",
+          "textures": {
+            "overlay_front": "supersymmetry:block/machines/batch_reactor/overlay_front"
+          }
         }
       },
       "when": {
@@ -16,7 +19,10 @@
     {
       "apply": {
         "model": {
-          "parent": "gtceu:block/casings/steam/bricked_bronze"
+          "parent": "gtceu:block/casings/steam/bricked_bronze",
+          "textures": {
+            "overlay_front": "supersymmetry:block/machines/batch_reactor/overlay_front_active"
+          }
         }
       },
       "when": {
@@ -26,7 +32,10 @@
     {
       "apply": {
         "model": {
-          "parent": "gtceu:block/casings/steam/bricked_bronze"
+          "parent": "gtceu:block/casings/steam/bricked_bronze",
+          "textures": {
+            "overlay_front": "supersymmetry:block/machines/batch_reactor/overlay_front_active"
+          }
         }
       },
       "when": {
@@ -36,7 +45,10 @@
     {
       "apply": {
         "model": {
-          "parent": "gtceu:block/casings/steam/bricked_bronze"
+          "parent": "gtceu:block/casings/steam/bricked_bronze",
+          "textures": {
+            "overlay_front": "supersymmetry:block/machines/batch_reactor/overlay_front"
+          }
         }
       },
       "when": {

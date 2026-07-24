@@ -5,22 +5,42 @@
   "variants": {
     "recipe_logic_status=idle": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/iv"
+        "parent": "gtceu:block/casings/voltage/iv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/fluid_compressor/overlay_front",
+          "overlay_side": "supersymmetry:block/machines/fluid_compressor/overlay_side",
+          "overlay_top": "supersymmetry:block/machines/fluid_compressor/overlay_top"
+        }
       }
     },
     "recipe_logic_status=suspend": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/iv"
+        "parent": "gtceu:block/casings/voltage/iv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/fluid_compressor/overlay_front",
+          "overlay_side": "supersymmetry:block/machines/fluid_compressor/overlay_side",
+          "overlay_top": "supersymmetry:block/machines/fluid_compressor/overlay_top"
+        }
       }
     },
     "recipe_logic_status=waiting": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/iv"
+        "parent": "gtceu:block/casings/voltage/iv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/fluid_compressor/overlay_front_active",
+          "overlay_side": "supersymmetry:block/machines/fluid_compressor/overlay_side_active",
+          "overlay_top": "supersymmetry:block/machines/fluid_compressor/overlay_top_active"
+        }
       }
     },
     "recipe_logic_status=working": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/iv"
+        "parent": "gtceu:block/casings/voltage/iv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/fluid_compressor/overlay_front_active",
+          "overlay_side": "supersymmetry:block/machines/fluid_compressor/overlay_side_active",
+          "overlay_top": "supersymmetry:block/machines/fluid_compressor/overlay_top_active"
+        }
       }
     }
   }

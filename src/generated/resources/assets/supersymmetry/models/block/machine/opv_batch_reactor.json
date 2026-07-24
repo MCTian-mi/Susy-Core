@@ -5,22 +5,34 @@
   "variants": {
     "recipe_logic_status=idle": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/opv"
+        "parent": "gtceu:block/casings/voltage/opv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/batch_reactor/overlay_front"
+        }
       }
     },
     "recipe_logic_status=suspend": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/opv"
+        "parent": "gtceu:block/casings/voltage/opv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/batch_reactor/overlay_front"
+        }
       }
     },
     "recipe_logic_status=waiting": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/opv"
+        "parent": "gtceu:block/casings/voltage/opv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/batch_reactor/overlay_front_active"
+        }
       }
     },
     "recipe_logic_status=working": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/opv"
+        "parent": "gtceu:block/casings/voltage/opv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/batch_reactor/overlay_front_active"
+        }
       }
     }
   }

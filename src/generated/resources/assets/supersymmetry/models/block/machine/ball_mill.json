@@ -1,5 +1,13 @@
 {
   "parent": "minecraft:block/block",
+  "dynamic_renders": [
+    {
+      "type": "supersymmetry:formed_part_appearance"
+    },
+    {
+      "type": "supersymmetry:geo_machine"
+    }
+  ],
   "loader": "gtceu:machine",
   "machine": "supersymmetry:ball_mill",
   "texture_overrides": {
@@ -11,8 +19,8 @@
         "parent": "gtceu:block/machine/template/cube_all/sided",
         "textures": {
           "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
-          "overlay_front": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front",
-          "overlay_front_emissive": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_emissive"
+          "overlay_front": "supersymmetry:block/multiblock/ball_mill/overlay_front",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/ball_mill/overlay_front_emissive"
         }
       }
     },
@@ -21,8 +29,8 @@
         "parent": "gtceu:block/machine/template/cube_all/sided",
         "textures": {
           "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
-          "overlay_front": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_paused",
-          "overlay_front_emissive": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_paused_emissive"
+          "overlay_front": "supersymmetry:block/multiblock/ball_mill/overlay_front_paused",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/ball_mill/overlay_front_paused_emissive"
         }
       }
     },
@@ -31,8 +39,8 @@
         "parent": "gtceu:block/machine/template/cube_all/sided",
         "textures": {
           "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
-          "overlay_front": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_active",
-          "overlay_front_emissive": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_active_emissive"
+          "overlay_front": "supersymmetry:block/multiblock/ball_mill/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/ball_mill/overlay_front_active_emissive"
         }
       }
     },
@@ -41,8 +49,8 @@
         "parent": "gtceu:block/machine/template/cube_all/sided",
         "textures": {
           "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
-          "overlay_front": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_active",
-          "overlay_front_emissive": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_active_emissive"
+          "overlay_front": "supersymmetry:block/multiblock/ball_mill/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/ball_mill/overlay_front_active_emissive"
         }
       }
     },
@@ -51,8 +59,8 @@
         "parent": "gtceu:block/machine/template/cube_all/sided",
         "textures": {
           "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
-          "overlay_front": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front",
-          "overlay_front_emissive": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_emissive"
+          "overlay_front": "supersymmetry:block/multiblock/ball_mill/overlay_front",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/ball_mill/overlay_front_emissive"
         }
       }
     },
@@ -61,8 +69,8 @@
         "parent": "gtceu:block/machine/template/cube_all/sided",
         "textures": {
           "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
-          "overlay_front": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_paused",
-          "overlay_front_emissive": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_paused_emissive"
+          "overlay_front": "supersymmetry:block/multiblock/ball_mill/overlay_front_paused",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/ball_mill/overlay_front_paused_emissive"
         }
       }
     },
@@ -71,8 +79,8 @@
         "parent": "gtceu:block/machine/template/cube_all/sided",
         "textures": {
           "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
-          "overlay_front": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_active",
-          "overlay_front_emissive": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_active_emissive"
+          "overlay_front": "supersymmetry:block/multiblock/ball_mill/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/ball_mill/overlay_front_active_emissive"
         }
       }
     },
@@ -81,8 +89,8 @@
         "parent": "gtceu:block/machine/template/cube_all/sided",
         "textures": {
           "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
-          "overlay_front": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_active",
-          "overlay_front_emissive": "gtceu:block/multiblock/gcym/large_maceration_tower/overlay_front_active_emissive"
+          "overlay_front": "supersymmetry:block/multiblock/ball_mill/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/ball_mill/overlay_front_active_emissive"
         }
       }
     }

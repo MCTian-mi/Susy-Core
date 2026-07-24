@@ -2335,12 +2335,6 @@ public final class SusyMachines {
                                 "       F F       ", "                 ")
                         .aisle("CCCCCCCCCCCCCCCCC", "RRRRRRRRRRRRRRRRR", "                 ", "                 ",
                                 "                 ", "                 ", "                 ", "       MMM       ",
-                                "       FGF       ", "       MMM       ")
-                        .aisle("                 ", "RRRRRRRRRRRRRRRRR", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "                 ",
-                                "       FMF       ", "                 ")
-                        .aisle("CCCCCCCCCCCCCCCCC", "RRRRRRRRRRRRRRRRR", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "       MMM       ",
                                 "       FGF       ", "       MAM       ")
                         .aisle("CCCCCCCCCCCCCCCCC", "                 ", "                 ", "                 ",
                                 "                 ", "                 ", "                 ", "                 ",
