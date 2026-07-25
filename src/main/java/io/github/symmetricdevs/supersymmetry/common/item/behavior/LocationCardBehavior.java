@@ -2,6 +2,9 @@ package io.github.symmetricdevs.supersymmetry.common.item.behavior;
 
 import com.gregtechceu.gtceu.api.item.component.IAddInformation;
 import com.gregtechceu.gtceu.api.item.component.IInteractionItem;
+import com.gregtechceu.gtceu.api.machine.MetaMachine;
+
+import io.github.symmetricdevs.supersymmetry.common.data.SusyMachines;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -44,9 +47,15 @@ public class LocationCardBehavior implements IInteractionItem, IAddInformation {
         if (!level.isClientSide) {
             Player player = context.getPlayer();
             if (player == null) return InteractionResult.PASS;
+            if (!player.isCrouching()) return InteractionResult.PASS;
 
             ItemStack stack = context.getItemInHand();
             BlockPos pos = context.getClickedPos();
+            MetaMachine machine = MetaMachine.getMachine(level, pos);
+            if (machine == null || !isDepositBasket(machine)) {
+                player.displayClientMessage(Component.translatable("susy.location_card.invalid_target"), true);
+                return InteractionResult.FAIL;
+            }
 
             CompoundTag tag = stack.getOrCreateTagElement(TAG_ROOT);
             tag.putInt(TAG_X, pos.getX());
@@ -60,6 +69,11 @@ public class LocationCardBehavior implements IInteractionItem, IAddInformation {
                     true);
         }
         return InteractionResult.SUCCESS;
+    }
+
+    private static boolean isDepositBasket(MetaMachine machine) {
+        return machine.getDefinition() == SusyMachines.DRONE_DEPOSIT_BASKET ||
+                machine.getDefinition() == SusyMachines.ADVANCED_DRONE_DEPOSIT_BASKET;
     }
 
     @Override

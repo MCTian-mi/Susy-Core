@@ -36,7 +36,7 @@ import static com.lowdragmc.lowdraglib.gui.texture.ProgressTexture.FillDirection
  * rendering is used; progress bars and sounds are mapped onto GTCEu stock assets.
  * <p>
  * Deferred with their parent scope: rocket/space maps ({@code rocket_assembler},
- * {@code drone_pad}, {@code cargo_drone_pad}, {@code jet_wingpack_fuels}) and the
+ * {@code jet_wingpack_fuels}) and the
  * worldgen-gated biome/dimension maps ({@code large_fluid_pump}, {@code quarry} —
  * see {@code SuSyWorldgenRecipeTypes}, Phase 5/8). The GCYM cross-map mirrors
  * ({@code ADVANCED_ARC_FURNACE}, {@code METALLURGICAL_CONVERTER},
@@ -471,6 +471,17 @@ public final class SuSyRecipeTypes {
             .setMaxIOSize(16, 1, 4, 0).setEUIO(IO.IN)
             .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW_MULTIPLE, LEFT_TO_RIGHT)
             .setSound(GTSoundEntries.ASSEMBLER);
+
+    /** Dimension-gated drone delivery recipes; the controller preserves legacy dimension IDs. */
+    public static final GTRecipeType DRONE_PAD_RECIPES = register("drone_pad", MULTIBLOCK)
+            .setMaxIOSize(4, 9, 0, 0).setEUIO(IO.IN)
+            .setProgressBar(GuiTextures.PROGRESS_BAR_ARROW, LEFT_TO_RIGHT)
+            .setSound(GTSoundEntries.ELECTROLYZER);
+
+    /** Internal cargo-pad transfer map; transfer setup is driven by the controller state machine. */
+    public static final GTRecipeType CARGO_DRONE_PAD_RECIPES = register("cargo_drone_pad", MULTIBLOCK)
+            .setMaxIOSize(1, 1, 0, 0)
+            .setXEIVisible(false);
 
     public static final GTRecipeType SCRAP_RECYCLER_RECIPES = register("scrap_recycler", ELECTRIC)
             .setMaxIOSize(2, 9, 0, 3).setEUIO(IO.IN)

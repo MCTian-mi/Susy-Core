@@ -4,8 +4,12 @@ import com.gregtechceu.gtceu.api.data.chemical.material.Material;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.common.machine.storage.CrateMachine;
 
+import io.github.symmetricdevs.supersymmetry.mixins.gtceu.CrateMachineAccessor;
+
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
@@ -18,13 +22,6 @@ import net.minecraft.world.phys.BlockHitResult;
  * It is registered with a loot {@code "inventory"} NBT payload (see
  * {@code SusyMachines}); {@code CrateMachine.onMachinePlaced} then loads that
  * loot and the crate drops with its contents preserved ({@code saveBreak()}).
- * <p>
- * TODO)) Phase 7: add a {@code CrateMachineAccessor} mixin so this crate can be
- * forced taped at construction (1.12.2 semantics: {@code setTaped(true)}) and so
- * {@code getItemStackLimit} can be overridden to 1. {@code CrateMachine.isTaped}
- * is private with no setter and there is no {@code getItemStackLimit} hook in
- * GTCEu-Modern, so a tiny accessor is the clean route — the same pattern 1.12.2
- * used ({@code MetaTileEntityCrateAccessor}).
  */
 public class LockedCrateMachine extends CrateMachine {
 
@@ -32,6 +29,15 @@ public class LockedCrateMachine extends CrateMachine {
         super(holder, material, inventorySize);
         // Inaccessible to automation and to insertion through the GUI slots.
         this.inventory.setFilter(stack -> false);
+        // Locked crates are permanently taped so they drop their contents when broken.
+        ((CrateMachineAccessor) this).setTaped(true);
+    }
+
+    @Override
+    public void onMachinePlaced(LivingEntity player, ItemStack stack) {
+        super.onMachinePlaced(player, stack);
+        // Re-apply taped flag after placement from an item; GTCEu may reset it.
+        ((CrateMachineAccessor) this).setTaped(true);
     }
 
     @Override

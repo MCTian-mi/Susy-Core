@@ -165,8 +165,8 @@ public final class SuSyRecipeMaps {
     // or "GENERATOR" groups and carry minimal config. Full XEI setup and
     // recipe generation will be added when the rocketry scope is ported.
     // ==================================================================
-    public static final GTRecipeType DRONE_PAD = registerDeferred("drone_pad");
-    public static final GTRecipeType CARGO_DRONE_PAD = registerDeferred("cargo_drone_pad");
+    public static final GTRecipeType DRONE_PAD = SuSyRecipeTypes.DRONE_PAD_RECIPES;
+    public static final GTRecipeType CARGO_DRONE_PAD = SuSyRecipeTypes.CARGO_DRONE_PAD_RECIPES;
     public static final GTRecipeType ROCKET_ASSEMBLER = registerDeferred("rocket_assembler");
     public static final GTRecipeType ROCKET_LAUNCH_PAD = registerDeferred("rocket_launch_pad");
     public static final GTRecipeType JET_WINGPACK_FUELS = SuSyRecipeTypes.register(

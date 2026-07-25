@@ -319,7 +319,7 @@ public final class SusyBlocks {
             casingTexture("multiblock", "structural_packing"));
     public static final BlockEntry<Block> ULV_STRUCTURAL_CASING = createCasingBlock("ulv_structural_casing",
             casingTexture("multiblock", "ulv_structural_casing")); // TODO)) CTM follow-up
-    public static final BlockEntry<Block> DRONE_PAD = createCasingBlock("drone_pad", TEX_STEEL); // TODO)) tex .../multiblock_casing/drone_pad
+    public static final BlockEntry<Block> DRONE_PAD_CASING = createCasingBlock("drone_pad_casing", TEX_STEEL); // TODO)) tex .../multiblock_casing/drone_pad
     public static final BlockEntry<Block> MONEL_500_CASING = createCasingBlock("monel_casing",
             casingTexture("multiblock", "monel_casing")); // TODO)) CTM follow-up
     public static final BlockEntry<Block> MONEL_500_PIPE = createCasingBlock("monel_casing_pipe",

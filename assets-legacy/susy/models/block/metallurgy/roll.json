@@ -1,7 +1,0 @@
-{
-  "parent": "block/cube_column",
-  "textures": {
-    "end": "gregtech:blocks/casings/metallurgy/roll/top",
-    "side": "gregtech:blocks/casings/metallurgy/roll/side"
-  }
-}

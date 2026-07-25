@@ -47,6 +47,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.fluids.FluidType;
 
+import com.simibubi.create.AllBlocks;
+
 import java.util.Locale;
 import java.util.function.BiFunction;
 
@@ -101,6 +103,8 @@ import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.BlenderMa
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.SuSyRotationGeneratorMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.AttritionScrubberMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.CurtainCoaterMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.CargoDronePadMachine;
+import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.DronePadMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.DumperMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.EccentricRollCrusherMachine;
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.FlareStackMachine;
@@ -2298,7 +2302,47 @@ public final class SusyMachines {
                     GTCEu.id("block/multiblock/primitive_blast_furnace"))
             .register();
 
-    // ---- railroad_engineering_station (deferred-scope IR placeholder + mining-fatigue aura) ----
+    private static final String[][] RAILROAD_ENGINEERING_STATION_PATTERN_AISLES = {
+            {"                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "                 "},
+            {"                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "                 "},
+            {"                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "                 "},
+            {"  CCC  BBB  CCC  ", "  CCC  BBB  CCC  ", "   C    B    C   ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "       F F       ", "       F F       "},
+            {"CCCCCCCCCCCCCCCCC", "CCCFCCCCFCCCCFCCC", "CCCFCCCCFCCCCFCCC", "   F    F    F   ", "   F    F    F   ", "   F    F    F   ", "   F    F    F   ", " FFFFFFFFFFFFFFF ", "  FF   FGF   FF  ", "       F F       "},
+            {"CCCCCCCCCCCCCCCCC", "CCCCCCCCCCCCCCCCC", "   C    C    C   ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "       F F       ", "       F F       "},
+            {"CCCCCCCCCCCCCCCCC", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "                 "},
+            {"CCCCCCCCCCCCCCCCC", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       MMM       ", "       FGF       ", "       MMM       "},
+            {"                 ", "RRRRRRRRRRRRRRRRR", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       FMF       ", "                 "},
+            {"CCCCCCCCCCCCCCCCC", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       MMM       ", "       FGF       ", "       MAM       "},
+            {"CCCCCCCCCCCCCCCCC", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "                 "},
+            {"CCCCCCCCCCCCCCCCC", "CCCCCCCCCCCCCCCCC", "   C    C    C   ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "       F F       ", "       F F       "},
+            {"CCCCCCCCCCCCCCCCC", "CCCFCCCCFCCCCFCCC", "CCCFCCCCFCCCCFCCC", "   F    F    F   ", "   F    F    F   ", "   F    F    F   ", "   F    F    F   ", " FFFFFFFFFFFFFFF ", "  FF   FGF   FF  ", "       F F       "},
+            {"  CCC  CCC  CCC  ", "  CCC  CSC  CCC  ", "   C    C    C   ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "       F F       ", "       F F       "},
+            {"                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "                 "},
+            {"                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "                 "},
+            {"                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "       F F       ", "                 "}
+    };
+
+    private static final String[][] RAILROAD_ENGINEERING_STATION_PREVIEW_AISLES = {
+            {"    CCCC CCCC    ", "    CC  R  CC    ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 "},
+            {"    CCCC CCCC    ", "    CC  R  CC    ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "                 ", "                 "},
+            {"   CCCCC CCCCC   ", "   CCC  R  CCC   ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "    F       F    ", "                 "},
+            {"   CCCCC CCCCC   ", "   CFC  R  CFC   ", "   CFC     CFC   ", "    F       F    ", "    F       F    ", "    F       F    ", "    F       F    ", "    F       F    ", "    F       F    ", "                 "},
+            {"   CCCCC CCCCC   ", "   CCC  R  CCC   ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "                 ", "                 "},
+            {"    CCCC CCCC    ", "    CC  R  CC    ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "                 ", "                 "},
+            {"    CCCC CCCC    ", "    CC  R  CC    ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "                 ", "                 "},
+            {"   BCCCC CCCCC   ", "   BCC  R  CCC   ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "   FFF M M FFF   ", "FFFFFFFFFFFFFFFFF", "   FFF M M FFF   "},
+            {"   BCCCC CCCCC   ", "   BFC  R  CFS   ", "   BFC     CFC   ", "    F       F    ", "    F       F    ", "    F       F    ", "    F       F    ", "    F  M M  F    ", "    G  GMG  G    ", "       M A       "},
+            {"   BCCCC CCCCC   ", "   BCC  R  CCC   ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "   FFF M M FFF   ", "FFFFFFFFFFFFFFFFF", "   FFF M M FFF   "},
+            {"    CCCC CCCC    ", "    CC  R  CC    ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "                 ", "                 "},
+            {"    CCCC CCCC    ", "    CC  R  CC    ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "                 ", "                 "},
+            {"   CCCCC CCCCC   ", "   CCC  R  CCC   ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "                 ", "                 "},
+            {"   CCCCC CCCCC   ", "   CFC  R  CFC   ", "   CFC     CFC   ", "    F       F    ", "    F       F    ", "    F       F    ", "    F       F    ", "    F       F    ", "    F       F    ", "                 "},
+            {"   CCCCC CCCCC   ", "   CCC  R  CCC   ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "    F       F    ", "                 "},
+            {"    CCCC CCCC    ", "    CC  R  CC    ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "    F       F    ", "                 ", "                 "},
+            {"    CCCC CCCC    ", "    CC  R  CC    ", "    C       C    ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 ", "                 "}
+    };
+
+    // ---- railroad_engineering_station (Create-track rail bed + mining-fatigue aura) ----
     public static final MultiblockMachineDefinition RAILROAD_ENGINEERING_STATION = REGISTRATE
             .multiblock("railroad_engineering_station", RailroadEngineeringStationMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
@@ -2311,52 +2355,11 @@ public final class SusyMachines {
             .pattern(definition -> {
                 TraceabilityPredicate solidSteel = Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get());
                 TraceabilityPredicate concrete = Predicates.blocks(GTBlocks.LIGHT_CONCRETE.get());
-                return FactoryBlockPattern.start()
-                        .aisle("                 ", "                 ", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "                 ",
-                                "       F F       ", "                 ")
-                        .aisle("                 ", "                 ", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "                 ",
-                                "       F F       ", "                 ")
-                        .aisle("                 ", "                 ", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "                 ",
-                                "       F F       ", "                 ")
-                        .aisle("  CCC  BBB  CCC  ", "  CCC  BBB  CCC  ", "   C    B    C   ", "                 ",
-                                "                 ", "                 ", "                 ", "       F F       ",
-                                "       F F       ", "       F F       ")
-                        .aisle("CCCCCCCCCCCCCCCCC", "CCCFCCCCFCCCCFCCC", "CCCFCCCCFCCCCFCCC", "   F    F    F   ",
-                                "   F    F    F   ", "   F    F    F   ", "   F    F    F   ", " FFFFFFFFFFFFFFF ",
-                                "  FF   FGF   FF  ", "       F F       ")
-                        .aisle("CCCCCCCCCCCCCCCCC", "CCCCCCCCCCCCCCCCC", "   C    C    C   ", "                 ",
-                                "                 ", "                 ", "                 ", "       F F       ",
-                                "       F F       ", "       F F       ")
-                        .aisle("CCCCCCCCCCCCCCCCC", "                 ", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "                 ",
-                                "       F F       ", "                 ")
-                        .aisle("CCCCCCCCCCCCCCCCC", "RRRRRRRRRRRRRRRRR", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "       MMM       ",
-                                "       FGF       ", "       MAM       ")
-                        .aisle("CCCCCCCCCCCCCCCCC", "                 ", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "                 ",
-                                "       F F       ", "                 ")
-                        .aisle("CCCCCCCCCCCCCCCCC", "CCCCCCCCCCCCCCCCC", "   C    C    C   ", "                 ",
-                                "                 ", "                 ", "                 ", "       F F       ",
-                                "       F F       ", "       F F       ")
-                        .aisle("CCCCCCCCCCCCCCCCC", "CCCFCCCCFCCCCFCCC", "CCCFCCCCFCCCCFCCC", "   F    F    F   ",
-                                "   F    F    F   ", "   F    F    F   ", "   F    F    F   ", " FFFFFFFFFFFFFFF ",
-                                "  FF   FGF   FF  ", "       F F       ")
-                        .aisle("  CCC  CCC  CCC  ", "  CCC  CSC  CCC  ", "   C    C    C   ", "                 ",
-                                "                 ", "                 ", "                 ", "       F F       ",
-                                "       F F       ", "       F F       ")
-                        .aisle("                 ", "                 ", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "                 ",
-                                "       F F       ", "                 ")
-                        .aisle("                 ", "                 ", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "                 ",
-                                "       F F       ", "                 ")
-                        .aisle("                 ", "                 ", "                 ", "                 ",
-                                "                 ", "                 ", "                 ", "                 ",
-                                "       F F       ", "                 ")
+                FactoryBlockPattern pattern = FactoryBlockPattern.start();
+                for (String[] aisle : RAILROAD_ENGINEERING_STATION_PATTERN_AISLES) {
+                    pattern = pattern.aisle(aisle);
+                }
+                return pattern
                         .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
                         .where('F', Predicates.frames(GTMaterials.Steel))
                         .where('M', solidSteel)
@@ -2369,9 +2372,80 @@ public final class SusyMachines {
                         .where(' ', Predicates.any())
                         .build();
             })
+            .shapeInfos(definition -> List.of(createRailroadEngineeringStationShape(definition)))
             .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
                     SuSyValues.susyId("block/multiblock/railroad_engineering_station"))
             .register();
+
+    // ---- drone_pad (dimension-gated recipe delivery; EntityDrone deferred) ----
+    public static final MultiblockMachineDefinition DRONE_PAD = REGISTRATE
+            .multiblock("drone_pad", DronePadMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_STEEL_SOLID.get())
+            .recipeType(SuSyRecipeTypes.DRONE_PAD_RECIPES)
+            // Legacy DronePadWorkable disallowed overclocking.
+            .recipeModifier(com.gregtechceu.gtceu.api.recipe.modifier.RecipeModifier.NO_MODIFIER)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle(" CCC ")
+                    .aisle("CPPPC")
+                    .aisle("CPPPC")
+                    .aisle("CPPPC")
+                    .aisle(" CSC ")
+                    .where(' ', Predicates.any())
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_STEEL_SOLID.get()).setMinGlobalLimited(6)
+                            .or(Predicates.autoAbilities(definition.getRecipeTypes(), true, false, true, true, false,
+                                    false)))
+                    .where('P', Predicates.blocks(SusyBlocks.DRONE_PAD_CASING.get()))
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_solid_steel"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    // ---- cargo_drone_pad (automated cargo-transfer state machine with EntityDrone) ----
+    public static final MultiblockMachineDefinition CARGO_DRONE_PAD = REGISTRATE
+            .multiblock("cargo_drone_pad", CargoDronePadMachine::new)
+            .rotationState(RotationState.NON_Y_AXIS)
+            .allowExtendedFacing(false)
+            .appearanceBlock(() -> GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+            .recipeType(SuSyRecipeTypes.CARGO_DRONE_PAD_RECIPES)
+            .recipeModifier(com.gregtechceu.gtceu.api.recipe.modifier.RecipeModifier.NO_MODIFIER)
+            .pattern(definition -> FactoryBlockPattern.start()
+                    .aisle(" CCC ")
+                    .aisle("CPPPC")
+                    .aisle("CPPPC")
+                    .aisle("CPPPC")
+                    .aisle(" CSC ")
+                    .where(' ', Predicates.any())
+                    .where('S', Predicates.controller(Predicates.blocks(definition.getBlock())))
+                    .where('C', Predicates.blocks(GTBlocks.CASING_ALUMINIUM_FROSTPROOF.get())
+                            .setMinGlobalLimited(6)
+                            .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setMinGlobalLimited(1))
+                            .or(Predicates.abilities(PartAbility.EXPORT_ITEMS).setMinGlobalLimited(1)))
+                    .where('P', Predicates.blocks(SusyBlocks.DRONE_PAD_CASING.get()))
+                    .build())
+            .workableCasingModel(GTCEu.id("block/casings/solid/machine_casing_frost_proof"),
+                    GTCEu.id("block/multiblock/blast_furnace"))
+            .register();
+
+    private static MultiblockShapeInfo createRailroadEngineeringStationShape(MultiblockMachineDefinition definition) {
+        MultiblockShapeInfo.ShapeInfoBuilder builder = MultiblockShapeInfo.builder();
+        for (String[] aisle : RAILROAD_ENGINEERING_STATION_PREVIEW_AISLES) {
+            builder = builder.aisle(aisle);
+        }
+        return builder
+                .where('S', definition, Direction.SOUTH)
+                .where('F', GTMaterialBlocks.MATERIAL_BLOCKS.get(TagPrefix.frameGt, GTMaterials.Steel).get())
+                .where('M', GTBlocks.CASING_STEEL_SOLID.get())
+                .where('G', GTBlocks.CASING_STEEL_GEARBOX.get())
+                .where('C', GTBlocks.LIGHT_CONCRETE.get())
+                .where('A', GTBlocks.CASING_STEEL_SOLID.get())
+                .where('B', GTBlocks.LIGHT_CONCRETE.get())
+                .where('R', AllBlocks.TRACK.get())
+                .where(' ', Blocks.AIR.defaultBlockState())
+                .build();
+    }
 
     // ---- heat_radiator (dynamic-size no-energy radiator) ----
     public static final MultiblockMachineDefinition HEAT_RADIATOR = REGISTRATE

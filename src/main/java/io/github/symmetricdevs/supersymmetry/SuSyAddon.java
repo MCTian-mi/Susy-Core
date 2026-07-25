@@ -3,6 +3,7 @@ package io.github.symmetricdevs.supersymmetry;
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
 import io.github.symmetricdevs.supersymmetry.api.unification.ore.SusyTagPrefixes;
 import io.github.symmetricdevs.supersymmetry.common.cover.SusyCovers;
+import io.github.symmetricdevs.supersymmetry.data.recipe.SusyDronePadRecipes;
 import io.github.symmetricdevs.supersymmetry.data.recipe.SusyOreProcessingRecipes;
 import io.github.symmetricdevs.supersymmetry.data.recipe.SusyRailroadRecipes;
 
@@ -56,6 +57,7 @@ public class SuSyAddon implements IGTAddon {
     public void addRecipes(Consumer<FinishedRecipe> provider) {
         SusyOreProcessingRecipes.init(provider);
         SusyRailroadRecipes.init(provider);
+        SusyDronePadRecipes.init(provider);
     }
 
     @Override

@@ -18,11 +18,14 @@ import com.simibubi.create.content.trains.graph.TrackNodeLocation;
 import com.simibubi.create.content.trains.track.ITrackBlock;
 import com.simibubi.create.content.trains.track.TrackBlock;
 
+import com.gregtechceu.gtceu.GTCEu;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -68,6 +71,8 @@ public final class CreateTrainSpawner {
         Collection<TrackNodeLocation.DiscoveredLocation> ends =
                 track.getConnected(level, trackPos, trackState, true, null);
         TrackNodeLocation location = null;
+        GTCEu.LOGGER.debug("[SuSy] Railroad spawn: track at {} has {} connected ends, assembly direction {}",
+                trackPos, ends.size(), assemblyDirection);
         for (TrackNodeLocation.DiscoveredLocation end : ends) {
             Vec3 toEnd = end.getLocation().subtract(centre).normalize();
             if (Mth.equal(0, targetOffset.distanceToSqr(toEnd))) {
@@ -145,7 +150,7 @@ public final class CreateTrainSpawner {
         }
 
         if (points.size() != pointOffsets.size()) {
-            return TrainSpawnResult.failed("not all travelling points created");
+            return TrainSpawnResult.failed("not all travelling points created (found " + points.size() + ")");
         }
 
         return assembleSingleBogeyTrain(level, trackPos, trackState, track, graph, points, assemblyDirection);
@@ -165,8 +170,9 @@ public final class CreateTrainSpawner {
             return TrainSpawnResult.failed("track bogey anchor is not a bogey block");
         }
 
-        BlockPos bogeyPos = trackPos.above()
-                .relative(assemblyDirection);
+        // Place the bogey one block along the assembly direction, matching
+        // StationTileEntity.assemble's offset for the frontmost bogey.
+        BlockPos bogeyPos = trackPos.above().relative(assemblyDirection, 1);
         BlockState existing = level.getBlockState(bogeyPos);
         if (!existing.canBeReplaced()) {
             return TrainSpawnResult.failed("bogey placement blocked at " + bogeyPos);
@@ -178,22 +184,34 @@ public final class CreateTrainSpawner {
             return TrainSpawnResult.failed("failed to create bogey tile entity");
         }
 
+        // CarriageContraption.assemble() requires more than one captured block,
+        // so add a temporary body block in front of the bogey.
+        BlockPos bodyPos = bogeyPos.relative(assemblyDirection);
+        BlockState existingBody = level.getBlockState(bodyPos);
+        if (!existingBody.canBeReplaced()) {
+            level.setBlock(bogeyPos, existing, 3);
+            return TrainSpawnResult.failed("temporary train body placement blocked at " + bodyPos);
+        }
+        level.setBlock(bodyPos, Blocks.OAK_PLANKS.defaultBlockState(), 3);
+
         CarriageContraption contraption = new CarriageContraption(assemblyDirection);
         boolean success;
         try {
             success = contraption.assemble(level, bogeyPos);
         } catch (com.simibubi.create.content.contraptions.AssemblyException e) {
+            level.setBlock(bodyPos, existingBody, 3);
             level.setBlock(bogeyPos, existing, 3);
             return TrainSpawnResult.failed("contraption assembly exception: " + e.getMessage());
         }
         if (!success) {
+            level.setBlock(bodyPos, existingBody, 3);
             level.setBlock(bogeyPos, existing, 3);
             return TrainSpawnResult.failed("contraption assembly failed");
         }
         if (!contraption.hasForwardControls()) {
             // A single-bogey test train has no controls. Log but allow it to
             // spawn so recipe completion still produces a visible train.
-            System.out.println("[SuSy] Spawned train has no forward controls; it will not be drivable.");
+            GTCEu.LOGGER.info("[SuSy] Spawned train has no forward controls; it will not be drivable.");
         }
 
         CarriageBogey bogey = new CarriageBogey(
@@ -212,6 +230,7 @@ public final class CreateTrainSpawner {
         Create.RAILWAYS.addTrain(train);
         AllPackets.getChannel().send(PacketDistributor.ALL.noArg(), new TrainPacket(train, true));
 
+        GTCEu.LOGGER.info("[SuSy] Spawned Create train {} on graph {} at {}", train.id, graph.id, trackPos);
         return new TrainSpawnResult(true, train.id, null);
     }
 

@@ -8,6 +8,7 @@ import io.github.symmetricdevs.supersymmetry.common.data.SuSyWorldgenRecipeTypes
 import io.github.symmetricdevs.supersymmetry.common.data.SusyBlockEntities;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyBlocks;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyCreativeModeTabs;
+import io.github.symmetricdevs.supersymmetry.common.data.SusyEntities;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyMachines;
 import io.github.symmetricdevs.supersymmetry.common.item.SusyItems;
 import io.github.symmetricdevs.supersymmetry.common.item.armor.SuSyMetaArmor;
@@ -82,6 +83,7 @@ public class Supersymmetry {
 
         // Register deferred sound events on the mod event bus.
         SusySounds.SOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        SusyEntities.ENTITY_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         // Register for the material lifecycle events fired on the mod bus
         // (MaterialRegistryEvent / MaterialEvent / PostMaterialEvent below).

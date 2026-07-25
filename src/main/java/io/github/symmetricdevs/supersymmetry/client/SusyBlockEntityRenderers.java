@@ -7,8 +7,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import io.github.symmetricdevs.supersymmetry.Supersymmetry;
+import io.github.symmetricdevs.supersymmetry.client.renderer.entity.DroneRenderer;
 import io.github.symmetricdevs.supersymmetry.client.renderer.handler.EccentricRollRenderer;
 import io.github.symmetricdevs.supersymmetry.common.data.SusyBlockEntities;
+import io.github.symmetricdevs.supersymmetry.common.data.SusyEntities;
 
 /**
  * Client-side block-entity renderer registrations, on the mod event bus (mirrors the
@@ -22,6 +24,7 @@ public final class SusyBlockEntityRenderers {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(SusyEntities.DRONE.get(), DroneRenderer::new);
         event.registerBlockEntityRenderer(SusyBlockEntities.ECCENTRIC_ROLL.get(), ctx -> new EccentricRollRenderer());
     }
 }

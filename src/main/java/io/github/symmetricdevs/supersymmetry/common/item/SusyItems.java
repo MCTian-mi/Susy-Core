@@ -12,6 +12,7 @@ import com.tterrag.registrate.util.nullness.NonNullConsumer;
 
 import io.github.symmetricdevs.supersymmetry.SuSyValues;
 import io.github.symmetricdevs.supersymmetry.api.registry.SusyRegistration;
+import io.github.symmetricdevs.supersymmetry.common.item.behavior.LocationCardBehavior;
 
 import net.minecraft.network.chat.Component;
 
@@ -182,6 +183,7 @@ public final class SusyItems {
             .item("location_card", ComponentItem::create)
             .lang("Location Card")
             .properties(p -> p.stacksTo(1))
+            .onRegister(attach(new LocationCardBehavior()))
             .defaultModel()
             .register();
 

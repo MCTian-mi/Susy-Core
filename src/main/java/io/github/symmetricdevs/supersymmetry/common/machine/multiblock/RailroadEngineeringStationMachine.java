@@ -26,6 +26,8 @@ import org.jetbrains.annotations.Nullable;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.trains.track.ITrackBlock;
 
+import com.gregtechceu.gtceu.GTCEu;
+
 import io.github.symmetricdevs.supersymmetry.common.machine.multiblock.integration.CreateTrainSpawner;
 
 /**
@@ -140,19 +142,26 @@ public class RailroadEngineeringStationMachine extends WorkableElectricMultibloc
         }
         BlockPos trackPos = findCentralTrackPos();
         if (trackPos == null) {
+            GTCEu.LOGGER.warn("[SuSy] Railroad Engineering Station at {} could not locate central track", getPos());
             return;
         }
         Direction assemblyDirection = getFrontFacing().getClockWise();
+        GTCEu.LOGGER.info("[SuSy] Railroad Engineering Station at {} spawning train on track {} facing {}",
+                getPos(), trackPos, assemblyDirection);
         CreateTrainSpawner.TrainSpawnResult result = CreateTrainSpawner.trySpawnTrain(level, trackPos, assemblyDirection);
         if (result.success()) {
             this.spawnedStockUuid = result.trainId().toString();
+            GTCEu.LOGGER.info("[SuSy] Train spawned: {}", result.trainId());
+        } else {
+            GTCEu.LOGGER.warn("[SuSy] Train spawn failed: {}", result.failure());
         }
     }
 
     /**
      * Finds a Create track block along the single central rail aisle of the structure.
      * The legacy rail bed runs left-to-right behind the controller front; the
-     * returned position is the left-most track in the central rail row.
+     * returned position is the track directly behind the controller so the train
+     * can be assembled in either direction along the rail.
      */
     @Nullable
     private BlockPos findCentralTrackPos() {
@@ -160,19 +169,26 @@ public class RailroadEngineeringStationMachine extends WorkableElectricMultibloc
         if (level == null) {
             return null;
         }
-        // The rail aisle is 4 blocks behind the controller (slice 7 of 15, with
-        // the controller at slice 11). Scan left-to-right so the train can be
+        // The single rail line is 5 blocks behind the controller (slice 8 of 17,
+        // with the controller at slice 13). Scan left-to-right so the train can be
         // assembled facing right along the rail.
         BlockPos.MutableBlockPos cursor = getPos().mutable();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             cursor.move(getFrontFacing().getOpposite());
         }
-        // right is positive toward the controller's left; start at the left edge.
-        for (int right = 8; right >= -8; right--) {
-            BlockPos probe = relativePos(cursor, right, 0, 0);
-            BlockState state = level.getBlockState(probe);
-            if (state.getBlock() instanceof ITrackBlock) {
-                return probe;
+        // The rail line is centered on the controller's X coordinate (right=0).
+        // Prefer the center block so the train can be assembled in either direction.
+        BlockPos center = relativePos(cursor, 0, 0, 0);
+        if (level.getBlockState(center).getBlock() instanceof ITrackBlock) {
+            return center;
+        }
+        for (int d = 1; d <= 8; d++) {
+            for (int sign : new int[] { 1, -1 }) {
+                BlockPos probe = relativePos(cursor, d * sign, 0, 0);
+                BlockState state = level.getBlockState(probe);
+                if (state.getBlock() instanceof ITrackBlock) {
+                    return probe;
+                }
             }
         }
         return null;
