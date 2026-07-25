@@ -1,0 +1,95 @@
+{
+  "parent": "minecraft:block/block",
+  "dynamic_renders": [
+    {
+      "type": "supersymmetry:geo_machine"
+    }
+  ],
+  "loader": "gtceu:machine",
+  "machine": "supersymmetry:rotary_kiln_v2",
+  "texture_overrides": {
+    "all": "gtceu:block/casings/solid/machine_casing_solid_steel"
+  },
+  "variants": {
+    "is_formed=false,recipe_logic_status=idle": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
+          "overlay_front": "supersymmetry:block/multiblock/rotary_kiln/overlay_front",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_emissive"
+        }
+      }
+    },
+    "is_formed=false,recipe_logic_status=suspend": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
+          "overlay_front": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_paused",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_paused_emissive"
+        }
+      }
+    },
+    "is_formed=false,recipe_logic_status=waiting": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
+          "overlay_front": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_active_emissive"
+        }
+      }
+    },
+    "is_formed=false,recipe_logic_status=working": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
+          "overlay_front": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_active_emissive"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=idle": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
+          "overlay_front": "supersymmetry:block/multiblock/rotary_kiln/overlay_front",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_emissive"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=suspend": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
+          "overlay_front": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_paused",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_paused_emissive"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=waiting": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
+          "overlay_front": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_active_emissive"
+        }
+      }
+    },
+    "is_formed=true,recipe_logic_status=working": {
+      "model": {
+        "parent": "gtceu:block/machine/template/cube_all/sided",
+        "textures": {
+          "all": "gtceu:block/casings/solid/machine_casing_solid_steel",
+          "overlay_front": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/multiblock/rotary_kiln/overlay_front_active_emissive"
+        }
+      }
+    }
+  }
+}

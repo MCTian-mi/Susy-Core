@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "supersymmetry:block/machine/luv_crystallizer",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/machine/luv_crystallizer"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/machine/luv_crystallizer",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/machine/luv_crystallizer",
+      "y": 270
+    }
+  }
+}

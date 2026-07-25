@@ -1,0 +1,180 @@
+package io.github.symmetricdevs.supersymmetry.common.item.armor;
+
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
+import static io.github.symmetricdevs.supersymmetry.Supersymmetry.MOD_ID;
+
+import io.github.symmetricdevs.supersymmetry.client.renderer.handler.BreathingArmorModels;
+
+/**
+ * Space suit armor piece. Provides full environmental protection when the full
+ * suit (helmet + chestplate + leggings + boots) is worn and the chest tank has
+ * oxygen.
+ */
+public class SpaceSuit extends BreathingApparatus {
+
+    private final double hoursOfLife;
+    private final String name;
+    private final int tier;
+    private final double relativeAbsorption;
+
+    public SpaceSuit(ArmorItem.Type slot, int maxDurability, double hoursOfLife, String name, int tier,
+                     double relativeAbsorption) {
+        super(slot, maxDurability);
+        this.hoursOfLife = hoursOfLife;
+        this.name = name;
+        this.tier = tier;
+        this.relativeAbsorption = relativeAbsorption;
+    }
+
+    @Override
+    public ResourceLocation getArmorTexture(@NotNull ItemStack stack, @Nullable Entity entity,
+                                            @NotNull EquipmentSlot slot, @Nullable String type) {
+        String layer = slot == EquipmentSlot.LEGS ? "layer_2" : "layer_1";
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/models/armor/" + name + "_" + layer + ".png");
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public HumanoidModel<?> getArmorModel(@NotNull LivingEntity entity, @NotNull ItemStack stack,
+                                          @NotNull EquipmentSlot slot, @NotNull HumanoidModel<?> defaultModel) {
+        return switch (slot) {
+            case HEAD, CHEST, LEGS, FEET -> BreathingArmorModels.protectiveSuit(defaultModel, slot);
+            default -> defaultModel;
+        };
+    }
+
+    @Override
+    public boolean mayBreatheWith(@NotNull ItemStack stack, @NotNull Player player) {
+        return true;
+    }
+
+    @Override
+    public double getDamageAbsorbed(@NotNull ItemStack stack, @NotNull Player player) {
+        handleDamage(stack, player);
+
+        ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (chest.getItem() instanceof com.gregtechceu.gtceu.api.item.armor.ArmorComponentItem item &&
+                item.getArmorLogic() instanceof SpaceSuit tank && tank.tier == tier) {
+            tank.handleDamage(chest, player);
+
+            int piecesCount = 0;
+            ItemStack leggings = player.getItemBySlot(EquipmentSlot.LEGS);
+            if (leggings.getItem() instanceof com.gregtechceu.gtceu.api.item.armor.ArmorComponentItem item2 &&
+                    item2.getArmorLogic() instanceof SpaceSuit legLogic) {
+                legLogic.handleDamage(leggings, player);
+                piecesCount++;
+            }
+
+            ItemStack boots = player.getItemBySlot(EquipmentSlot.FEET);
+            if (boots.getItem() instanceof com.gregtechceu.gtceu.api.item.armor.ArmorComponentItem item2 &&
+                    item2.getArmorLogic() instanceof SpaceSuit bootLogic) {
+                bootLogic.handleDamage(boots, player);
+                piecesCount++;
+            }
+
+            if (tank.getOxygen(chest) <= 0) {
+                return 0.5;
+            } else {
+                tank.changeOxygen(chest, -1.0);
+            }
+            return switch (piecesCount) {
+                case 0, 1 -> 0;
+                case 2 -> BreathabilityHelper.ABSORB_ALL;
+                default -> 0;
+            };
+        }
+        return 0;
+    }
+
+    private double getDamage(ItemStack stack) {
+        var tag = stack.getOrCreateTag();
+        if (!tag.contains("damage")) {
+            tag.putDouble("damage", 0);
+        }
+        return tag.getDouble("damage");
+    }
+
+    private void changeDamage(ItemStack stack, double damageChange) {
+        var tag = stack.getOrCreateTag();
+        tag.putDouble("damage", getDamage(stack) + damageChange);
+    }
+
+    private void handleDamage(ItemStack stack, Player player) {
+        if (hoursOfLife == 0 || player.level().dimension().location().toString().equals("beneath")) {
+            return;
+        }
+        double amount = 1.0 / (60.0 * 60.0 * hoursOfLife);
+        changeDamage(stack, amount);
+        if (getDamage(stack) >= 1) {
+            stack.shrink(1);
+            player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+        }
+    }
+
+    /**
+     * Fill level for the durability bar (oxygen for tanks, remaining lifetime
+     * otherwise). Not an {@code @Override}: 1.20.1 {@code IArmorLogic} has no
+     * {@code getDurabilityForDisplay} (1.12.2 Forge hook, removed).
+     */
+    public double getDurabilityForDisplay(ItemStack stack) {
+        if (getArmorType() == ArmorItem.Type.CHESTPLATE && getMaxOxygen(stack) != -1) {
+            return getOxygen(stack) / getMaxOxygen(stack);
+        } else {
+            if (hoursOfLife > 0) {
+                return 1 - getDamage(stack);
+            }
+        }
+        return 1;
+    }
+
+    @Override
+    public int getArmorDisplay(@NotNull Player player, @NotNull ItemStack armor, @NotNull EquipmentSlot slot) {
+        return (int) Math.round(20.0F * getAbsorption(armor) * relativeAbsorption);
+    }
+
+    @Override
+    public void addInformation(ItemStack stack, List<Component> tooltips) {
+        if (hoursOfLife > 0) {
+            double lifetime = 60 * 60 * hoursOfLife;
+            int secondsRemaining = (int) (lifetime - getDamage(stack) * lifetime);
+            tooltips.add(Component.translatable("supersymmetry.seconds_left", secondsRemaining));
+        } else {
+            tooltips.add(Component.translatable("supersymmetry.unlimited"));
+        }
+
+        int armor = (int) Math.round(20.0F * getAbsorption(this.slot) * this.relativeAbsorption);
+        if (armor > 0) {
+            tooltips.add(Component.translatable("attribute.modifier.plus.0", armor,
+                    Component.translatable("attribute.name.generic.armor")));
+        }
+    }
+
+    protected float getAbsorption(ItemStack stack) {
+        return getAbsorption(getArmorType());
+    }
+
+    protected float getAbsorption(ArmorItem.Type type) {
+        return switch (type) {
+            case HELMET, BOOTS -> 0.15F;
+            case CHESTPLATE -> 0.4F;
+            case LEGGINGS -> 0.3F;
+            default -> 0.0F;
+        };
+    }
+}

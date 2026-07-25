@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "supersymmetry:block/flotation_multiblock_tank"
+    },
+    "active=true": {
+      "model": "supersymmetry:block/flotation_multiblock_tank_active"
+    }
+  }
+}

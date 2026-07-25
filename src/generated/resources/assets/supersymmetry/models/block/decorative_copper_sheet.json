@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "supersymmetry:block/decorative_copper_sheet"
+  }
+}

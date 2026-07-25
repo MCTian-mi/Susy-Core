@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "supersymmetry:block/machine/mining_drill",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/machine/mining_drill"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/machine/mining_drill",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/machine/mining_drill",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "supersymmetry:block/casings/wooden_coagulation_tank_wall/bottom",
+    "side": "supersymmetry:block/casings/wooden_coagulation_tank_wall/side",
+    "top": "supersymmetry:block/casings/wooden_coagulation_tank_wall/top"
+  }
+}

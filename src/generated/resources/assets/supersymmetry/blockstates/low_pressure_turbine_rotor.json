@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "supersymmetry:block/low_pressure_turbine_rotor",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/low_pressure_turbine_rotor"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/low_pressure_turbine_rotor",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/low_pressure_turbine_rotor",
+      "y": 270
+    }
+  }
+}

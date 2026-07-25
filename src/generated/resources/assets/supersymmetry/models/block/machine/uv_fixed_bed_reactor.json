@@ -1,0 +1,41 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "gtceu:machine",
+  "machine": "supersymmetry:uv_fixed_bed_reactor",
+  "variants": {
+    "recipe_logic_status=idle": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/uv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/fixed_bed_reactor/overlay_front"
+        }
+      }
+    },
+    "recipe_logic_status=suspend": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/uv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/fixed_bed_reactor/overlay_front"
+        }
+      }
+    },
+    "recipe_logic_status=waiting": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/uv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/fixed_bed_reactor/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/machines/fixed_bed_reactor/overlay_front_active_emissive"
+        }
+      }
+    },
+    "recipe_logic_status=working": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/uv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/fixed_bed_reactor/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/machines/fixed_bed_reactor/overlay_front_active_emissive"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "supersymmetry:block/bandit_flare_bottom",
+    "side": "supersymmetry:block/bandit_flare_side",
+    "top": "supersymmetry:block/bandit_flare_top"
+  }
+}

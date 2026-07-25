@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "supersymmetry:block/carbon_electrode_assembly"
+    },
+    "active=true": {
+      "model": "supersymmetry:block/carbon_electrode_assembly_active"
+    }
+  }
+}

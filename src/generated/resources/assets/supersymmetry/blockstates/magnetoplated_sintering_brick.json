@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "supersymmetry:block/magnetoplated_sintering_brick"
+    },
+    "active=true": {
+      "model": "supersymmetry:block/magnetoplated_sintering_brick_active"
+    }
+  }
+}

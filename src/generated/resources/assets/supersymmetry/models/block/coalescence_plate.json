@@ -1,0 +1,6 @@
+{
+  "parent": "supersymmetry:block/cube_with_inner",
+  "textures": {
+    "all": "supersymmetry:block/casings/multiblock/coalescence_plate"
+  }
+}

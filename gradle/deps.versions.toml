@@ -1,0 +1,56 @@
+[versions]
+annotations = "26.1.0"
+jspecify = "1.0.0"
+
+ldlib = "1.0.50"
+registrate = "MC1.20-1.3.11"
+configuration = "3.1.0-forge"
+gtceu = "7.5.3"
+geckolib = "aC5KMoNg"
+create = "6.0.8-291"
+ponder = "1.0.92"
+flywheel = "1.0.6-280"
+
+embeddium = "0.3.31+mc1.20.1"
+jei = "15.20.0.133"
+architectury = "9.2.14"
+clothConfigApi = "11.1.136"
+rei = "12.1.785"
+emi = "1.1.24+1.20.1"
+jade = "11.13.2+forge"
+jade-addons = "5.5.1+forge"
+spark = "1.10.53-forge"
+
+[libraries]
+annotations = { module = "org.jetbrains:annotations", version.ref = "annotations" }
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+
+ldlib = { module = "com.lowdragmc.ldlib:ldlib-forge-1.20.1", version.ref = "ldlib" }
+registrate = { module = "com.tterrag.registrate:Registrate", version.ref = "registrate" }
+configuration = { module = "dev.toma.configuration:configuration-1.20.1", version.ref = "configuration" }
+gtceu = { module = "com.gregtechceu.gtceu:gtceu-1.20.1", version.ref = "gtceu" }
+geckolib = { module = "maven.modrinth:geckolib", version.ref = "geckolib" }
+create = { module = "com.simibubi.create:create-1.20.1", version.ref = "create" }
+ponder = { module = "net.createmod.ponder:Ponder-Forge-1.20.1", version.ref = "ponder" }
+flywheel-forge-api = { module = "dev.engine-room.flywheel:flywheel-forge-api-1.20.1", version.ref = "flywheel" }
+flywheel-forge = { module = "dev.engine-room.flywheel:flywheel-forge-1.20.1", version.ref = "flywheel" }
+
+embeddium = { module = "maven.modrinth:embeddium", version.ref = "embeddium" }
+jei-common-api = { module = "mezz.jei:jei-1.20.1-common-api", version.ref = "jei" }
+jei-forge-api = { module = "mezz.jei:jei-1.20.1-forge-api", version.ref = "jei" }
+jei-forge-impl = { module = "mezz.jei:jei-1.20.1-forge", version.ref = "jei" }
+architectury = { module = "dev.architectury:architectury-forge", version.ref = "architectury" }
+clothConfigApi = { module = "me.shedaniel.cloth:cloth-config-forge", version.ref = "clothConfigApi" }
+rei-forge-plugin = { module = "me.shedaniel:RoughlyEnoughItems-default-plugin-forge", version.ref = "rei" }
+rei-forge-api = { module = "me.shedaniel:RoughlyEnoughItems-api-forge", version.ref = "rei" }
+rei-forge-impl = { module = "me.shedaniel:RoughlyEnoughItems-forge", version.ref = "rei" }
+emi = { module = "dev.emi:emi-forge", version.ref = "emi" }
+jade = { module = "maven.modrinth:jade", version.ref = "jade" }
+jade-addons = { module = "maven.modrinth:jade-addons-forge", version.ref = "jade-addons" }
+spark = { module = "maven.modrinth:spark", version.ref = "spark" }
+
+[bundles]
+jei = ["jei-common-api", "jei-forge-api", "jei-forge-impl"]
+rei = ["rei-forge-plugin", "rei-forge-impl", "rei-forge-api"]
+rei-runtime = ["rei-forge-impl", "architectury", "clothConfigApi"]
+jade = ["jade", "jade-addons"]

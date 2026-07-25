@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "supersymmetry:block/lv_conveyor_belt",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/lv_conveyor_belt"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/lv_conveyor_belt",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/lv_conveyor_belt",
+      "y": 270
+    }
+  }
+}

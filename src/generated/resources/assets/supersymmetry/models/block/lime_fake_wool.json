@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "supersymmetry:block/lime_fake_wool"
+  }
+}

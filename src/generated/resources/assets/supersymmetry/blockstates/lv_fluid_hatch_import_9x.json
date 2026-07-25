@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "supersymmetry:block/machine/lv_fluid_hatch_import_9x",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "supersymmetry:block/machine/lv_fluid_hatch_import_9x",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/machine/lv_fluid_hatch_import_9x"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/machine/lv_fluid_hatch_import_9x",
+      "y": 180
+    },
+    "facing=up": {
+      "gtceu:z": 180,
+      "model": "supersymmetry:block/machine/lv_fluid_hatch_import_9x",
+      "x": 270
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/machine/lv_fluid_hatch_import_9x",
+      "y": 270
+    }
+  }
+}

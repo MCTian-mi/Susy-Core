@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "supersymmetry:steel_eccentric_roll"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "supersymmetry:blocks/steel_eccentric_roll"
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "supersymmetry:block/base_structural_block",
+    "side": "supersymmetry:block/structural_block_low",
+    "top": "supersymmetry:block/base_structural_block"
+  }
+}

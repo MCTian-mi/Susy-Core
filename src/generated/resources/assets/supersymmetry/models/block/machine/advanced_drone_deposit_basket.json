@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "gtceu:machine",
+  "machine": "supersymmetry:advanced_drone_deposit_basket",
+  "variants": {
+    "taped=false": {
+      "model": "gtceu:block/machine/template/crate/metal_crate"
+    },
+    "taped=true": {
+      "model": "gtceu:block/machine/template/crate/metal_crate_taped"
+    }
+  }
+}

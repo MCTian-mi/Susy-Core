@@ -1,0 +1,27 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.simple_gas_mask",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 2,
+				"visible_bounds_height": 2,
+				"visible_bounds_offset": [0, 1, 0]
+			},
+			"bones": [
+				{
+					"name": "head",
+					"pivot": [0, 24, 0],
+					"cubes": [
+						{"origin": [-3, 23, -5], "size": [6, 4, 1], "inflate": 0.15, "uv": [0, 0]},
+						{"origin": [-1.5, 22, -6], "size": [3, 3, 2], "uv": [0, 6]},
+						{"origin": [-4, 23, -4.75], "size": [1, 3, 1], "uv": [10, 6]},
+						{"origin": [3, 23, -4.75], "size": [1, 3, 1], "uv": [14, 6]}
+					]
+				}
+			]
+		}
+	]
+}

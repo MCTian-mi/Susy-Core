@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "supersymmetry:block/praseodymium_nickel_cooling_coil"
+    },
+    "active=true": {
+      "model": "supersymmetry:block/praseodymium_nickel_cooling_coil_active"
+    }
+  }
+}

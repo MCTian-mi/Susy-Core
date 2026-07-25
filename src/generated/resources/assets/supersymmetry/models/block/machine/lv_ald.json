@@ -1,0 +1,53 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "gtceu:machine",
+  "machine": "supersymmetry:lv_ald",
+  "variants": {
+    "recipe_logic_status=idle": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/lv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/ald/overlay_front",
+          "overlay_side": "supersymmetry:block/machines/ald/overlay_side",
+          "overlay_top": "supersymmetry:block/machines/ald/overlay_top"
+        }
+      }
+    },
+    "recipe_logic_status=suspend": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/lv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/ald/overlay_front",
+          "overlay_side": "supersymmetry:block/machines/ald/overlay_side",
+          "overlay_top": "supersymmetry:block/machines/ald/overlay_top"
+        }
+      }
+    },
+    "recipe_logic_status=waiting": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/lv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/ald/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/machines/ald/overlay_front_active_emissive",
+          "overlay_side": "supersymmetry:block/machines/ald/overlay_side_active",
+          "overlay_side_emissive": "supersymmetry:block/machines/ald/overlay_side_active_emissive",
+          "overlay_top": "supersymmetry:block/machines/ald/overlay_top_active",
+          "overlay_top_emissive": "supersymmetry:block/machines/ald/overlay_top_active_emissive"
+        }
+      }
+    },
+    "recipe_logic_status=working": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/lv",
+        "textures": {
+          "overlay_front": "supersymmetry:block/machines/ald/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/machines/ald/overlay_front_active_emissive",
+          "overlay_side": "supersymmetry:block/machines/ald/overlay_side_active",
+          "overlay_side_emissive": "supersymmetry:block/machines/ald/overlay_side_active_emissive",
+          "overlay_top": "supersymmetry:block/machines/ald/overlay_top_active",
+          "overlay_top_emissive": "supersymmetry:block/machines/ald/overlay_top_active_emissive"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "supersymmetry:block/metallurgy_roll_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "supersymmetry:block/metallurgy_roll"
+    },
+    "axis=z": {
+      "model": "supersymmetry:block/metallurgy_roll_horizontal",
+      "x": 90
+    }
+  }
+}

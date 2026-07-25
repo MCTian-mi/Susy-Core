@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "supersymmetry:block/crankshaft_engine_casing",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/crankshaft_engine_casing"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/crankshaft_engine_casing",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/crankshaft_engine_casing",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "supersymmetry:block/machine/hp_steam_batch_reactor",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "supersymmetry:block/machine/hp_steam_batch_reactor",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "supersymmetry:block/machine/hp_steam_batch_reactor"
+    },
+    "facing=south": {
+      "model": "supersymmetry:block/machine/hp_steam_batch_reactor",
+      "y": 180
+    },
+    "facing=up": {
+      "gtceu:z": 180,
+      "model": "supersymmetry:block/machine/hp_steam_batch_reactor",
+      "x": 270
+    },
+    "facing=west": {
+      "model": "supersymmetry:block/machine/hp_steam_batch_reactor",
+      "y": 270
+    }
+  }
+}

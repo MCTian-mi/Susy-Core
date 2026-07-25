@@ -1,0 +1,65 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "gtceu:machine",
+  "machine": "supersymmetry:ev_zone_refiner",
+  "variants": {
+    "recipe_logic_status=idle": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/ev",
+        "textures": {
+          "overlay_back": "supersymmetry:block/machines/zone_refiner/overlay_back",
+          "overlay_bottom": "supersymmetry:block/machines/zone_refiner/overlay_bottom",
+          "overlay_front": "supersymmetry:block/machines/zone_refiner/overlay_front",
+          "overlay_side": "supersymmetry:block/machines/zone_refiner/overlay_side",
+          "overlay_top": "supersymmetry:block/machines/zone_refiner/overlay_top"
+        }
+      }
+    },
+    "recipe_logic_status=suspend": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/ev",
+        "textures": {
+          "overlay_back": "supersymmetry:block/machines/zone_refiner/overlay_back",
+          "overlay_bottom": "supersymmetry:block/machines/zone_refiner/overlay_bottom",
+          "overlay_front": "supersymmetry:block/machines/zone_refiner/overlay_front",
+          "overlay_side": "supersymmetry:block/machines/zone_refiner/overlay_side",
+          "overlay_top": "supersymmetry:block/machines/zone_refiner/overlay_top"
+        }
+      }
+    },
+    "recipe_logic_status=waiting": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/ev",
+        "textures": {
+          "overlay_back": "supersymmetry:block/machines/zone_refiner/overlay_back_active",
+          "overlay_back_emissive": "supersymmetry:block/machines/zone_refiner/overlay_back_active_emissive",
+          "overlay_bottom": "supersymmetry:block/machines/zone_refiner/overlay_bottom_active",
+          "overlay_bottom_emissive": "supersymmetry:block/machines/zone_refiner/overlay_bottom_active_emissive",
+          "overlay_front": "supersymmetry:block/machines/zone_refiner/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/machines/zone_refiner/overlay_front_active_emissive",
+          "overlay_side": "supersymmetry:block/machines/zone_refiner/overlay_side_active",
+          "overlay_side_emissive": "supersymmetry:block/machines/zone_refiner/overlay_side_active_emissive",
+          "overlay_top": "supersymmetry:block/machines/zone_refiner/overlay_top_active",
+          "overlay_top_emissive": "supersymmetry:block/machines/zone_refiner/overlay_top_active_emissive"
+        }
+      }
+    },
+    "recipe_logic_status=working": {
+      "model": {
+        "parent": "gtceu:block/casings/voltage/ev",
+        "textures": {
+          "overlay_back": "supersymmetry:block/machines/zone_refiner/overlay_back_active",
+          "overlay_back_emissive": "supersymmetry:block/machines/zone_refiner/overlay_back_active_emissive",
+          "overlay_bottom": "supersymmetry:block/machines/zone_refiner/overlay_bottom_active",
+          "overlay_bottom_emissive": "supersymmetry:block/machines/zone_refiner/overlay_bottom_active_emissive",
+          "overlay_front": "supersymmetry:block/machines/zone_refiner/overlay_front_active",
+          "overlay_front_emissive": "supersymmetry:block/machines/zone_refiner/overlay_front_active_emissive",
+          "overlay_side": "supersymmetry:block/machines/zone_refiner/overlay_side_active",
+          "overlay_side_emissive": "supersymmetry:block/machines/zone_refiner/overlay_side_active_emissive",
+          "overlay_top": "supersymmetry:block/machines/zone_refiner/overlay_top_active",
+          "overlay_top_emissive": "supersymmetry:block/machines/zone_refiner/overlay_top_active_emissive"
+        }
+      }
+    }
+  }
+}

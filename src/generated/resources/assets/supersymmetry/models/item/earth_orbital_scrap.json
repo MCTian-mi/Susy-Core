@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "supersymmetry:item/earth_orbital_scrap"
+  }
+}
